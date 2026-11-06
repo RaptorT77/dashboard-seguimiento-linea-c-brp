@@ -1,0 +1,1110 @@
+/* =============================================================================
+   DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — ROTAX MÉXICO
+   Hoja de Estilos Corporativos Industriales (KOLBEN-BRP Identity)
+   ============================================================================= */
+
+:root {
+  /* Paleta Corporativa Extraída del Sitio Oficial KOLBEN-BRP */
+  --corporate-navy: #173D60;
+  --corporate-navy-hover: #1E4E7A;
+  --corporate-navy-active: #0F2942;
+  --corporate-steel: #1F4E79;
+  --corporate-steel-light: #2C6191;
+  --corporate-accent: #2563EB;
+  --corporate-accent-hover: #1D4ED8;
+  
+  /* Fondos y Superficies */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F1F5F9;
+  --color-surface-hover: #E2E8F0;
+  
+  /* Bordes y Divisores */
+  --color-border: #E2E8F0;
+  --color-border-dark: #CBD5E1;
+  --color-border-accent: #2C6191;
+  
+  /* Textos y Jerarquía Tipográfica */
+  --color-text-main: #0F172A;
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748B;
+  --color-text-navy: #173D60;
+  
+  /* Estados Industriales HMI / Semáforo de Planta */
+  --status-ok: #22C55E;
+  --status-ok-border: #16A34A;
+  --status-ok-bg: #F0FDF4;
+  --status-ok-text: #14532D;
+
+  --status-run: #F59E0B;
+  --status-run-border: #D97706;
+  --status-run-bg: #FFFBEB;
+  --status-run-text: #78350F;
+
+  --status-warn: #F59E0B;
+  --status-pend: #EF4444;
+  --status-pend-border: #DC2626;
+  --status-pend-bg: #FEF2F2;
+  --status-pend-text: #7F1D1D;
+
+  --status-disabled: #9CA3AF;
+  --status-disabled-border: #D1D5DB;
+  --status-disabled-bg: #F3F4F6;
+  
+  /* Tipografía */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Sombras y Elevaciones */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Reseteo y Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* =============================================================================
+   1. ENCABEZADO CORPORATIVO OFICIAL
+   ============================================================================= */
+.corporate-header {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 16px;
+  box-shadow: var(--shadow-xs);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  user-select: none;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.logo-card {
+  padding: 3px;
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.logo-card:hover {
+  transform: scale(1.02);
+}
+
+.logo-img {
+  height: 48px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  display: block;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.header-title {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--corporate-navy);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.header-subtitle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.badge-corp {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.pill-status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--status-ok);
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.pill-clock {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   BOTONES CORPORATIVOS
+   ============================================================================= */
+.btn-corp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+  user-select: none;
+  font-family: inherit;
+}
+
+.btn-corp:active {
+  transform: scale(0.97);
+}
+
+.btn-corp-primary {
+  background: linear-gradient(135deg, var(--corporate-navy) 0%, var(--corporate-steel) 100%);
+  color: #FFFFFF;
+  border-color: var(--corporate-navy);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-corp-primary:hover {
+  background: linear-gradient(135deg, var(--corporate-steel) 0%, #2563EB 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-corp-soft {
+  background-color: #EFF6FF;
+  color: var(--corporate-steel);
+  border-color: #BFDBFE;
+}
+
+.btn-corp-soft:hover {
+  background-color: #DBEAFE;
+  color: var(--corporate-navy);
+}
+
+.btn-corp-amber {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border-color: #FCD34D;
+}
+
+.btn-corp-amber:hover {
+  background-color: #FDE68A;
+}
+
+.btn-corp-green {
+  background-color: #DCFCE7;
+  color: #166534;
+  border-color: #86EFAC;
+}
+
+.btn-corp-green:hover {
+  background-color: #BBF7D0;
+}
+
+/* =============================================================================
+   2. BARRA DE MÉTRICAS RÁPIDAS Y FILTROS INTERACTIVOS
+   ============================================================================= */
+.filter-toolbar {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.filter-toolbar-inner {
+  max-width: 1720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-pills-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.quick-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.quick-pill-label {
+  color: var(--color-text-subtle);
+}
+
+.quick-pill-val {
+  color: var(--color-text-main);
+  font-weight: 800;
+}
+
+.pill-ok {
+  background-color: #22C55E;
+  border-color: #16A34A;
+  color: #000000;
+}
+.pill-ok .pill-badge {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 900;
+}
+
+.pill-run {
+  background-color: #F59E0B;
+  border-color: #D97706;
+  color: #000000;
+}
+.pill-run .pill-badge {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 900;
+}
+
+.pill-pend {
+  background-color: #EF4444;
+  border-color: #DC2626;
+  color: #000000;
+}
+.pill-pend .pill-badge {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 900;
+}
+
+/* Fila de Controles de Filtros */
+.filters-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filters-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-select, .filter-input {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.filter-select:focus, .filter-input:focus {
+  border-color: var(--corporate-steel);
+  box-shadow: 0 0 0 1px var(--corporate-steel);
+  background-color: #FFFFFF;
+}
+
+/* =============================================================================
+   3. CONTENEDOR PRINCIPAL Y HERO DE OPERACIÓN
+   ============================================================================= */
+.dashboard-main {
+  flex: 1;
+  max-width: 1720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 14px 16px 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Fila Hero: Widgets Operativos Principales */
+.operational-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.hero-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--corporate-steel);
+}
+
+.hero-card-status::before { background-color: var(--status-ok); }
+.hero-card-shift::before { background-color: var(--corporate-navy); }
+.hero-card-model::before { background-color: #2563EB; }
+.hero-card-oee::before { background-color: #059669; }
+
+.hero-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.hero-card-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hero-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  background-color: #DCFCE7;
+  color: #166534;
+  border: 1px solid #86EFAC;
+}
+
+.hero-status-pill.status-alert {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border-color: #FCD34D;
+}
+
+.hero-status-pill.status-stop {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border-color: #FCA5A5;
+}
+
+.hero-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.hero-meta-row {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-muted);
+}
+
+.hero-meta-row strong {
+  color: var(--color-text-main);
+  font-weight: 700;
+}
+
+/* =============================================================================
+   4. GRILLA DE INDICADORES CLAVE (KPIS)
+   ============================================================================= */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.kpi-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--corporate-navy);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.kpi-unit {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-subtle);
+  margin-left: 4px;
+}
+
+.kpi-target {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.kpi-progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #E2E8F0;
+  border-radius: 9999px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.kpi-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--corporate-steel) 0%, #2563EB 100%);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.kpi-progress-fill.fill-green { background: #22C55E; }
+.kpi-progress-fill.fill-amber { background: #F59E0B; }
+.kpi-progress-fill.fill-red { background: #EF4444; }
+
+/* =============================================================================
+   5. SECCIÓN DE VISUALIZACIÓN DE DATOS (GRÁFICAS)
+   ============================================================================= */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.chart-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chart-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--corporate-navy);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.chart-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  background-color: #EFF6FF;
+  color: var(--corporate-steel);
+  border: 1px solid #BFDBFE;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.chart-body {
+  position: relative;
+  height: 250px;
+  width: 100%;
+}
+
+/* =============================================================================
+   6. SECCIÓN DE AVANCE POR ESTACIÓN (LAYOUT DE PROCESO)
+   ============================================================================= */
+.stations-section {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--corporate-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stations-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.station-node-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px 10px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.station-node-card:hover {
+  border-color: var(--corporate-steel);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.station-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.station-id {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--corporate-navy);
+}
+
+.station-status-pill {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.station-status-pill.status-ok { background: #22C55E; color: #000000; }
+.station-status-pill.status-run { background: #F59E0B; color: #000000; }
+.station-status-pill.status-pend { background: #EF4444; color: #000000; }
+
+.station-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  line-height: 1.2;
+  margin-bottom: 6px;
+  min-height: 26px;
+}
+
+.station-metrics {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px dashed var(--color-border);
+  padding-top: 6px;
+}
+
+.station-metrics strong {
+  color: var(--color-text-main);
+}
+
+/* =============================================================================
+   7. TABLA DE SEGUIMIENTO INDUSTRIAL DETALLADO (ESTILO KOLBEN)
+   ============================================================================= */
+.table-section {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  width: 260px;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 11px;
+  font-family: inherit;
+  width: 100%;
+  color: var(--color-text-main);
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.industrial-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: left;
+}
+
+.industrial-table thead tr {
+  background-color: var(--corporate-steel);
+  color: #FFFFFF;
+  border-bottom: 2px solid var(--corporate-navy);
+}
+
+.industrial-table th {
+  padding: 8px 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  border-right: 1px solid var(--corporate-steel-light);
+  white-space: nowrap;
+}
+
+.industrial-table th:last-child {
+  border-right: none;
+}
+
+.industrial-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.1s ease;
+}
+
+.industrial-table tbody tr:nth-child(even) {
+  background-color: #F8FAFC;
+}
+
+.industrial-table tbody tr:hover {
+  background-color: #EFF6FF;
+}
+
+.industrial-table td {
+  padding: 8px 12px;
+  color: var(--color-text-main);
+  border-right: 1px solid #F1F5F9;
+  white-space: nowrap;
+}
+
+.industrial-table td:last-child {
+  border-right: none;
+}
+
+/* Badge de celda */
+.cell-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 9.5px;
+  text-align: center;
+}
+
+/* =============================================================================
+   8. SECCIÓN DE ALERTAS Y NOTIFICACIONES
+   ============================================================================= */
+.alerts-section {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background-color: #F8FAFC;
+}
+
+.alert-item.alert-critica {
+  background-color: #FEF2F2;
+  border-color: #FECACA;
+}
+
+.alert-item.alert-advertencia {
+  background-color: #FFFBEB;
+  border-color: #FDE68A;
+}
+
+.alert-item.alert-calidad {
+  background-color: #EFF6FF;
+  border-color: #BFDBFE;
+}
+
+.alert-item.alert-info {
+  background-color: #F3F4F6;
+  border-color: #E5E7EB;
+}
+
+.alert-icon {
+  font-size: 16px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.alert-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.alert-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.alert-badge.badge-critica { background: #EF4444; color: #FFFFFF; }
+.alert-badge.badge-advertencia { background: #F59E0B; color: #000000; }
+.alert-badge.badge-calidad { background: #2563EB; color: #FFFFFF; }
+.alert-badge.badge-info { background: #64748B; color: #FFFFFF; }
+
+.alert-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.alert-footer-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-text-subtle);
+}
+
+/* =============================================================================
+   9. PIE DE PÁGINA CORPORATIVO
+   ============================================================================= */
+.corporate-footer {
+  background-color: #FFFFFF;
+  border-top: 1px solid var(--color-border);
+  padding: 12px 16px;
+  font-size: 11px;
+  color: var(--color-text-subtle);
+  margin-top: auto;
+}
+
+.footer-inner {
+  max-width: 1720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Notificación Toast Flotante */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--corporate-navy);
+  color: #FFFFFF;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--status-ok);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: toast-in 0.3s forwards ease;
+  pointer-events: auto;
+}
+
+@keyframes toast-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================================================================
+   10. RESPONSIVE DESIGN (MEDIA QUERIES)
+   ============================================================================= */
+@media (max-width: 1280px) {
+  .operational-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stations-flow-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .operational-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .stations-flow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .header-title {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .stations-flow-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  .quick-pills-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* =============================================================================
+   11. REGLAS DE IMPRESIÓN OFICIAL (PDF REPORT)
+   ============================================================================= */
+@media print {
+  .corporate-header, .filter-toolbar, .header-actions, .table-toolbar, .btn-corp {
+    display: none !important;
+  }
+  body {
+    background-color: #FFFFFF !important;
+    padding: 0 !important;
+  }
+  .dashboard-main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .hero-card, .kpi-card, .chart-card, .table-section, .stations-section {
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+    break-inside: avoid;
+  }
+  .chart-body {
+    height: 200px !important;
+  }
+}

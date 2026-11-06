@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
+  <meta name="theme-color" content="#173D60">
+  <title>Dashboard de Seguimiento Línea C BRP</title>
+  <meta name="description" content="Dashboard Ejecutivo y Operativo de Seguimiento para la Línea C BRP Rotax México. Monitoreo en tiempo real de producción, OEE, paros y estaciones.">
+  <link rel="icon" href="assets/images/LOGO_KS-1.png" type="image/png">
+  
+  <!-- Estilos Corporativos Oficiales -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+
+  <!-- Librería de Gráficas Chart.js CDN Oficial -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. ENCABEZADO CORPORATIVO OFICIAL (IDENTIDAD KOLBEN-BRP)
+       ========================================================================= -->
+  <header class="corporate-header">
+    <div class="header-inner">
+      <!-- Esquina Izquierda: Logotipo Kolbenschmidt / KS -->
+      <div class="logo-card" title="Kolbenschmidt / Pierburg">
+        <img src="assets/images/LOGO_KS-1.png" alt="Logo KS Kolbenschmidt" class="logo-img" onerror="this.src='assets/images/LOGO_KS-1.bmp'">
+      </div>
+
+      <!-- Centro: Título Oficial de la Línea e Indicadores en Vivo -->
+      <div class="header-center">
+        <h1 class="header-title">Dashboard de Seguimiento Línea C BRP</h1>
+        <div class="header-subtitle-row">
+          <span class="badge-corp">KOLBEN • BRP ROTAX • LÍNEA C</span>
+          <span class="pill-status-live" title="Conexión activa con el servidor MES/SCADA">
+            <span class="pulse-dot"></span>
+            <span>EN VIVO</span>
+          </span>
+          <span class="pill-clock" id="liveClock" title="Fecha y Hora Oficial de Planta">--/--/---- --:--:--</span>
+        </div>
+      </div>
+
+      <!-- Esquina Derecha: Acciones Rápidas y Logotipo JI&FIX / BRP -->
+      <div class="header-actions">
+        <button id="btnSimulate" class="btn-corp btn-corp-amber" title="Simular término de pieza en tiempo real (+1 unidad)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span class="btn-label-text">Simular Pieza (+1)</span>
+        </button>
+
+        <button id="btnDownloadCsv" class="btn-corp btn-corp-green" title="Descargar datos en formato CSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="btn-label-text">Exportar CSV</span>
+        </button>
+
+        <button id="btnPrintReport" class="btn-corp btn-corp-primary" title="Imprimir informe ejecutivo en PDF">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span class="btn-label-text">Imprimir PDF</span>
+        </button>
+
+        <button id="btnFullscreen" class="btn-corp btn-corp-soft" title="Alternar modo pantalla completa Andon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+
+        <div class="logo-card" title="JI&FIX SIGMA SA DE CV / BRP">
+          <img src="assets/images/LOGO_JIFIX_BRP-1.jpg" alt="Logo JI&FIX SIGMA / BRP" class="logo-img">
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. BARRA DE HERRAMIENTAS: CHIPS DE RESUMEN Y FILTROS INTERACTIVOS
+       ========================================================================= -->
+  <nav class="filter-toolbar">
+    <div class="filter-toolbar-inner">
+      <!-- Fila de Chips Rápidos de Estado (Métricas Globales) -->
+      <div class="quick-pills-row">
+        <div class="quick-pill">
+          <span class="quick-pill-label">LÍNEA:</span>
+          <span class="quick-pill-val">LÍNEA C (ROTAX ACE)</span>
+        </div>
+        <div class="quick-pill">
+          <span class="quick-pill-label">META:</span>
+          <span class="quick-pill-val" id="pillToolbarMeta">540 UDS</span>
+        </div>
+        <div class="quick-pill pill-ok">
+          <span>PRODUCCIÓN:</span>
+          <span class="pill-badge" id="pillToolbarReal">432 UDS (80.0%)</span>
+        </div>
+        <div class="quick-pill pill-run">
+          <span>PENDIENTES:</span>
+          <span class="pill-badge" id="pillToolbarPend">108 UDS</span>
+        </div>
+        <div class="quick-pill">
+          <span class="quick-pill-label">OEE GLOBAL:</span>
+          <span class="quick-pill-val" id="pillToolbarOee" style="color:#1E3A8A;">89.4%</span>
+        </div>
+        <div class="quick-pill pill-pend">
+          <span>PAROS ACUM:</span>
+          <span class="pill-badge" id="pillToolbarParos">18 MIN (4 EV)</span>
+        </div>
+        <div class="quick-pill">
+          <span class="quick-pill-label">SCRAP:</span>
+          <span class="quick-pill-val" style="color:#DC2626;">0.46% (2 PZ)</span>
+        </div>
+      </div>
+
+      <!-- Fila de Controles de Filtros Interactivos -->
+      <div class="filters-controls-row">
+        <div class="filters-group">
+          <div class="filter-item">
+            <label for="filterDate" class="filter-label">Fecha:</label>
+            <input type="date" id="filterDate" class="filter-input">
+          </div>
+
+          <div class="filter-item">
+            <label for="filterShift" class="filter-label">Turno:</label>
+            <select id="filterShift" class="filter-select">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filterStation" class="filter-label">Estación:</label>
+            <select id="filterStation" class="filter-select">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filterModel" class="filter-label">Modelo:</label>
+            <select id="filterModel" class="filter-select">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filterStatus" class="filter-label">Estado:</label>
+            <select id="filterStatus" class="filter-select">
+              <option value="all">Todos los Estados</option>
+              <option value="OK">OK — Operando Normal</option>
+              <option value="RUN">RUN — En Proceso</option>
+              <option value="PEND">PEND / PARO — Con Incidencia</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <button id="btnResetFilters" class="btn-corp btn-corp-soft" title="Limpiar todos los filtros y volver a vista predeterminada">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            <span>Restablecer Filtros</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- =========================================================================
+       3. CUERPO PRINCIPAL DEL DASHBOARD
+       ========================================================================= -->
+  <main class="dashboard-main">
+
+    <!-- 3.1. FILA HERO: TARJETAS CON DATOS OPERATIVOS EN VIVO -->
+    <section class="operational-hero-grid">
+      <!-- Tarjeta 1: Estado General de la Línea -->
+      <article class="hero-card hero-card-status">
+        <div class="hero-card-header">
+          <span class="hero-card-title">Estado de la Línea</span>
+          <span style="font-size:10px; font-weight:700; color:#166534;">SCADA ONLINE</span>
+        </div>
+        <div class="hero-card-body">
+          <div id="heroStatusPill" class="hero-status-pill">
+            <span class="pulse-dot"></span>
+            <span id="heroStatusText">🟢 OPERANDO A RITMO NORMAL</span>
+          </div>
+          <div class="hero-meta-list">
+            <div class="hero-meta-row">
+              <span>Tiempo de Ciclo Actual:</span>
+              <strong id="heroTakt">44.8 s (Target: 45.0 s)</strong>
+            </div>
+            <div class="hero-meta-row">
+              <span>Cadencia de Línea:</span>
+              <strong id="heroRate">80 uds/h</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 2: Turno & Supervisión -->
+      <article class="hero-card hero-card-shift">
+        <div class="hero-card-header">
+          <span class="hero-card-title">Turno y Supervisión</span>
+          <span class="chart-badge">T1 MATUTINO</span>
+        </div>
+        <div class="hero-card-body">
+          <div style="font-size: 15px; font-weight: 900; color: #173D60;">06:00 a 14:30 hrs</div>
+          <div class="hero-meta-list">
+            <div class="hero-meta-row">
+              <span>Supervisor a Cargo:</span>
+              <strong id="heroSupervisor">Ing. Carlos Mendoza (T1)</strong>
+            </div>
+            <div class="hero-meta-row">
+              <span>Personal en Línea:</span>
+              <strong>24 Técnicos Operadores</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 3: Modelo en Fabricación -->
+      <article class="hero-card hero-card-model">
+        <div class="hero-card-header">
+          <span class="hero-card-title">Producto en Ensamble</span>
+          <span class="chart-badge" style="background:#EFF6FF; color:#1D4ED8; border-color:#BFDBFE;">ACTIVO</span>
+        </div>
+        <div class="hero-card-body">
+          <div id="heroProduct" style="font-size: 14.5px; font-weight: 900; color: #173D60; line-height: 1.2;">
+            Rotax 900 ACE Turbo (3 Cil - 200HP)
+          </div>
+          <div class="hero-meta-list">
+            <div class="hero-meta-row">
+              <span>Orden de Trabajo:</span>
+              <strong id="heroOrder" style="font-family:var(--font-mono);">OT-2026-BRP-09482</strong>
+            </div>
+            <div class="hero-meta-row">
+              <span>Destino Planta:</span>
+              <strong>Can-Am Juárez / Valcourt</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 4: Resumen OEE & Eficiencia -->
+      <article class="hero-card hero-card-oee">
+        <div class="hero-card-header">
+          <span class="hero-card-title">Eficiencia Operativa (OEE)</span>
+          <span class="chart-badge" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0;">META > 85%</span>
+        </div>
+        <div class="hero-card-body">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <span style="font-size: 24px; font-weight: 900; color: #059669;">89.4%</span>
+            <span style="font-size: 10px; font-weight: 700; color: #166534;">+4.4% vs Meta</span>
+          </div>
+          <div class="hero-meta-list">
+            <div class="hero-meta-row">
+              <span>Disponibilidad / Rendimiento:</span>
+              <strong><span id="heroAvail">94.1%</span> / <span id="heroPerf">95.5%</span></strong>
+            </div>
+            <div class="hero-meta-row">
+              <span>Calidad (First Pass Yield):</span>
+              <strong id="heroQual">99.54%</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 3.2. GRILLA DE INDICADORES CLAVE (KPIS) -->
+    <section class="kpi-grid">
+      <!-- KPI 1: Producción del Día -->
+      <article class="kpi-card">
+        <div class="kpi-title">Producción Real</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiProdVal">432</span>
+          <span class="kpi-unit">unidades</span>
+        </div>
+        <div class="kpi-target">Meta acumulada: 430 uds</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill fill-green" style="width: 100%;"></div>
+        </div>
+      </article>
+
+      <!-- KPI 2: Meta Diaria -->
+      <article class="kpi-card">
+        <div class="kpi-title">Meta Diaria</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiMetaVal">540</span>
+          <span class="kpi-unit">unidades</span>
+        </div>
+        <div class="kpi-target">Turno 1: 540 uds programadas</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill" style="width: 100%; background:#64748B;"></div>
+        </div>
+      </article>
+
+      <!-- KPI 3: Porcentaje de Avance -->
+      <article class="kpi-card">
+        <div class="kpi-title">Porcentaje de Avance</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiAvanceVal">80.0%</span>
+          <span class="kpi-unit">cumplido</span>
+        </div>
+        <div class="kpi-target">Esperado a la hora: 79.6%</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill fill-green" id="barAvance" style="width: 80%;"></div>
+        </div>
+      </article>
+
+      <!-- KPI 4: Unidades Pendientes -->
+      <article class="kpi-card">
+        <div class="kpi-title">Unidades Pendientes</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiPendVal" style="color:#D97706;">108</span>
+          <span class="kpi-unit">por fabricar</span>
+        </div>
+        <div class="kpi-target">Tiempo restante: 1h 15 min</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill fill-amber" style="width: 20%;"></div>
+        </div>
+      </article>
+
+      <!-- KPI 5: Eficiencia de Línea (OEE) -->
+      <article class="kpi-card">
+        <div class="kpi-title">Eficiencia Global (OEE)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiOeeVal" style="color:#1E3A8A;">89.4%</span>
+          <span class="kpi-unit">OEE</span>
+        </div>
+        <div class="kpi-target">Clase Mundial: >85%</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill fill-green" id="barOee" style="width: 89.4%;"></div>
+        </div>
+      </article>
+
+      <!-- KPI 6: Tiempo de Paros -->
+      <article class="kpi-card">
+        <div class="kpi-title">Paros Acumulados</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiParosVal" style="color:#DC2626;">18 min</span>
+          <span class="kpi-unit">4 eventos</span>
+        </div>
+        <div class="kpi-target">MTTR: 4.5 min / evento</div>
+        <div class="kpi-progress-bar">
+          <div class="kpi-progress-fill fill-red" style="width: 25%;"></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 3.3. SECCIÓN DE AVANCE POR ESTACIÓN / PROCESO (FLOW LAYOUT) -->
+    <section class="stations-section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <span>Avance y Estado por Estación de Trabajo (Línea C)</span>
+        </div>
+        <span style="font-size:10px; font-weight:700; color:#475569;">HAZ CLIC EN CUALQUIER ESTACIÓN PARA FILTRAR</span>
+      </div>
+
+      <div class="stations-flow-grid" id="stationsFlowContainer">
+        <!-- Generado dinámicamente -->
+      </div>
+    </section>
+
+    <!-- 3.4. SECCIÓN DE VISUALIZACIÓN DE DATOS (GRÁFICAS) -->
+    <section class="charts-grid">
+      <!-- Gráfica 1: Producción por Hora (Real vs Meta) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-header-left">
+            <span class="chart-title">Producción por Hora (Real vs. Meta)</span>
+            <span class="chart-badge">HORARIO T1</span>
+          </div>
+          <span style="font-size:10.5px; font-weight:700; color:#173D60;">Meta: 68 pz/h</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chartHourlyCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfica 2: Curva de Avance Acumulado (Curva S Proyectada vs Real) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-header-left">
+            <span class="chart-title">Curva de Avance Acumulado</span>
+            <span class="chart-badge">CURVA S</span>
+          </div>
+          <span style="font-size:10.5px; font-weight:700; color:#166534;">Ritmo: +2 pzas vs Plan</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chartCumulativeCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfica 3: Desglose de Eficiencia OEE -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-header-left">
+            <span class="chart-title">Desglose de Eficiencia (OEE)</span>
+            <span class="chart-badge">TPM / OEE</span>
+          </div>
+          <span style="font-size:10.5px; font-weight:700; color:#1E3A8A;">Target Global: 85%</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chartOeeCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfica 4: Pareto de Causas de Paros -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-header-left">
+            <span class="chart-title">Distribución de Paros e Incidencias</span>
+            <span class="chart-badge">PARETO</span>
+          </div>
+          <span style="font-size:10.5px; font-weight:700; color:#DC2626;">Total: 18 min</span>
+        </div>
+        <div class="chart-body">
+          <canvas id="chartDowntimeCanvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3.5. TABLA INDUSTRIAL DE SEGUIMIENTO DETALLADO -->
+    <section class="table-section" id="tableSection">
+      <div class="table-toolbar">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h18v18H3z"></path>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+            <path d="M9 3v18"></path>
+          </svg>
+          <span>Tabla Operativa de Estaciones, Equipos y Tiempos de Ciclo</span>
+        </div>
+
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="tableSearchInput" class="search-input" placeholder="Buscar por estación, equipo u operador...">
+        </div>
+      </div>
+
+      <div class="table-responsive-container">
+        <table class="industrial-table">
+          <thead>
+            <tr>
+              <th>Estación</th>
+              <th>Proceso Operativo</th>
+              <th>Equipo / Activo SCADA</th>
+              <th>Operador Asignado</th>
+              <th>Meta (Uds)</th>
+              <th>Buenas</th>
+              <th>Scrap</th>
+              <th>Tiempo Ciclo</th>
+              <th>Estado</th>
+              <th>Última Liberación</th>
+            </tr>
+          </thead>
+          <tbody id="tableStationsBody">
+            <!-- Filas inyectadas dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3.6. SECCIÓN DE ALERTAS Y NOTIFICACIONES OPERATIVAS -->
+    <section class="alerts-section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Centro de Alertas, Paros e Incidencias en Línea</span>
+        </div>
+        <span style="font-size:10.5px; font-weight:700; color:#173D60;">4 EVENTOS REGISTRADOS EN LA JORNADA</span>
+      </div>
+
+      <div class="alerts-list" id="alertsListContainer">
+        <!-- Alertas inyectadas dinámicamente -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       4. PIE DE PÁGINA CORPORATIVO
+       ========================================================================= -->
+  <footer class="corporate-footer">
+    <div class="footer-inner">
+      <div>
+        <strong>BRP ROTAX MÉXICO S.A. de C.V.</strong> — Sistema de Seguimiento Operativo Línea C (Planta Querétaro).
+      </div>
+      <div>
+        En colaboración con <strong>Kolbenschmidt Pierburg</strong> &amp; <strong>JI&amp;FIX SIGMA S.A. de C.V.</strong>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts del Dashboard -->
+  <script src="assets/js/mockData.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
