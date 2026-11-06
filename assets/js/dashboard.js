@@ -649,20 +649,104 @@
     }
   }
 
+  const CSV_STORAGE_KEY = 'BRP_PERSISTENT_CSV_RECORDS';
+
+  /**
+   * Obtiene la lista persistente de registros históricos para el archivo CSV.
+   * Si no existe en localStorage, se inicializa con los registros reales de la pizarra.
+   */
+  function getPersistentCsvRecords() {
+    let records = [];
+    try {
+      const stored = localStorage.getItem(CSV_STORAGE_KEY);
+      if (stored) {
+        records = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Error leyendo CSV histórico de localStorage:', e);
+    }
+
+    if (!records || records.length === 0) {
+      // Semilla inicial oficial con los datos de 8 horas extraídos de la pizarra
+      records = [
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '06:30 - 08:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 90, real_pz_hora: 96, obj_acumulado: 90, real_acumulado: 80, piezas_malas: 16, tiempo_minutos: 0, paros: '', estado: 'PRODUCCION_EN_ORDEN', timestamp: '2026-11-06 08:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '08:00 - 09:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 42, obj_acumulado: 150, real_acumulado: 100, piezas_malas: 22, tiempo_minutos: 25, paros: '* Golpe en cabeza op 20', estado: 'ADVERTENCIA_OPERATIVA', timestamp: '2026-11-06 09:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '09:00 - 10:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 19, obj_acumulado: 210, real_acumulado: 100, piezas_malas: 19, tiempo_minutos: 20, paros: '* Golpe en cabeza * marca de rebarba', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 10:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '10:00 - 11:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 16, obj_acumulado: 270, real_acumulado: 100, piezas_malas: 16, tiempo_minutos: 0, paros: 'Cadencia frenada', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 11:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '11:00 - 12:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 30, real_pz_hora: 18, obj_acumulado: 300, real_acumulado: 100, piezas_malas: 18, tiempo_minutos: 15, paros: 'Ajuste DNs en TF', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 12:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '12:00 - 13:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 36, obj_acumulado: 360, real_acumulado: 120, piezas_malas: 16, tiempo_minutos: 0, paros: '', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 13:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '13:00 - 14:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 59, obj_acumulado: 420, real_acumulado: 165, piezas_malas: 14, tiempo_minutos: 0, paros: '', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 14:00:00' },
+        { fecha: '2026-11-06', turno: 'Primero: 06:30 a 15:00 hrs', horario: '14:00 - 15:00', linea: 'C', producto: 'WOLF V1', lider: 'Antonia', obj_pz_hora: 60, real_pz_hora: 30, obj_acumulado: 480, real_acumulado: 185, piezas_malas: 10, tiempo_minutos: 0, paros: 'Venta => 185 | Scrap: 131', estado: 'PRODUCCION_DEFICIENTE', timestamp: '2026-11-06 15:00:00' }
+      ];
+      try {
+        localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(records));
+      } catch (e) {}
+    }
+    return records;
+  }
+
+  /**
+   * Asegura que los registros de producción activos se almacenen en el CSV persistente.
+   */
+  function persistCurrentRecordsToCsv(currentData) {
+    if (!currentData || !currentData.produccionHoraria) return;
+    const records = getPersistentCsvRecords();
+    const shiftName = currentData.turnos?.[0]?.nombre || 'Primero: 06:30 a 15:00 hrs';
+    const leader = currentData.planta?.supervisorActual || 'Líder Antonia';
+    const prodName = currentData.planta?.productoActual || 'WOLF V1';
+
+    currentData.produccionHoraria.forEach(h => {
+      if (h.real > 0 || h.malas > 0 || (h.comentario && !h.comentario.includes('En espera'))) {
+        const existingIdx = records.findIndex(r => r.horario === h.hora && r.turno === shiftName);
+        const item = {
+          fecha: new Date().toISOString().slice(0, 10),
+          turno: shiftName,
+          horario: h.hora,
+          linea: 'C',
+          producto: prodName,
+          lider: leader,
+          obj_pz_hora: h.meta,
+          real_pz_hora: h.real,
+          obj_acumulado: h.acumMeta,
+          real_acumulado: h.acumReal,
+          piezas_malas: h.malas || 0,
+          tiempo_minutos: h.parosMin || 0,
+          paros: h.comentario || '',
+          estado: currentData.resumenKpis?.estadoLinea || 'PRODUCCION_EN_ORDEN',
+          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
+        };
+
+        if (existingIdx >= 0) {
+          records[existingIdx] = item;
+        } else {
+          records.push(item);
+        }
+      }
+    });
+
+    try {
+      localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(records));
+    } catch (e) {}
+  }
+
   /**
    * Restablecer todos los datos del dashboard a cero / baseline inicial
    * para comenzar una nueva captura de turno subiendo imágenes desde Telegram.
+   * IMPORTANTE: Los datos acumulados del archivo CSV permanecen persistentes.
    */
   function handleResetData() {
     const confirmed = window.confirm(
-      '¿Desea restablecer todos los datos de la Línea C a cero?\n\n' +
-      'Esta acción reiniciará los contadores de producción, piezas, scrap, paros y alertas ' +
-      'para comenzar una nueva captura de turno subiendo imágenes desde Telegram según el procedimiento.'
+      '¿Desea restablecer todos los datos del dashboard a cero para iniciar una nueva captura de turno?\n\n' +
+      'AVISO DE PERSISTENCIA:\n' +
+      'Los datos acumulados de producción se preservarán intactos en el archivo CSV para su exportación histórica.'
     );
 
     if (!confirmed) return;
 
-    // 1. Estructura limpia de inicio de turno
+    // 1. Guardar de forma persistente los datos acumulados actuales en el historial CSV antes de limpiar el dashboard
+    persistCurrentRecordsToCsv(state.data);
+
+    // 2. Estructura limpia de inicio de turno (todos los contadores del dashboard a cero)
     const cleanData = {
       planta: {
         nombre: 'BRP ROTAX MÉXICO S.A. de C.V.',
@@ -722,21 +806,21 @@
       alertas: []
     };
 
-    // 2. Aplicar a estado reactivo y persistencia local
+    // 3. Aplicar al estado reactivo del dashboard y guardar para visualización
     state.data = JSON.parse(JSON.stringify(cleanData));
     try {
       localStorage.setItem('BRP_DASHBOARD_RESET_DATA', JSON.stringify(cleanData));
       localStorage.setItem('BRP_DASHBOARD_RESET_TIME', Date.now().toString());
     } catch (e) {}
 
-    // 3. Renderizar todos los módulos visuales
+    // 4. Re-renderizar módulos visuales en ceros
     renderKpis();
     renderHeroWidgets();
     renderStationsFlow();
     renderTable();
     renderAlerts();
 
-    // 4. Actualizar gráficas en tiempo real
+    // 5. Actualizar gráficas en ceros
     if (chartHourly) {
       chartHourly.data.datasets[0].data = cleanData.produccionHoraria.map(() => 0);
       chartHourly.update();
@@ -752,17 +836,17 @@
       chartDowntime.update();
     }
 
-    // 5. Restablecer semáforo Andon ESP32 a Producción en Orden (Lámpara Verde Fija)
+    // 6. Restablecer semáforo Andon ESP32 a Producción en Orden (Lámpara Verde Fija)
     try {
       fetch('http://192.168.0.200/api/andon?state=orden', { method: 'POST', mode: 'no-cors' }).catch(() => {});
     } catch (e) {}
 
-    // 6. Notificar al backend FastAPI si está levantado
+    // 7. Notificar al backend FastAPI si está levantado
     try {
       fetch('/api/reset', { method: 'POST' }).catch(() => {});
     } catch (e) {}
 
-    showToast('🔄 Datos de línea restablecidos. Listo para nueva captura de fotos vía Telegram.');
+    showToast('🔄 Dashboard restablecido a ceros. Los datos acumulados permanecen persistentes en el archivo CSV.');
   }
 
   /**
@@ -815,37 +899,83 @@
 
   /**
    * Exportar Datos a formato CSV oficial
+   * Mantiene el historial acumulado persistente incluso tras pulsar Reset.
    */
   function exportCsv() {
-    const headers = ['Estacion', 'Nombre_Proceso', 'Equipo', 'Operador', 'Meta_Pzas', 'Buenas_Pzas', 'Scrap_Pzas', 'Ciclo_Seg', 'Estado', 'Ultima_Liberacion'];
-    const rows = state.data.estaciones.map(e => [
-      e.id,
-      `"${e.nombre}"`,
-      `"${e.equipo}"`,
-      `"${e.operador}"`,
-      e.metaPzas,
-      e.buenasPzas,
-      e.scrapPzas,
-      e.cicloSeg,
-      e.estado,
-      e.ultimaLiberacion
-    ]);
+    // Si la sesión actual tiene datos en pantalla, sincronizarlos con el histórico persistente
+    persistCurrentRecordsToCsv(state.data);
+    const records = getPersistentCsvRecords();
+
+    const headers = [
+      'Fecha',
+      'Turno',
+      'Horario',
+      'Linea',
+      'Producto',
+      'Lider_Supervisor',
+      'Obj_Pz_Hora',
+      'Real_Pz_Hora',
+      'Obj_Acumulado',
+      'Real_Acumulado',
+      'Piezas_Malas_Scrap',
+      'Tiempo_Minutos_Paro',
+      'Causa_Paro_Incidencia',
+      'Estado_Linea',
+      'Timestamp_Registro'
+    ];
 
     let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
     csvContent += headers.join(',') + '\r\n';
-    rows.forEach(r => {
-      csvContent += r.join(',') + '\r\n';
+
+    records.forEach(r => {
+      const row = [
+        r.fecha || '2026-11-06',
+        `"${r.turno || 'Primero: 06:30 a 15:00 hrs'}"`,
+        `"${r.horario || ''}"`,
+        `"${r.linea || 'C'}"`,
+        `"${r.producto || 'WOLF V1'}"`,
+        `"${r.lider || 'Antonia'}"`,
+        r.obj_pz_hora ?? 60,
+        r.real_pz_hora ?? 0,
+        r.obj_acumulado ?? 0,
+        r.real_acumulado ?? 0,
+        r.piezas_malas ?? 0,
+        r.tiempo_minutos ?? 0,
+        `"${(r.paros || '').replace(/"/g, '""')}"`,
+        `"${r.estado || 'PRODUCCION_EN_ORDEN'}"`,
+        `"${r.timestamp || new Date().toISOString()}"`
+      ];
+      csvContent += row.join(',') + '\r\n';
+    });
+
+    // Anexar resumen de estaciones de trabajo
+    csvContent += '\r\n';
+    csvContent += '# RESUMEN DE ESTACIONES DE TRABAJO (LINEA C)\r\n';
+    csvContent += 'Estacion,Nombre_Proceso,Equipo,Operador,Meta_Pzas,Buenas_Pzas,Scrap_Pzas,Ciclo_Seg,Estado,Ultima_Liberacion\r\n';
+    state.data.estaciones.forEach(e => {
+      csvContent += [
+        e.id,
+        `"${e.nombre}"`,
+        `"${e.equipo}"`,
+        `"${e.operador}"`,
+        e.metaPzas,
+        e.buenasPzas,
+        e.scrapPzas,
+        e.cicloSeg,
+        e.estado,
+        e.ultimaLiberacion
+      ].join(',') + '\r\n';
     });
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute('download', `BRP_Linea_C_Seguimiento_${dateStr}.csv`);
+    link.setAttribute('download', `BRP_Linea_C_Historial_Produccion_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('Archivo CSV descargado exitosamente');
+    showToast(`📄 CSV histórico exportado exitosamente (${records.length} registros persistentes conservados)`);
   }
 
   /**

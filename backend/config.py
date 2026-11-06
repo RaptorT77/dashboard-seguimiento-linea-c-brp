@@ -25,6 +25,7 @@ DATABASE_URL = f"sqlite:///{STORAGE_DIR / 'production_data.db'}"
 # Rutas de integración con el Dashboard Web existente
 DASHBOARD_MOCK_DATA_JS = PROJECT_ROOT / "assets" / "js" / "mockData.js"
 DASHBOARD_DATA_JSON = PROJECT_ROOT / "data" / "production_data.json"
+PERSISTENT_CSV_PATH = PROJECT_ROOT / "data" / "produccion_linea_c_historial.csv"
 
 # Umbral mínimo de confianza para alertas de revisión
 MIN_OCR_CONFIDENCE_THRESHOLD = 0.55

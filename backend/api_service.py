@@ -8,10 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from .config import DASHBOARD_DATA_JSON, RAW_IMAGES_DIR
+from .config import DASHBOARD_DATA_JSON, RAW_IMAGES_DIR, PERSISTENT_CSV_PATH
 from .database import get_db, init_db
 from .models import HourlyProductionRecord, RawImage, AuditEvent
 from .pipeline import WhiteboardProcessingPipeline
@@ -128,6 +129,18 @@ def reset_production_telemetry(db: Session = Depends(get_db)):
         "message": "Datos de producción de Línea C restablecidos a cero correctamente",
         "data": clean_data
     }
+
+
+@app.get("/api/production/export-csv")
+def export_persistent_csv():
+    """Descarga el archivo CSV acumulado persistente oficial de Línea C."""
+    if not PERSISTENT_CSV_PATH.exists():
+        raise HTTPException(status_code=404, detail="Archivo CSV histórico no encontrado")
+    return FileResponse(
+        PERSISTENT_CSV_PATH,
+        media_type="text/csv",
+        filename=f"BRP_Linea_C_Historial_Produccion_{datetime.utcnow().strftime('%Y-%m-%d')}.csv"
+    )
 
 
 @app.post("/api/upload")

@@ -3,10 +3,12 @@ Módulo de Sincronización con la Fuente de Datos del Dashboard Web.
 Actualiza atómicamente mockData.js y production_data.json sin alterar el frontend.
 """
 
+import csv
 import json
+import logging
 from pathlib import Path
 from typing import Dict, Any, List
-from .config import DASHBOARD_MOCK_DATA_JS, DASHBOARD_DATA_JSON
+from .config import DASHBOARD_MOCK_DATA_JS, DASHBOARD_DATA_JSON, PERSISTENT_CSV_PATH
 from .models import HourlyProductionRecord
 
 
@@ -16,11 +18,14 @@ class DashboardSyncService:
     def __init__(
         self,
         mock_data_path: Path = DASHBOARD_MOCK_DATA_JS,
-        json_data_path: Path = DASHBOARD_DATA_JSON
+        json_data_path: Path = DASHBOARD_DATA_JSON,
+        csv_history_path: Path = PERSISTENT_CSV_PATH
     ):
         self.mock_data_path = mock_data_path
         self.json_data_path = json_data_path
+        self.csv_history_path = csv_history_path
         self.json_data_path.parent.mkdir(parents=True, exist_ok=True)
+        self.csv_history_path.parent.mkdir(parents=True, exist_ok=True)
 
     def sync_latest_record(
         self,
@@ -260,9 +265,66 @@ if (typeof module !== 'undefined' && module.exports) {{
         with open(self.mock_data_path, "w", encoding="utf-8") as f:
             f.write(js_content)
 
-        # 6. Notificar al hardware ESP32 Andon si hay conexión configurada
+        # 6. Garantizar persistencia del registro en el archivo CSV histórico
+        try:
+            self.append_to_persistent_csv(record)
+        except Exception as e:
+            logging.getLogger("BRP_Audit").warning(f"No se pudo anexar al CSV persistente: {e}")
+
+        # 7. Notificar al hardware ESP32 Andon si hay conexión configurada
         self.notify_esp32_andon(estado_linea)
 
+        return True
+
+    def append_to_persistent_csv(self, record: HourlyProductionRecord) -> bool:
+        """
+        Anexa de manera persistente cada registro al archivo CSV histórico.
+        Este archivo NO se borra cuando el operador pulsa el botón de Reset.
+        """
+        file_exists = self.csv_history_path.exists()
+        header = [
+            "Fecha", "Turno", "Horario", "Linea", "Producto", "Lider",
+            "Obj_Pz_Hora", "Real_Pz_Hora", "Obj_Acumulado", "Real_Acumulado",
+            "Piezas_Malas_Scrap", "Tiempo_Minutos_Paro", "Causa_Paro",
+            "Estado_Validacion", "Fecha_Registro"
+        ]
+
+        existing_rows = []
+        if file_exists:
+            with open(self.csv_history_path, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                existing_rows = list(reader)
+
+        # Evitar registrar exactamente la misma hora y turno si ya existe
+        row_key = (str(record.fecha or ""), str(record.horario or ""))
+        exists = any(
+            len(r) > 2 and r[0] == row_key[0] and r[2] == row_key[1]
+            for r in existing_rows[1:]
+        )
+        if exists:
+            return True
+
+        with open(self.csv_history_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            if not file_exists or len(existing_rows) == 0:
+                writer.writerow(header)
+            writer.writerow([
+                record.fecha or "",
+                record.turno or "Primero: 06:30 a 15:00 hrs",
+                record.horario or "",
+                record.linea or "C",
+                record.producto or "WOLF V1",
+                record.lider or "Antonia",
+                record.obj_pz_hora if record.obj_pz_hora is not None else 60,
+                record.real_pz_hora if record.real_pz_hora is not None else 0,
+                record.obj_acumulado if record.obj_acumulado is not None else 0,
+                record.real_acumulado if record.real_acumulado is not None else 0,
+                record.piezas_malas if record.piezas_malas is not None else 0,
+                record.tiempo_minutos if record.tiempo_minutos is not None else 0,
+                record.paros or "",
+                record.validation_status or "VALIDO",
+                record.updated_at.strftime("%Y-%m-%d %H:%M:%S") if hasattr(record, "updated_at") and record.updated_at else ""
+            ])
         return True
 
     def reset_production_data(self) -> Dict[str, Any]:
