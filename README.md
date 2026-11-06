@@ -142,8 +142,8 @@ dashboard-seguimiento-linea-c-brp/
 
 ## 📄 Créditos y Derechos
 
-- **Organización:** BRP Rotax México S.A. de C.V.
-- **Línea de Ensamble:** Línea C — Motores Rotax 900 ACE / 1630 ACE
-- **Colaboradores:** Kolbenschmidt Pierburg &amp; JI&FIX SIGMA S.A. de C.V.
+- **Organización:** BRP ROTAX MÉXICO S.A. de C.V. — Sistema de Seguimiento Operativo Línea C (Planta Kolben Schmidt Celaya).
+- **En colaboración con:** [HC Advanced Automation](https://www.hcaa.com.mx/) &amp; **JI&amp;FIX SIGMA S.A. de C.V.**
+- **Sitio Web Oficial HCAA:** [https://www.hcaa.com.mx/](https://www.hcaa.com.mx/)
 - **Desarrollo:** Ingeniería de Procesos y Automatización MES/SCADA
 

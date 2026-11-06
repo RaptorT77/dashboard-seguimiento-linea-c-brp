@@ -10,7 +10,7 @@
 const BRP_DATA = {
   planta: {
     nombre: "BRP ROTAX MÉXICO S.A. de C.V.",
-    plantaId: "PLANTA QUERÉTARO - LÍNEA C",
+    plantaId: "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     linea: "Línea C — Ensamble y Mecanizado de Motores Rotax ACE",
     versionSistema: "v2.6.4-MES",
     tiempoCicloTargetSeg: 45.0,
