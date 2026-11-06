@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Archivo de Datos Sincronizados Automáticamente vía OCR Telegram
- * Última Hora Registrada: 14:00 - 15:00 | Producto: WOLF V1
+ * Última Hora Registrada: 16:00 - 17:00 | Producto: WOLF V1
  * =============================================================================
  */
 
@@ -13,27 +13,27 @@ const BRP_DATA = {
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
     "tiempoCicloTargetSeg": 45.0,
-    "metaTurnoUnidades": 480,
+    "metaTurnoUnidades": 120,
     "supervisorActual": "Líder Antonia",
     "productoActual": "WOLF V1 (Pistón BRP)",
-    "turnoActual": 1
+    "turnoActual": 2
   },
   "resumenKpis": {
     "produccionDia": 185,
-    "metaDiaria": 480,
-    "porcentajeAvance": 38.5,
+    "metaDiaria": 120,
+    "porcentajeAvance": 154.2,
     "unidadesCompletadas": 185,
-    "unidadesPendientes": 295,
-    "eficienciaOee": 33.7,
+    "unidadesPendientes": 0,
+    "eficienciaOee": 134.9,
     "disponibilidad": 87.5,
-    "rendimiento": 65.8,
-    "calidadFpy": 58.54,
+    "rendimiento": 154.2,
+    "calidadFpy": 100.0,
     "parosAcumuladosMin": 60,
     "eventosParo": 3,
     "taktTimeSeg": 58.2,
-    "scrapPiezas": 131,
-    "scrapPorcentaje": 41.46,
-    "estadoLinea": "PRODUCCION_DEFICIENTE"
+    "scrapPiezas": 0,
+    "scrapPorcentaje": 0.0,
+    "estadoLinea": "PRODUCCION_EN_ORDEN"
   },
   "turnos": [
     {
@@ -41,9 +41,9 @@ const BRP_DATA = {
       "nombre": "Turno 1 - Matutino",
       "horario": "06:30 - 15:00",
       "supervisor": "Antonia",
-      "meta": 480,
+      "meta": 120,
       "real": 185,
-      "oee": 33.7,
+      "oee": 134.9,
       "activo": true
     },
     {
@@ -206,7 +206,7 @@ const BRP_DATA = {
       "nombre": "Mecanizado de Falda y Corona WOLF V1",
       "equipo": "Torno / Centro CNC OP10",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 190,
       "scrapPzas": 16,
       "cicloSeg": 44.0,
@@ -220,7 +220,7 @@ const BRP_DATA = {
       "nombre": "Ranurado de Anillos y Barrenado de Perno",
       "equipo": "Ranuradora de Precisión OP20",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 145,
       "scrapPzas": 41,
       "cicloSeg": 55.0,
@@ -234,7 +234,7 @@ const BRP_DATA = {
       "nombre": "Lavado Térmico y Desengrase",
       "equipo": "Lavadora Ultrasónica OP30",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 188,
       "scrapPzas": 18,
       "cicloSeg": 43.0,
@@ -248,7 +248,7 @@ const BRP_DATA = {
       "nombre": "Acabado de Superficie / Recubrimiento",
       "equipo": "Cabina de Grafito / Moly OP40",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 186,
       "scrapPzas": 16,
       "cicloSeg": 45.0,
@@ -262,7 +262,7 @@ const BRP_DATA = {
       "nombre": "Inspección Dimensional Neumática",
       "equipo": "Gage de Aire Multidiametral OP50",
       "operador": "Téc. Calidad",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 185,
       "scrapPzas": 20,
       "cicloSeg": 46.0,
@@ -276,7 +276,7 @@ const BRP_DATA = {
       "nombre": "Inspección Final EOL & Marcado Láser",
       "equipo": "Estación de Visión y Embalaje OP60",
       "operador": "Antonia",
-      "metaPzas": 480,
+      "metaPzas": 120,
       "buenasPzas": 185,
       "scrapPzas": 20,
       "cicloSeg": 44.5,
