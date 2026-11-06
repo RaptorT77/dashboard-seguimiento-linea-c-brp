@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/storage/*.db
+backend/storage/*.db-journal
+
+# Local storage and audit logs (keep folders via .gitkeep)
+backend/storage/raw_images/*
+!backend/storage/raw_images/.gitkeep
+backend/storage/processed_images/*
+!backend/storage/processed_images/.gitkeep
+backend/storage/audit_logs/*
+!backend/storage/audit_logs/.gitkeep
+backend/tests/test_data/*
+!backend/tests/test_data/.gitkeep
+
+# Environment variables & secrets
+.env
