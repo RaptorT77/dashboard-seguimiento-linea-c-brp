@@ -419,11 +419,16 @@
   }
 
   /**
-   * Renderizar Alertas Operativas
+   * Renderizar Alertas Operativas y Paros de Línea
    */
   function renderAlerts() {
     const container = document.getElementById('alertsListContainer');
     if (!container) return;
+
+    const elCount = document.getElementById('alertsCountHeader');
+    if (elCount && state.data.alertas) {
+      elCount.textContent = `${state.data.alertas.length} EVENTOS Y PAROS REGISTRADOS EN LA JORNADA`;
+    }
 
     if (!state.data.alertas || state.data.alertas.length === 0) {
       container.innerHTML = `
@@ -599,7 +604,8 @@
       const paros = state.data.parosIncidencias || [];
       const labels = paros.length > 0 ? paros.map(p => p.causa || p.categoria) : ['Sin paros activos'];
       const dataVals = paros.length > 0 ? paros.map(p => p.duracionMin || 1) : [0];
-      const bgColors = paros.length > 0 ? ['#EF4444', '#F59E0B', '#3B82F6', '#64748B', '#8B5CF6'] : ['#10B981'];
+      const palette = ['#EF4444', '#F59E0B', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B', '#F97316', '#06B6D4'];
+      const bgColors = paros.length > 0 ? paros.map((_, i) => palette[i % palette.length]) : ['#10B981'];
 
       chartDowntime = new Chart(ctxDowntime, {
         type: 'doughnut',
@@ -1105,10 +1111,12 @@
             chartCumulative.update();
           }
           if (chartDowntime && freshData.parosIncidencias) {
-            const labels = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.causa.substring(0, 20)) : ['Sin paros'];
+            const palette = ['#EF4444', '#F59E0B', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B', '#F97316', '#06B6D4'];
+            const labels = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.causa.length > 25 ? p.causa.substring(0, 25) + '...' : p.causa) : ['Sin paros'];
             const mins = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.duracionMin) : [0];
             chartDowntime.data.labels = labels;
             chartDowntime.data.datasets[0].data = mins;
+            chartDowntime.data.datasets[0].backgroundColor = mins.length > 0 ? mins.map((_, i) => palette[i % palette.length]) : ['#10B981'];
             chartDowntime.update();
           }
           showToast('⚡ Dashboard actualizado con la última hora de pizarra');

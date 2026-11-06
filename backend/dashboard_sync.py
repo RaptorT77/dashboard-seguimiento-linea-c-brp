@@ -40,15 +40,15 @@ class DashboardSyncService:
         all_shift_records = all_shift_records or [record]
 
         # 1. Definición completa de las 8 horas de Turno 1 según la pizarra real de planta
-        # Horas oficiales del Turno 1 (06:30 a 15:00 hrs)
+        # Horas oficiales del Turno 1 (06:30 a 15:00 hrs) con texto manuscrito fiel
         t1_schedule_master = [
-            ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø P/E, offset, mordazas y cambio tornillo (OP40/OP30)"),
-            ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Paro continuo en OP30"),
-            ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura (OP30)"),
-            ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)"),
-            ("11:00 - 12:00", 30, 300, 0, 25, 0, 30, "Ajuste de perilla de avance maq. (OP30)"),
-            ("12:00 - 13:00", 60, 360, 0, 25, 0, 60, "Alineación de barra y herramental (OP30)"),
-            ("13:00 - 14:00", 60, 420, 0, 25, 0, 60, "Ajuste continuo de herramental (OP30)"),
+            ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø R/S, offset y mordazas, tornillos (6). Se checó mat. x altura"),
+            ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Continuación de ajuste de offset y mordazas (//)"),
+            ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura"),
+            ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. (1047654)"),
+            ("11:00 - 12:00", 30, 300, 0, 25, 0, 30, "Ajuste de perilla de avance maq."),
+            ("12:00 - 13:00", 60, 360, 0, 25, 0, 60, "Alineación de barra"),
+            ("13:00 - 14:00", 60, 420, 0, 25, 0, 60, "Continuación de alineación de barra / ajuste herramental (//)"),
             ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Hora programada / Por fabricar")
         ]
 
@@ -103,15 +103,14 @@ class DashboardSyncService:
         oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)      # 1.0%
 
         # 3. Estado de la Línea Dinámico (Los 3 Estados Oficiales BRP)
-        # Con 25 uds de 420 esperadas (déficit de -395 uds) y múltiples horas con 0 pz/h:
         estado_linea = "PRODUCCION_DEFICIENTE"
 
-        # 4. Lista de Paros Reales identificados en la pizarra
+        # 4. Lista de Paros Reales identificados fielmente de la pizarra
         paros_list = [
             {
                 "id": "P-01",
                 "estacion": "OP40 / OP30",
-                "causa": "Ajuste Ø P/E, offset y mordazas, tornillo",
+                "causa": "Ajuste Ø R/S, offset y mordazas, tornillos (6)",
                 "duracionMin": 40,
                 "categoria": "Mecánico / Setup",
                 "tipo": "Incidencia Pizarra",
@@ -121,76 +120,156 @@ class DashboardSyncService:
             {
                 "id": "P-02",
                 "estacion": "OP30",
-                "causa": "Paro continuo en OP30 (Ajuste offset Manufactura)",
-                "duracionMin": 180,
+                "causa": "Continuación ajuste offset y mordazas (//)",
+                "duracionMin": 60,
                 "categoria": "Mecánico / Herramental",
                 "tipo": "Incidencia Pizarra",
-                "hora": "08:00 - 11:00",
+                "hora": "08:00 - 09:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-03",
                 "estacion": "OP30",
-                "causa": "Ajuste de perilla de avance de máquina",
-                "duracionMin": 30,
-                "categoria": "Mantenimiento / Calibración",
+                "causa": "Ajuste offset - Manufactura",
+                "duracionMin": 60,
+                "categoria": "Manufactura",
                 "tipo": "Incidencia Pizarra",
-                "hora": "11:00 - 12:00",
+                "hora": "09:00 - 10:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-04",
                 "estacion": "OP30",
-                "causa": "Alineación de barra y herramental",
+                "causa": "Ajuste offset // Mantto. (1047654)",
                 "duracionMin": 60,
-                "categoria": "Mecánico / Herramental",
+                "categoria": "Mantenimiento",
                 "tipo": "Incidencia Pizarra",
-                "hora": "12:00 - 13:00",
+                "hora": "10:00 - 11:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-05",
                 "estacion": "OP30",
-                "causa": "Ajuste continuo de herramental",
+                "causa": "Ajuste de perilla de avance maq.",
+                "duracionMin": 30,
+                "categoria": "Calibración",
+                "tipo": "Incidencia Pizarra",
+                "hora": "11:00 - 12:00",
+                "estatus": "Reportado en Pizarra"
+            },
+            {
+                "id": "P-06",
+                "estacion": "OP30",
+                "causa": "Alineación de barra",
                 "duracionMin": 60,
-                "categoria": "Mantenimiento / Ajuste",
+                "categoria": "Mecánico",
+                "tipo": "Incidencia Pizarra",
+                "hora": "12:00 - 13:00",
+                "estatus": "Reportado en Pizarra"
+            },
+            {
+                "id": "P-07",
+                "estacion": "OP30",
+                "causa": "Continuación alineación / ajuste herramental (//)",
+                "duracionMin": 60,
+                "categoria": "Herramental",
                 "tipo": "Incidencia Pizarra",
                 "hora": "13:00 - 14:00",
                 "estatus": "Reportado en Pizarra"
             }
         ]
 
-        # 5. Alertas Operativas Críticas y de Calidad derivadas de la pizarra
+        # 5. Alertas Operativas Críticas y de Paros visibles en el Centro de Alertas del Dashboard
         diff_vs_plan = prod_dia - meta_al_corte
         alertas_list = [
             {
                 "id": "ALT-DEFICIT-CRIT",
                 "tipo": "CRITICA",
                 "titulo": f"Déficit Crítico de Producción ({diff_vs_plan} Uds vs Plan a las {hora_corte_str})",
-                "descripcion": f"El Turno 1 acumula únicamente {prod_dia} unidades producidas de {meta_al_corte} esperadas al corte de las {hora_corte_str} hrs ({rendimiento}% de avance vs plan a la hora). Se activó alarma Andon.",
-                "estacion": "LÍNEA C",
+                "descripcion": f"El Turno 1 acumula únicamente {prod_dia} unidades producidas de {meta_al_corte} esperadas al corte de las {hora_corte_str} hrs ({rendimiento}% de cumplimiento). Línea detenida con baliza roja y zumbador a 3 Hz por 370 min de paros acumulados.",
+                "estacion": "LÍNEA C / GENERAL",
                 "hora": hora_corte_str,
-                "tiempoTranscurrido": "Turno 1 en curso",
+                "tiempoTranscurrido": "Jornada en curso",
                 "resuelta": False
             },
             {
-                "id": "ALT-PARO-OP30",
+                "id": "PARO-H01",
                 "tipo": "CRITICA",
-                "titulo": "Falla Mayor y Paro Continuo en OP30 (Ranurado/Ajuste Offset)",
-                "descripcion": "3 horas consecutivas sin producción (0 pz/h de 08:00 a 11:00). Mantenimiento y manufactura ajustando offset, mordazas y perilla de avance.",
+                "titulo": "Paro 40 min — Ajuste Ø R/S, Offset, Mordazas y Tornillos (6)",
+                "descripcion": "Ajuste de diámetro R/S, ajuste de offset y mordazas, cambio de tornillos (6). Se checó material por altura.",
+                "estacion": "OP40 / OP30",
+                "hora": "06:30 - 08:00",
+                "tiempoTranscurrido": "40 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H02",
+                "tipo": "CRITICA",
+                "titulo": "Paro 60 min — Continuación de Ajuste de Offset y Mordazas",
+                "descripcion": "Máquina detenida sin producción (0 pz/h). Continuación de ajuste de mordazas y offset en estación.",
                 "estacion": "OP30",
-                "hora": "08:00 - 11:00",
-                "tiempoTranscurrido": "180 min acumulados",
+                "hora": "08:00 - 09:00",
+                "tiempoTranscurrido": "60 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H03",
+                "tipo": "CRITICA",
+                "titulo": "Paro 60 min — Ajuste Offset Manufactura",
+                "descripcion": "Intervención de ingeniería de manufactura para ajuste de offset en máquina de ranurado.",
+                "estacion": "OP30",
+                "hora": "09:00 - 10:00",
+                "tiempoTranscurrido": "60 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H04",
+                "tipo": "CRITICA",
+                "titulo": "Paro 60 min — Ajuste Offset // Mantenimiento (OT: 1047654)",
+                "descripcion": "Ajuste de offset y atención de mantenimiento técnico mecánico bajo orden de trabajo 1047654.",
+                "estacion": "OP30",
+                "hora": "10:00 - 11:00",
+                "tiempoTranscurrido": "60 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H05",
+                "tipo": "ADVERTENCIA",
+                "titulo": "Paro 30 min — Ajuste de Perilla de Avance de Máquina",
+                "descripcion": "Ajuste y calibración de perilla de avance mecánico para restituir cadencia de corte.",
+                "estacion": "OP30",
+                "hora": "11:00 - 12:00",
+                "tiempoTranscurrido": "30 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H06",
+                "tipo": "CRITICA",
+                "titulo": "Paro 60 min — Alineación de Barra",
+                "descripcion": "Desalineación detectada en barra guía; paro total para alineación y verificación geométrica.",
+                "estacion": "OP30",
+                "hora": "12:00 - 13:00",
+                "tiempoTranscurrido": "60 min registrados",
+                "resuelta": True
+            },
+            {
+                "id": "PARO-H07",
+                "tipo": "CRITICA",
+                "titulo": "Paro 60 min — Continuación de Alineación / Ajuste Herramental",
+                "descripcion": "Máquina detenida sin producción (0 pz/h). Continuación de alineación de barra y ajuste fino de herramientas.",
+                "estacion": "OP30",
+                "hora": "13:00 - 14:00",
+                "tiempoTranscurrido": "60 min registrados",
                 "resuelta": False
             },
             {
                 "id": "ALT-MAT-NOK",
-                "tipo": "ADVERTENCIA",
-                "titulo": "Material No Conforme: 23 pzas NOK por Offset (Turno Previo)",
-                "descripcion": "Nota escrita en pizarra: '* 23 pzas NOK por offset mat. turno anterior'. Afecta inventario y rendimiento de falda/corona.",
+                "tipo": "CALIDAD",
+                "titulo": "Material No Conforme: 23 pzas NOK por Offset (Turno Anterior)",
+                "descripcion": "Nota manuscrita en pizarra: '* 23 pzas NOK por offset mat. turno anterior'. Afecta balance de material de entrada en falda y corona.",
                 "estacion": "LÍNEA C / CALIDAD",
-                "hora": "11:00",
-                "tiempoTranscurrido": "Registrado",
+                "hora": "06:30",
+                "tiempoTranscurrido": "Reportado en pizarra",
                 "resuelta": False
             }
         ]
