@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Archivo de Datos Sincronizados Automáticamente vía OCR Telegram
- * Última Hora Registrada: 10:00 - 11:00 | Producto: WOLF V1
+ * Última Hora Registrada: 13:00 - 14:00 | Producto: WOLF V1
  * =============================================================================
  */
 
@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
-    "updatedAt": "2026-11-06T19:59:59Z",
+    "updatedAt": "2026-11-06T20:14:01Z",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 480,
     "supervisorActual": "Líder Antonia",
@@ -20,20 +20,20 @@ const BRP_DATA = {
     "turnoActual": 1
   },
   "resumenKpis": {
-    "produccionDia": 25,
+    "produccionDia": 270,
     "metaDiaria": 480,
-    "porcentajeAvance": 5.2,
-    "unidadesCompletadas": 25,
-    "unidadesPendientes": 455,
-    "eficienciaOee": 1.5,
+    "porcentajeAvance": 56.2,
+    "unidadesCompletadas": 270,
+    "unidadesPendientes": 210,
+    "eficienciaOee": 18.3,
     "disponibilidad": 18.5,
-    "rendimiento": 9.3,
-    "calidadFpy": 89.3,
+    "rendimiento": 100.0,
+    "calidadFpy": 98.9,
     "parosAcumuladosMin": 220,
     "eventosParo": 3,
     "taktTimeSeg": 58.2,
     "scrapPiezas": 3,
-    "scrapPorcentaje": 10.7,
+    "scrapPorcentaje": 1.1,
     "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
@@ -43,8 +43,8 @@ const BRP_DATA = {
       "horario": "06:30 - 15:00",
       "supervisor": "Antonia",
       "meta": 480,
-      "real": 25,
-      "oee": 1.5,
+      "real": 270,
+      "oee": 18.3,
       "activo": true
     },
     {

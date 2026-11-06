@@ -3,3 +3,4 @@ Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,
 2026-11-06,Primero: 06:30 a 15:00 hrs,08:00 - 09:00,C,WOLF V1,Antonia,60,0,150,25,0,60,"Paro continuo en OP30",VALIDO,2026-11-06 09:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,09:00 - 10:00,C,WOLF V1,Antonia,60,0,210,25,0,60,"Ajuste offset - Manufactura (OP30)",VALIDO,2026-11-06 10:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,10:00 - 11:00,C,WOLF V1,Antonia,60,0,270,25,0,60,"Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)",VALIDO,2026-11-06 11:00:00
+2026-11-06,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,0,420,270,3,60,"Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)",PARCIAL,2026-11-06 20:14:01
