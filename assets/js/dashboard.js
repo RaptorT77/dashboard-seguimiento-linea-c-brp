@@ -108,20 +108,56 @@
     const p = state.data.planta;
     const k = state.data.resumenKpis;
 
-    // Estado General
+    // Los 3 Estados Oficiales de la Línea C BRP:
+    // 1. Producción en orden: Rates y metas se cumplen. Lámpara verde fija ON, demás OFF.
+    // 2. Producción deficiente: Rates/metas NO se cumplen. Baliza roja y zumbador a 3 Hz, demás OFF.
+    // 3. Advertencia operativa: Rates en promedio se van cumpliendo pero cerca de límite. Lámpara ámbar oscilando a 3 Hz, demás OFF.
     const statusPill = document.getElementById('heroStatusPill');
     const statusText = document.getElementById('heroStatusText');
-    if (statusPill && statusText) {
-      if (k.estadoLinea === 'OPERANDO') {
-        statusPill.className = 'hero-status-pill';
-        statusText.textContent = '🟢 OPERANDO A RITMO NORMAL';
-      } else if (k.estadoLinea === 'ALERTA') {
-        statusPill.className = 'hero-status-pill status-alert';
-        statusText.textContent = '🟡 EN ADVERTENCIA OPERATIVA';
-      } else {
-        statusPill.className = 'hero-status-pill status-stop';
-        statusText.textContent = '🔴 PARO DE LÍNEA ACTIVO';
-      }
+    const heroDot = document.getElementById('heroStatusDot');
+    const lampRed = document.getElementById('lampRed');
+    const lampAmber = document.getElementById('lampAmber');
+    const lampGreen = document.getElementById('lampGreen');
+    const lampBuzzer = document.getElementById('lampBuzzer');
+    const andonLabel = document.getElementById('andonStateLabel');
+
+    const st = (k.estadoLinea || '').toUpperCase();
+    const isDeficiente = st.includes('DEFICIENTE') || st.includes('PARO') || st === 'STOP';
+    const isAdvertencia = st.includes('ADVERTENCIA') || st.includes('ALERTA') || st === 'WARN';
+
+    if (isDeficiente) {
+      // Estado 2: Producción Deficiente
+      if (statusPill) statusPill.className = 'hero-status-pill status-deficiente';
+      if (statusText) statusText.textContent = 'PRODUCCIÓN DEFICIENTE';
+      if (heroDot) heroDot.className = 'pulse-dot dot-red-3hz';
+
+      if (lampRed) lampRed.className = 'andon-lamp lamp-red active-3hz';
+      if (lampBuzzer) lampBuzzer.className = 'andon-buzzer-icon active-3hz';
+      if (lampAmber) lampAmber.className = 'andon-lamp lamp-amber';
+      if (lampGreen) lampGreen.className = 'andon-lamp lamp-green';
+      if (andonLabel) andonLabel.textContent = 'CH1 + CH4 @ 3Hz';
+    } else if (isAdvertencia) {
+      // Estado 3: Advertencia Operativa
+      if (statusPill) statusPill.className = 'hero-status-pill status-advertencia';
+      if (statusText) statusText.textContent = 'ADVERTENCIA OPERATIVA';
+      if (heroDot) heroDot.className = 'pulse-dot dot-amber-3hz';
+
+      if (lampAmber) lampAmber.className = 'andon-lamp lamp-amber active-3hz';
+      if (lampRed) lampRed.className = 'andon-lamp lamp-red';
+      if (lampGreen) lampGreen.className = 'andon-lamp lamp-green';
+      if (lampBuzzer) lampBuzzer.className = 'andon-buzzer-icon';
+      if (andonLabel) andonLabel.textContent = 'CH2 @ 3Hz';
+    } else {
+      // Estado 1: Producción en Orden
+      if (statusPill) statusPill.className = 'hero-status-pill status-orden';
+      if (statusText) statusText.textContent = 'PRODUCCIÓN EN ORDEN';
+      if (heroDot) heroDot.className = 'pulse-dot dot-green-fixed';
+
+      if (lampGreen) lampGreen.className = 'andon-lamp lamp-green active-fixed';
+      if (lampRed) lampRed.className = 'andon-lamp lamp-red';
+      if (lampAmber) lampAmber.className = 'andon-lamp lamp-amber';
+      if (lampBuzzer) lampBuzzer.className = 'andon-buzzer-icon';
+      if (andonLabel) andonLabel.textContent = 'CH3 FIJO ON';
     }
 
     const heroTakt = document.getElementById('heroTakt');

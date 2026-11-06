@@ -186,9 +186,22 @@
           <span style="font-size:10px; font-weight:700; color:#166534;">SCADA ONLINE</span>
         </div>
         <div class="hero-card-body">
-          <div id="heroStatusPill" class="hero-status-pill">
-            <span class="pulse-dot"></span>
-            <span id="heroStatusText">🟢 OPERANDO A RITMO NORMAL</span>
+          <div id="heroStatusPill" class="hero-status-pill status-orden">
+            <span id="heroStatusDot" class="pulse-dot dot-green-fixed"></span>
+            <span id="heroStatusText">PRODUCCIÓN EN ORDEN</span>
+          </div>
+
+          <!-- Torre Andon Industrial (CH1: Roja, CH2: Ámbar, CH3: Verde, CH4: Zumbador) -->
+          <div class="andon-tower-bar" id="andonTowerBar" title="Torre Andon Línea C BRP — Sincronizada con ESP32-6CHA">
+            <div class="andon-lamp lamp-red" id="lampRed" title="Baliza Roja (CH1) — Oscila a 3 Hz en Producción Deficiente"></div>
+            <div class="andon-lamp lamp-amber" id="lampAmber" title="Lámpara Ámbar (CH2) — Oscila a 3 Hz en Advertencia Operativa"></div>
+            <div class="andon-lamp lamp-green active-fixed" id="lampGreen" title="Lámpara Verde (CH3) — Encendida fija en Producción en Orden"></div>
+            <div class="andon-buzzer-icon" id="lampBuzzer" title="Zumbador Alarma (CH4) — Oscila a 3 Hz en Producción Deficiente">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+            </div>
+            <span id="andonStateLabel" style="font-size:10px; font-weight:800; color:#94A3B8; margin-left:auto; letter-spacing:0.04em;">CH3 FIJO ON</span>
           </div>
           <div class="hero-meta-list">
             <div class="hero-meta-row">

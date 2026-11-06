@@ -34,7 +34,7 @@ const BRP_DATA = {
     "taktTimeSeg": 58.2,
     "scrapPiezas": 131,
     "scrapPorcentaje": 41.46,
-    "estadoLinea": "ALERTA"
+    "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
     {

@@ -98,14 +98,16 @@ class DashboardSyncService:
         # OEE Real Consolidado = D * R * Q
         oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)
 
-        # 3. Estado de la Línea Dinámico (NUNCA 'OPERANDO' si hay déficit crítico o alto scrap)
-        # Con avance de 38.5% al cierre de turno y scrap de 41.5%, la línea está en ALERTA CRÍTICA
-        if avance_pct < 60.0 or scrap_pct > 15.0 or total_scrap >= 30:
-            estado_linea = "ALERTA"
+        # 3. Estado de la Línea Dinámico (Los 3 Estados Oficiales BRP)
+        # • Producción en orden: Rates y metas se cumplen (verde fija ON, demás OFF)
+        # • Producción deficiente: Rates/metas NO se cumplen (roja y zumbador a 3 Hz, demás OFF)
+        # • Advertencia operativa: Rates en promedio se van cumpliendo pero cerca de límite (ámbar a 3 Hz, demás OFF)
+        if avance_pct < 70.0 or scrap_pct > 12.0 or pendientes > 100 or total_scrap >= 30:
+            estado_linea = "PRODUCCION_DEFICIENTE"
         elif avance_pct < 85.0 or scrap_pct > 5.0:
-            estado_linea = "ALERTA"
+            estado_linea = "ADVERTENCIA_OPERATIVA"
         else:
-            estado_linea = "OPERANDO"
+            estado_linea = "PRODUCCION_EN_ORDEN"
 
         # 4. Lista de Paros Reales identificados en la pizarra
         paros_list = [

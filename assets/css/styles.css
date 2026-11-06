@@ -494,21 +494,160 @@ body {
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+/* Estado 1: Producción en Orden (Lámpara verde fija) */
+.hero-status-pill.status-orden {
   background-color: #DCFCE7;
   color: #166534;
   border: 1px solid #86EFAC;
 }
 
-.hero-status-pill.status-alert {
-  background-color: #FEF3C7;
-  color: #92400E;
-  border-color: #FCD34D;
-}
-
+/* Estado 2: Producción Deficiente (Baliza roja y zumbador oscilando a 3 Hz) */
+.hero-status-pill.status-deficiente,
 .hero-status-pill.status-stop {
   background-color: #FEE2E2;
   color: #991B1B;
-  border-color: #FCA5A5;
+  border: 1px solid #F87171;
+  animation: pill-pulse-3hz 0.333s infinite steps(1);
+}
+
+/* Estado 3: Advertencia Operativa (Lámpara ámbar oscilando a 3 Hz) */
+.hero-status-pill.status-advertencia,
+.hero-status-pill.status-alert {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+  animation: pill-pulse-3hz 0.333s infinite steps(1);
+}
+
+/* Animación de oscilación a 3 Hz (333.3 ms periodo = 166.7 ms encendido / 166.7 ms apagado) */
+@keyframes blink-3hz {
+  0%, 49.9% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+  50%, 100% {
+    opacity: 0.18;
+    filter: none;
+  }
+}
+
+@keyframes pill-pulse-3hz {
+  0%, 49.9% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+  }
+  50%, 100% {
+    box-shadow: none;
+  }
+}
+
+.hero-status-pill.status-advertencia {
+  animation: pill-pulse-amber-3hz 0.333s infinite steps(1);
+}
+
+@keyframes pill-pulse-amber-3hz {
+  0%, 49.9% {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+  }
+  50%, 100% {
+    box-shadow: none;
+  }
+}
+
+/* Puntos de estado sincronizados */
+.pulse-dot.dot-green-fixed {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.pulse-dot.dot-amber-3hz {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #F59E0B;
+  animation: blink-3hz 0.333s infinite steps(1);
+}
+
+.pulse-dot.dot-red-3hz {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #EF4444;
+  animation: blink-3hz 0.333s infinite steps(1);
+}
+
+/* Barra de Torre Andon Industrial (3 Balizas + Zumbador) */
+.andon-tower-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background-color: #0F172A;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.andon-lamp {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  opacity: 0.22;
+  transition: opacity 0.1s ease;
+  position: relative;
+}
+
+.andon-lamp::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.andon-lamp.lamp-red {
+  background-color: #EF4444;
+  color: #EF4444;
+}
+
+.andon-lamp.lamp-amber {
+  background-color: #F59E0B;
+  color: #F59E0B;
+}
+
+.andon-lamp.lamp-green {
+  background-color: #10B981;
+  color: #10B981;
+}
+
+.andon-buzzer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #EF4444;
+  opacity: 0.22;
+  margin-left: 4px;
+}
+
+.andon-lamp.active-fixed {
+  opacity: 1 !important;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.andon-lamp.active-3hz {
+  animation: blink-3hz 0.333s infinite steps(1) !important;
+}
+
+.andon-buzzer-icon.active-3hz {
+  animation: blink-3hz 0.333s infinite steps(1) !important;
 }
 
 .hero-meta-list {
