@@ -265,6 +265,93 @@ if (typeof module !== 'undefined' && module.exports) {{
 
         return True
 
+    def reset_production_data(self) -> Dict[str, Any]:
+        """
+        Restablece los datos de producción a ceros (baseline inicial de turno)
+        listo para una nueva captura horaria desde Telegram.
+        """
+        clean_data = {
+            "planta": {
+                "nombre": "BRP ROTAX MÉXICO S.A. de C.V.",
+                "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
+                "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
+                "versionSistema": "v2.7.0-OCR-LIVE",
+                "tiempoCicloTargetSeg": 45.0,
+                "metaTurnoUnidades": 480,
+                "supervisorActual": "Líder Turno",
+                "productoActual": "WOLF V1 (Pistón BRP)",
+                "turnoActual": 1
+            },
+            "resumenKpis": {
+                "produccionDia": 0,
+                "metaDiaria": 480,
+                "porcentajeAvance": 0.0,
+                "unidadesCompletadas": 0,
+                "unidadesPendientes": 480,
+                "eficienciaOee": 0.0,
+                "disponibilidad": 100.0,
+                "rendimiento": 0.0,
+                "calidadFpy": 100.0,
+                "parosAcumuladosMin": 0,
+                "eventosParo": 0,
+                "taktTimeSeg": 45.0,
+                "scrapPiezas": 0,
+                "scrapPorcentaje": 0.0,
+                "estadoLinea": "PRODUCCION_EN_ORDEN"
+            },
+            "turnos": [
+                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Por Asignar", "meta": 480, "real": 0, "oee": 0.0, "activo": True},
+                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": False},
+                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": False}
+            ],
+            "modelos": [
+                {"id": "M01", "codigo": "PISTON-WOLF-V1", "nombre": "Pistón WOLF V1 (Línea C)", "cilindros": 1, "hp": 0, "plataforma": "BRP Rotax Engine Program", "activo": True}
+            ],
+            "produccionHoraria": [
+                {"hora": "06:30 - 08:00", "meta": 90, "real": 0, "acumMeta": 90, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de primer reporte Telegram"},
+                {"hora": "08:00 - 09:00", "meta": 60, "real": 0, "acumMeta": 150, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "09:00 - 10:00", "meta": 60, "real": 0, "acumMeta": 210, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "10:00 - 11:00", "meta": 60, "real": 0, "acumMeta": 270, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "11:00 - 12:00", "meta": 30, "real": 0, "acumMeta": 300, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "12:00 - 13:00", "meta": 60, "real": 0, "acumMeta": 360, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "13:00 - 14:00", "meta": 60, "real": 0, "acumMeta": 420, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
+                {"hora": "14:00 - 15:00", "meta": 60, "real": 0, "acumMeta": 480, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"}
+            ],
+            "parosIncidencias": [],
+            "estaciones": [
+                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP30", "nombre": "Lavado Térmico y Desengrase", "equipo": "Lavadora Ultrasónica OP30", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": "Téc. Calidad", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"}
+            ],
+            "alertas": []
+        }
+
+        with open(self.json_data_path, "w", encoding="utf-8") as f:
+            json.dump(clean_data, f, indent=2, ensure_ascii=False)
+
+        js_content = f"""/**
+ * =============================================================================
+ * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
+ * Archivo de Datos Sincronizados Automáticamente vía OCR Telegram
+ * Estado: Turno Nuevo Inicializado (Reset de Datos) | Producto: WOLF V1
+ * =============================================================================
+ */
+
+const BRP_DATA = {json.dumps(clean_data, indent=2, ensure_ascii=False)};
+
+if (typeof module !== 'undefined' && module.exports) {{
+  module.exports = BRP_DATA;
+}}
+"""
+        with open(self.mock_data_path, "w", encoding="utf-8") as f:
+            f.write(js_content)
+
+        self.notify_esp32_andon("PRODUCCION_EN_ORDEN")
+        return clean_data
+
     def notify_esp32_andon(self, estado_linea: str) -> bool:
         """
         Envía opcionalmente el estado operativo al hardware ESP32 Andon

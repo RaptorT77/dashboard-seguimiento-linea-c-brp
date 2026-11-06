@@ -113,6 +113,23 @@ def get_dashboard_data():
     return data
 
 
+@app.post("/api/reset")
+def reset_production_telemetry(db: Session = Depends(get_db)):
+    """Restablece los datos de producción a ceros para una nueva captura de turno."""
+    db.query(HourlyProductionRecord).update({HourlyProductionRecord.is_latest: False})
+    db.commit()
+
+    from .dashboard_sync import DashboardSyncService
+    sync_svc = DashboardSyncService()
+    clean_data = sync_svc.reset_production_data()
+
+    return {
+        "status": "success",
+        "message": "Datos de producción de Línea C restablecidos a cero correctamente",
+        "data": clean_data
+    }
+
+
 @app.post("/api/upload")
 async def upload_whiteboard_image(
     file: UploadFile = File(...),

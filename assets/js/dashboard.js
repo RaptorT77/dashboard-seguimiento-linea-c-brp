@@ -29,6 +29,18 @@
    * Inicialización al cargar el DOM
    */
   document.addEventListener('DOMContentLoaded', () => {
+    // Si hay un estado de reset guardado en localStorage, cargarlo
+    try {
+      const savedReset = localStorage.getItem('BRP_DASHBOARD_RESET_DATA');
+      const resetTime = parseInt(localStorage.getItem('BRP_DASHBOARD_RESET_TIME') || '0', 10);
+      const dataTime = state.data.updatedAt ? new Date(state.data.updatedAt).getTime() : 0;
+      if (savedReset && resetTime > dataTime) {
+        state.data = JSON.parse(savedReset);
+      }
+    } catch (e) {
+      console.warn('Error leyendo reset de localStorage:', e);
+    }
+
     initClock();
     initFilters();
     renderKpis();
@@ -218,6 +230,31 @@
     if (pillReal) pillReal.textContent = `${k.unidadesCompletadas} UDS (${k.porcentajeAvance.toFixed(1)}%)`;
     if (pillOee) pillOee.textContent = `${k.eficienciaOee.toFixed(1)}%`;
     if (pillPend) pillPend.textContent = `${k.unidadesPendientes} UDS`;
+
+    // Badges en cabecera de gráficas
+    const elCumBadge = document.getElementById('chartCumulativeBadge');
+    if (elCumBadge) {
+      if (k.unidadesCompletadas === 0) {
+        elCumBadge.textContent = 'En espera de primer reporte';
+        elCumBadge.style.color = '#64748B';
+      } else {
+        const lastRec = state.data.produccionHoraria.filter(h => h.acumReal > 0).pop();
+        const diff = lastRec ? (lastRec.acumReal - lastRec.acumMeta) : (k.unidadesCompletadas - k.metaDiaria);
+        if (diff >= 0) {
+          elCumBadge.textContent = `Ritmo: +${diff} pzas vs Plan`;
+          elCumBadge.style.color = '#166534';
+        } else {
+          elCumBadge.textContent = `Ritmo: ${diff} pzas vs Plan`;
+          elCumBadge.style.color = '#DC2626';
+        }
+      }
+    }
+
+    const elDownBadge = document.getElementById('chartDowntimeBadge');
+    if (elDownBadge) {
+      elDownBadge.textContent = `Total: ${k.parosAcumuladosMin} min`;
+      elDownBadge.style.color = k.parosAcumuladosMin > 0 ? '#DC2626' : '#166534';
+    }
   }
 
   /**
@@ -318,6 +355,15 @@
   function renderAlerts() {
     const container = document.getElementById('alertsListContainer');
     if (!container) return;
+
+    if (!state.data.alertas || state.data.alertas.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 24px; text-align: center; color: var(--color-text-subtle); font-size: 13px;">
+          ✅ No hay alertas activas en la Línea C. Sistema listo para recepción de fotos vía Telegram.
+        </div>
+      `;
+      return;
+    }
 
     container.innerHTML = state.data.alertas.map(a => {
       let itemClass = 'alert-info';
@@ -474,13 +520,18 @@
     // 3. Gráfica de Análisis de Paros (Pareto de Causas)
     const ctxDowntime = document.getElementById('chartDowntimeCanvas');
     if (ctxDowntime) {
+      const paros = state.data.parosIncidencias || [];
+      const labels = paros.length > 0 ? paros.map(p => p.causa || p.categoria) : ['Sin paros activos'];
+      const dataVals = paros.length > 0 ? paros.map(p => p.duracionMin || 1) : [0];
+      const bgColors = paros.length > 0 ? ['#EF4444', '#F59E0B', '#3B82F6', '#64748B', '#8B5CF6'] : ['#10B981'];
+
       chartDowntime = new Chart(ctxDowntime, {
         type: 'doughnut',
         data: {
-          labels: ['Mecánico (Gantry OP10)', 'Logística (Bielas OP30)', 'Setup (Atornillador OP40)', 'Limpieza (Canastilla OP20)'],
+          labels: labels,
           datasets: [{
-            data: [8, 5, 3, 2],
-            backgroundColor: ['#EF4444', '#F59E0B', '#3B82F6', '#64748B']
+            data: dataVals,
+            backgroundColor: bgColors
           }]
         },
         options: {
@@ -588,6 +639,130 @@
         showToast('Filtros restablecidos');
       });
     }
+
+    // Botón Reset General de Datos (Esquina Superior Derecha)
+    const btnResetData = document.getElementById('btnResetData');
+    if (btnResetData) {
+      btnResetData.addEventListener('click', () => {
+        handleResetData();
+      });
+    }
+  }
+
+  /**
+   * Restablecer todos los datos del dashboard a cero / baseline inicial
+   * para comenzar una nueva captura de turno subiendo imágenes desde Telegram.
+   */
+  function handleResetData() {
+    const confirmed = window.confirm(
+      '¿Desea restablecer todos los datos de la Línea C a cero?\n\n' +
+      'Esta acción reiniciará los contadores de producción, piezas, scrap, paros y alertas ' +
+      'para comenzar una nueva captura de turno subiendo imágenes desde Telegram según el procedimiento.'
+    );
+
+    if (!confirmed) return;
+
+    // 1. Estructura limpia de inicio de turno
+    const cleanData = {
+      planta: {
+        nombre: 'BRP ROTAX MÉXICO S.A. de C.V.',
+        plantaId: 'PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C',
+        linea: 'Línea C — Ensamble y Mecanizado de Pistón WOLF V1',
+        versionSistema: 'v2.7.0-OCR-LIVE',
+        tiempoCicloTargetSeg: 45.0,
+        metaTurnoUnidades: 480,
+        supervisorActual: 'Líder Turno',
+        productoActual: 'WOLF V1 (Pistón BRP)',
+        turnoActual: 1
+      },
+      resumenKpis: {
+        produccionDia: 0,
+        metaDiaria: 480,
+        porcentajeAvance: 0.0,
+        unidadesCompletadas: 0,
+        unidadesPendientes: 480,
+        eficienciaOee: 0.0,
+        disponibilidad: 100.0,
+        rendimiento: 0.0,
+        calidadFpy: 100.0,
+        parosAcumuladosMin: 0,
+        eventosParo: 0,
+        taktTimeSeg: 45.0,
+        scrapPiezas: 0,
+        scrapPorcentaje: 0.0,
+        estadoLinea: 'PRODUCCION_EN_ORDEN'
+      },
+      turnos: [
+        { id: 1, nombre: 'Turno 1 - Matutino', horario: '06:30 - 15:00', supervisor: 'Por Asignar', meta: 480, real: 0, oee: 0.0, activo: true },
+        { id: 2, nombre: 'Turno 2 - Vespertino', horario: '15:00 - 23:00', supervisor: 'Ing. Roberto Garza', meta: 450, real: 0, oee: 0.0, activo: false },
+        { id: 3, nombre: 'Turno 3 - Nocturno', horario: '23:00 - 06:30', supervisor: 'Ing. Diana Soto', meta: 420, real: 0, oee: 0.0, activo: false }
+      ],
+      modelos: [
+        { id: 'M01', codigo: 'PISTON-WOLF-V1', nombre: 'Pistón WOLF V1 (Línea C)', cilindros: 1, hp: 0, plataforma: 'BRP Rotax Engine Program', activo: true }
+      ],
+      produccionHoraria: [
+        { hora: '06:30 - 08:00', meta: 90, real: 0, acumMeta: 90, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de primer reporte Telegram' },
+        { hora: '08:00 - 09:00', meta: 60, real: 0, acumMeta: 150, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '09:00 - 10:00', meta: 60, real: 0, acumMeta: 210, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '10:00 - 11:00', meta: 60, real: 0, acumMeta: 270, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '11:00 - 12:00', meta: 30, real: 0, acumMeta: 300, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '12:00 - 13:00', meta: 60, real: 0, acumMeta: 360, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '13:00 - 14:00', meta: 60, real: 0, acumMeta: 420, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
+        { hora: '14:00 - 15:00', meta: 60, real: 0, acumMeta: 480, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' }
+      ],
+      parosIncidencias: [],
+      estaciones: [
+        { id: 'OP10', nombre: 'Mecanizado de Falda y Corona WOLF V1', equipo: 'Torno / Centro CNC OP10', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP20', nombre: 'Ranurado de Anillos y Barrenado de Perno', equipo: 'Ranuradora de Precisión OP20', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP30', nombre: 'Lavado Térmico y Desengrase', equipo: 'Lavadora Ultrasónica OP30', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP40', nombre: 'Acabado de Superficie / Recubrimiento', equipo: 'Cabina de Grafito / Moly OP40', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP50', nombre: 'Inspección Dimensional Neumática', equipo: 'Gage de Aire Multidiametral OP50', operador: 'Téc. Calidad', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP60', nombre: 'Inspección Final EOL & Marcado Láser', equipo: 'Estación de Visión y Embalaje OP60', operador: 'Téc. Calidad', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' }
+      ],
+      alertas: []
+    };
+
+    // 2. Aplicar a estado reactivo y persistencia local
+    state.data = JSON.parse(JSON.stringify(cleanData));
+    try {
+      localStorage.setItem('BRP_DASHBOARD_RESET_DATA', JSON.stringify(cleanData));
+      localStorage.setItem('BRP_DASHBOARD_RESET_TIME', Date.now().toString());
+    } catch (e) {}
+
+    // 3. Renderizar todos los módulos visuales
+    renderKpis();
+    renderHeroWidgets();
+    renderStationsFlow();
+    renderTable();
+    renderAlerts();
+
+    // 4. Actualizar gráficas en tiempo real
+    if (chartHourly) {
+      chartHourly.data.datasets[0].data = cleanData.produccionHoraria.map(() => 0);
+      chartHourly.update();
+    }
+    if (chartCumulative) {
+      chartCumulative.data.datasets[0].data = cleanData.produccionHoraria.map(() => 0);
+      chartCumulative.update();
+    }
+    if (chartDowntime) {
+      chartDowntime.data.labels = ['Sin paros activos'];
+      chartDowntime.data.datasets[0].data = [0];
+      chartDowntime.data.datasets[0].backgroundColor = ['#10B981'];
+      chartDowntime.update();
+    }
+
+    // 5. Restablecer semáforo Andon ESP32 a Producción en Orden (Lámpara Verde Fija)
+    try {
+      fetch('http://192.168.0.200/api/andon?state=orden', { method: 'POST', mode: 'no-cors' }).catch(() => {});
+    } catch (e) {}
+
+    // 6. Notificar al backend FastAPI si está levantado
+    try {
+      fetch('/api/reset', { method: 'POST' }).catch(() => {});
+    } catch (e) {}
+
+    showToast('🔄 Datos de línea restablecidos. Listo para nueva captura de fotos vía Telegram.');
   }
 
   /**

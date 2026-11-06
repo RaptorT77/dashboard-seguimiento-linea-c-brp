@@ -41,6 +41,14 @@
 
       <!-- Esquina Derecha: Acciones Rápidas y Logotipo JI&FIX / BRP -->
       <div class="header-actions">
+        <button id="btnResetData" class="btn-corp btn-corp-danger" title="Restablecer todos los datos para iniciar una nueva captura de turno">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          <span class="btn-label-text">Reset</span>
+        </button>
+
         <button id="btnSimulate" class="btn-corp btn-corp-amber" title="Simular término de pieza en tiempo real (+1 unidad)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
@@ -400,7 +408,7 @@
             <span class="chart-title">Curva de Avance Acumulado</span>
             <span class="chart-badge">CURVA S</span>
           </div>
-          <span style="font-size:10.5px; font-weight:700; color:#166534;">Ritmo: +2 pzas vs Plan</span>
+          <span style="font-size:10.5px; font-weight:700; color:#166534;" id="chartCumulativeBadge">Ritmo: +2 pzas vs Plan</span>
         </div>
         <div class="chart-body">
           <canvas id="chartCumulativeCanvas"></canvas>
@@ -414,7 +422,7 @@
             <span class="chart-title">Distribución de Paros e Incidencias</span>
             <span class="chart-badge">PARETO</span>
           </div>
-          <span style="font-size:10.5px; font-weight:700; color:#DC2626;">Total: 60 min</span>
+          <span style="font-size:10.5px; font-weight:700; color:#DC2626;" id="chartDowntimeBadge">Total: 60 min</span>
         </div>
         <div class="chart-body">
           <canvas id="chartDowntimeCanvas"></canvas>

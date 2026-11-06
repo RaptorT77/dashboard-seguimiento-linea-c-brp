@@ -278,6 +278,19 @@ body {
   background-color: #BBF7D0;
 }
 
+.btn-corp-danger {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FCA5A5;
+}
+
+.btn-corp-danger:hover {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border-color: #B91C1C;
+  box-shadow: var(--shadow-sm);
+}
+
 /* =============================================================================
    2. BARRA DE MÉTRICAS RÁPIDAS Y FILTROS INTERACTIVOS
    ============================================================================= */
