@@ -27,3 +27,4 @@ backend/tests/test_data/*
 
 # Environment variables & secrets
 .env
+

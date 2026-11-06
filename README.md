@@ -140,6 +140,107 @@ dashboard-seguimiento-linea-c-brp/
 
 ---
 
+## 🤖 Pipeline de Datos, Telemetría y OCR de Pizarra vía Telegram
+
+El sistema cuenta con un backend desacoplado de ingeniería de datos para la **captura, digitalización y validación automática de pizarras de producción** de la **Línea C (Planta Kolben Schmidt Celaya)** para el producto **WOLF V1**.
+
+```
+[Operador en Piso] 
+       │ (Toma fotografía horaria de la pizarra)
+       ▼
+[Telegram Bot: @DASHBOARD_BRP_001_bot]
+       │ (Descarga imagen raw en alta resolución)
+       ▼
+[Image Preprocessor (OpenCV)]
+       │ • Bounding de contorno de pizarra
+       │ • CLAHE (Contrast Limited Adaptive Histogram Equalization)
+       │ • Binarización adaptativa bilateral
+       ▼
+[OCR Engine (RapidOCR PP-OCRv4 ONNX)]
+       │ • Detección de texto y cajas delimitadoras
+       │ • Centroides de celda y cálculo de confianza espacial
+       ▼
+[Data Extractor (Última Hora)]
+       │ • Extracción estricta de los 14 campos sin inferir datos ausentes
+       │ • Mapeo horario según matriz oficial de turnos (Turnos 1, 2 y 3)
+       ▼
+[Data Validator (Reglas Industriales)]
+       │ • Validación de tipos y rangos de producción
+       │ • Ecuación de balance: Real Acumulado = Previo + (Real Pz/Hora - Piezas Malas)
+       │ • Idempotencia (Prevención de registros duplicados)
+       │ • Umbrales de confianza OCR
+       ▼
+[Persistencia SQLite + Auditoría Inmutable]
+       │ • Tablas: RawImage, OcrLog, HourlyProductionRecord, ProductionHistory, AuditEvent
+       ▼
+[Sincronizador Web Atómico]
+       │ • Inyección atómica a mockData.js y data/production_data.json
+       ▼
+[Dashboard Web Línea C BRP] ◄── Visualización en vivo sin alterar código frontend
+```
+
+### 📋 Los 14 Campos Extraídos de la Pizarra
+
+1. **Línea:** Valor esperado `C`.
+2. **Producto:** Valor esperado `WOLF V1` (Pistón BRP).
+3. **Fecha:** Fecha del turno/día de producción.
+4. **Turno:** `Primero: 06:30 a 15:00 hrs`, `Segundo: 15:00 a 23:00 hrs`, o `Tercero: 23:00 a 06:30 hrs`.
+5. **Horario:** Intervalo de la última hora concluida (ej. `14:00 - 15:00`).
+6. **Obj. Pz/Hora:** Rate o meta por hora de producción.
+7. **Real Pz/Hora:** Piezas totales que salieron de línea en la hora.
+8. **Obj. Acumulado:** Meta acumulada del turno hasta la hora registrada.
+9. **Real Acumulado:** Total de piezas OK producidas acumuladas en el turno.
+10. **Piezas Malas:** Piezas de scrap / no conformes de la última hora.
+11. **Líder:** Nombre del líder de turno legible en la pizarra (ej. `Antonia`).
+12. **Op:** Estación de falla si está indicada en notas (ej. `OP20`).
+13. **Tiempo Minutos:** Minutos de paro registrados.
+14. **Paros:** Descripción manuscrita de la causa de paro reportada.
+
+### 🚀 Puesta en Marcha del Backend
+
+#### 1. Instalar Dependencias
+```bash
+pip install -r backend/requirements.txt
+```
+
+#### 2. Modos de Ejecución (`run_backend.py`)
+
+- **Modo Completo (Bot de Telegram + API REST en paralelo):**
+  ```bash
+  python run_backend.py --mode all
+  ```
+
+- **Solo Receptor de Telegram:**
+  ```bash
+  python run_backend.py --mode bot
+  ```
+
+- **Solo Servidor API REST (FastAPI):**
+  ```bash
+  python run_backend.py --mode api --port 8000
+  ```
+
+- **Procesamiento Manual de una Fotografía:**
+  ```bash
+  python run_backend.py --mode process --image "ruta/a/foto_pizarra.jpg"
+  ```
+
+- **Ejecutar Batería de Pruebas Automatizadas:**
+  ```bash
+  python run_backend.py --mode test
+  ```
+
+### 🧪 Suite de Pruebas Automatizadas (5 Escenarios de Validación)
+
+El módulo `backend/tests/test_pipeline.py` valida 100% los requerimientos de robustez operacional:
+1. **Fotografía Real de Pizarra:** Procesa la imagen física subida por el operador, extrayendo con total fidelidad `WOLF V1`, Línea `C`, `14:00 - 15:00`, `Real: 30`, `Obj: 60`, `Acum: 185`, `Malas: 10`, `Líder: Antonia`.
+2. **Idempotencia (Imagen Duplicada):** Comprueba que enviar la misma fotografía no genere registros duplicados en base de datos.
+3. **Campos Faltantes:** Verifica que una pizarra en blanco no invente números ni líderes, clasificándose como `REQUIERE_REVISION`.
+4. **Baja Confianza / Desenfoque Extremo:** Simula pérdida de foco con desenfoque gaussiano masivo, previniendo actualizaciones corruptas.
+5. **Causa de Paro Manuscrita:** Verifica la detección de anotaciones manuscritas en la columna de paros (`golpe en cabeza`, `ajuste`, etc.).
+
+---
+
 ## 📄 Créditos y Derechos
 
 - **Organización:** BRP ROTAX MÉXICO S.A. de C.V. — Sistema de Seguimiento Operativo Línea C (Planta Kolben Schmidt Celaya).
