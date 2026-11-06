@@ -50,6 +50,7 @@
     renderAlerts();
     initCharts();
     setupEventListeners();
+    initAutoSync();
   });
 
   /**
@@ -976,6 +977,59 @@
     link.click();
     document.body.removeChild(link);
     showToast(`📄 CSV histórico exportado exitosamente (${records.length} registros persistentes conservados)`);
+  }
+
+  /**
+   * Sincronización automática periódica con data/production_data.json
+   */
+  function initAutoSync() {
+    setInterval(async () => {
+      try {
+        const resp = await fetch('data/production_data.json?v=' + Date.now(), { cache: 'no-store' });
+        if (!resp.ok) return;
+        const freshData = await resp.json();
+        if (!freshData || !freshData.resumenKpis) return;
+
+        const curProd = state.data.resumenKpis ? state.data.resumenKpis.produccionDia : -1;
+        const freshProd = freshData.resumenKpis.produccionDia;
+        const curStatus = state.data.resumenKpis ? state.data.resumenKpis.estadoLinea : '';
+        const freshStatus = freshData.resumenKpis.estadoLinea;
+        const curHours = (state.data.produccionHoraria || []).map(h => h.real).join(',');
+        const freshHours = (freshData.produccionHoraria || []).map(h => h.real).join(',');
+
+        if (curProd !== freshProd || curStatus !== freshStatus || curHours !== freshHours) {
+          console.log('[AUTO-SYNC] Nueva información horaria detectada, actualizando interfaz...');
+          state.data = freshData;
+          renderKpis();
+          renderHeroWidgets();
+          renderStationsFlow();
+          renderTable();
+          renderAlerts();
+          if (chartHourly && freshData.produccionHoraria) {
+            chartHourly.data.labels = freshData.produccionHoraria.map(h => h.hora);
+            chartHourly.data.datasets[0].data = freshData.produccionHoraria.map(h => h.real);
+            chartHourly.data.datasets[1].data = freshData.produccionHoraria.map(h => h.meta);
+            chartHourly.update();
+          }
+          if (chartCumulative && freshData.produccionHoraria) {
+            chartCumulative.data.labels = freshData.produccionHoraria.map(h => h.hora);
+            chartCumulative.data.datasets[0].data = freshData.produccionHoraria.map(h => h.acumReal);
+            chartCumulative.data.datasets[1].data = freshData.produccionHoraria.map(h => h.acumMeta);
+            chartCumulative.update();
+          }
+          if (chartDowntime && freshData.parosIncidencias) {
+            const labels = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.causa.substring(0, 20)) : ['Sin paros'];
+            const mins = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.duracionMin) : [0];
+            chartDowntime.data.labels = labels;
+            chartDowntime.data.datasets[0].data = mins;
+            chartDowntime.update();
+          }
+          showToast('⚡ Dashboard actualizado con la última hora de pizarra');
+        }
+      } catch (e) {
+        // Fallback silencioso
+      }
+    }, 4000);
   }
 
   /**

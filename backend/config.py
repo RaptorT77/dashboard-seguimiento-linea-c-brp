@@ -41,3 +41,7 @@ SHIFT_DEFINITIONS = {
 EXPECTED_LINEA = "C"
 EXPECTED_PRODUCTO = "WOLF V1"
 
+# Endpoint de Control de Baliza Andon ESP32-S3 (Planta Kolben Schmidt)
+ESP32_HOST = os.getenv("ESP32_HOST", "http://192.168.0.200")
+
+

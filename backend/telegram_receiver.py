@@ -5,12 +5,15 @@ Atiende fotos enviadas por los operadores de piso de planta y ejecuta el pipelin
 
 import os
 import time
+import json
+import threading
+import subprocess
 import requests
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from .config import TELEGRAM_BOT_TOKEN, RAW_IMAGES_DIR
+from .config import TELEGRAM_BOT_TOKEN, RAW_IMAGES_DIR, ESP32_HOST, DASHBOARD_DATA_JSON
 from .pipeline import WhiteboardProcessingPipeline
 from .audit_logger import AuditLogger
 
@@ -40,6 +43,54 @@ class TelegramPhotoReceiver:
         except Exception as e:
             AuditLogger.log_event("TELEGRAM_SEND_ERROR", f"Error enviando mensaje: {e}", level="ERROR")
 
+    def _git_push_background(self):
+        """Actualiza el repositorio en segundo plano para reflejar datos en GitHub Pages."""
+        def _task():
+            try:
+                subprocess.run(["git", "add", "data/", "assets/js/mockData.js"], cwd=str(Path(__file__).resolve().parent.parent), check=False)
+                subprocess.run(["git", "commit", "-m", "chore(telemetry): auto-sync production data from whiteboard photo [skip ci]"], cwd=str(Path(__file__).resolve().parent.parent), check=False)
+                subprocess.run(["git", "push"], cwd=str(Path(__file__).resolve().parent.parent), check=False, timeout=15)
+            except Exception:
+                pass
+        threading.Thread(target=_task, daemon=True).start()
+
+    def get_system_status_summary(self) -> str:
+        """Genera un reporte resumido del estado del sistema y torre Andon."""
+        try:
+            # Consultar hardware ESP32
+            res = requests.get(f"{ESP32_HOST.rstrip('/')}/api/status", timeout=2.0).json()
+            line_state = res.get("line_state", "DESCONOCIDO")
+            uptime = res.get("uptime_str", "--:--:--")
+            ip = res.get("ip", "N/A")
+            rssi = res.get("rssi", 0)
+        except Exception:
+            line_state = "DESCONECTADO"
+            uptime = "N/A"
+            ip = "N/A"
+            rssi = 0
+
+        # Consultar datos de producción
+        try:
+            with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+                d = json.load(f)
+                k = d.get("resumenKpis", {})
+                prod = k.get("produccionDia", 0)
+                meta = k.get("metaDiaria", 480)
+                avance = k.get("porcentajeAvance", 0.0)
+                scrap = k.get("scrapPiezas", 0)
+        except Exception:
+            prod, meta, avance, scrap = 0, 480, 0.0, 0
+
+        return (
+            "📊 *ESTADO ACTUAL — SISTEMA LÍNEA C BRP*\n"
+            "Planta Kolben Schmidt Celaya\n\n"
+            f"🚦 *Semáforo Andon:* `{line_state}`\n"
+            f"📦 *Producción Real:* *{prod}* / *{meta}* uds ({avance:.1f}%)\n"
+            f"🗑 *Scrap Acumulado:* *{scrap}* pzas\n\n"
+            f"🌐 *Hardware ESP32:* `{ip}` ({rssi} dBm) | Uptime: `{uptime}`\n"
+            "🔗 *Dashboard Web:* [Abrir en Vivo](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)"
+        )
+
     def download_photo(self, file_id: str, dest_path: Path) -> bool:
         """Descarga el archivo de imagen original desde los servidores de Telegram."""
         try:
@@ -59,7 +110,7 @@ class TelegramPhotoReceiver:
             return False
 
     def handle_message(self, message: Dict[str, Any]):
-        """Procesa un mensaje recibido, validando si contiene una fotografía."""
+        """Procesa un mensaje recibido, validando si contiene una fotografía o comando."""
         msg_id = message.get("message_id")
         chat = message.get("chat", {})
         chat_id = str(chat.get("id"))
@@ -72,15 +123,74 @@ class TelegramPhotoReceiver:
         # 1. Comprobar si incluye foto
         photos = message.get("photo")
         if not photos:
-            text = message.get("text", "")
+            text = (message.get("text") or "").strip()
             if text.startswith("/start") or text.startswith("/help"):
                 welcome = (
-                    "👋 *Sistema de Captura de Pizarra — Línea C BRP*\n"
-                    "Planta Kolben Schmidt Celaya.\n\n"
-                    "📷 Envía una fotografía clara de la pizarra de producción para digitalizar "
-                    "y actualizar el dashboard automáticamente."
+                    "👋 *Sistema de Telemetría y Captura de Pizarra — Línea C BRP*\n"
+                    "Planta Kolben Schmidt Celaya — BRP Rotax México\n\n"
+                    "📷 *Instrucciones para Captura de Pizarra:*\n"
+                    "1. Toma una fotografía clara de la pizarra de Línea C con buena iluminación.\n"
+                    "2. Envíala directamente a este chat de Telegram.\n"
+                    "3. El sistema ejecutará el OCR avanzado, extraerá la última hora registrada, "
+                    "actualizará el dashboard web y sincronizará la torre Andon física.\n\n"
+                    "🚦 *Comandos de Estado Operativo (Torre Andon):*\n"
+                    "• /orden — 🟢 Producción en orden (Verde fija ON)\n"
+                    "• /advertencia — 🟡 Advertencia operativa (Ámbar a 3 Hz)\n"
+                    "• /deficiente — 🚨 Producción deficiente (Roja + Buzzer a 3 Hz)\n"
+                    "• /status — 📊 Consultar telemetría y KPIs actuales\n"
+                    "• /reset — 🔄 Restablecer dashboard a ceros (conserva historial CSV)\n\n"
+                    "🌐 *Dashboard Web en Vivo:* [Ver en GitHub Pages](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)"
                 )
                 self.send_message(chat_id, welcome, reply_to_message_id=msg_id)
+            elif text.startswith("/orden"):
+                self.pipeline.sync_service.notify_esp32_andon("PRODUCCION_EN_ORDEN")
+                self.send_message(
+                    chat_id,
+                    "🟢 *LÍNEA C: PRODUCCIÓN EN ORDEN*\n"
+                    "• Lámpara Verde: FIJA ENCENDIDA\n"
+                    "• Baliza Roja: APAGADA\n"
+                    "• Lámpara Ámbar: APAGADA\n"
+                    "• Zumbador: APAGADO\n\n"
+                    "✓ Rates y metas de producción cumpliéndose normalmente.",
+                    reply_to_message_id=msg_id
+                )
+            elif text.startswith("/deficiente"):
+                self.pipeline.sync_service.notify_esp32_andon("PRODUCCION_DEFICIENTE")
+                self.send_message(
+                    chat_id,
+                    "🚨 *LÍNEA C: PRODUCCIÓN DEFICIENTE (ALARMA)*\n"
+                    "• Baliza Roja: OSCILANDO A 3 Hz\n"
+                    "• Zumbador: INTERMITENTE A 3 Hz\n"
+                    "• Lámpara Verde: APAGADA\n"
+                    "• Lámpara Ámbar: APAGADA\n\n"
+                    "⚠️ Rates o metas no cumplidos. Supervisión requerida de inmediato.",
+                    reply_to_message_id=msg_id
+                )
+            elif text.startswith("/advertencia"):
+                self.pipeline.sync_service.notify_esp32_andon("ADVERTENCIA_OPERATIVA")
+                self.send_message(
+                    chat_id,
+                    "🟡 *LÍNEA C: ADVERTENCIA OPERATIVA*\n"
+                    "• Lámpara Ámbar: OSCILANDO A 3 Hz\n"
+                    "• Lámpara Verde: APAGADA\n"
+                    "• Baliza Roja: APAGADA\n"
+                    "• Zumbador: APAGADO\n\n"
+                    "⚡ Rates en promedio cumpliéndose; riesgo próximo de producción deficiente.",
+                    reply_to_message_id=msg_id
+                )
+            elif text.startswith("/status"):
+                status_text = self.get_system_status_summary()
+                self.send_message(chat_id, status_text, reply_to_message_id=msg_id)
+            elif text.startswith("/reset"):
+                self.pipeline.sync_service.reset_production_data()
+                self.send_message(
+                    chat_id,
+                    "🔄 *Dashboard Restablecido a Ceros (Nuevo Turno)*\n"
+                    "• Se han reiniciado los contadores en pantalla.\n"
+                    "• El archivo histórico CSV se mantiene persistente e intacto.\n"
+                    "• El sistema queda listo para la primera captura horaria.",
+                    reply_to_message_id=msg_id
+                )
             return
 
         # Notificar recepción inmediata
@@ -153,6 +263,7 @@ class TelegramPhotoReceiver:
                 )
 
             self.send_message(chat_id, reply, reply_to_message_id=msg_id)
+            self._git_push_background()
 
         except Exception as e:
             AuditLogger.log_event("PROCESSING_ERROR", f"Error procesando imagen: {e}", level="ERROR")

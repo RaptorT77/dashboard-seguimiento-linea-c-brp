@@ -7,3 +7,4 @@ Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,
 2026-11-06,Primero: 06:30 a 15:00 hrs,12:00 - 13:00,C,WOLF V1,Antonia,60,36,360,120,16,0,,VALIDO,2026-11-06 13:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,59,420,165,14,0,,VALIDO,2026-11-06 14:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,14:00 - 15:00,C,WOLF V1,Antonia,60,30,480,185,10,0,Venta => 185 | Scrap: 131,VALIDO,2026-11-06 15:00:00
+

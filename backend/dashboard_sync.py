@@ -416,21 +416,22 @@ if (typeof module !== 'undefined' && module.exports) {{
 
     def notify_esp32_andon(self, estado_linea: str) -> bool:
         """
-        Envía opcionalmente el estado operativo al hardware ESP32 Andon
-        si la variable de entorno ESP32_HOST está configurada (ej. http://192.168.1.150)
+        Envía el estado operativo al hardware ESP32 Andon
+        utilizando la IP configurada (por defecto http://192.168.0.200)
         """
         import os
         import urllib.request
         import urllib.error
+        from .config import ESP32_HOST
 
-        esp32_host = os.getenv("ESP32_HOST")
+        esp32_host = os.getenv("ESP32_HOST", ESP32_HOST)
         if not esp32_host:
             return False
 
         url = f"{esp32_host.rstrip('/')}/api/andon?state={estado_linea}"
         try:
             req = urllib.request.Request(url, method="POST")
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
                 if resp.status == 200:
                     logging.getLogger("BRP_Audit").info(
                         f"Hardware ESP32 Andon sincronizado exitosamente con estado: {estado_linea}"
