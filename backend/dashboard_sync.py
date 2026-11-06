@@ -261,5 +261,35 @@ if (typeof module !== 'undefined' && module.exports) {{
         with open(self.mock_data_path, "w", encoding="utf-8") as f:
             f.write(js_content)
 
+        # 6. Notificar al hardware ESP32 Andon si hay conexión configurada
+        self.notify_esp32_andon(estado_linea)
+
         return True
+
+    def notify_esp32_andon(self, estado_linea: str) -> bool:
+        """
+        Envía opcionalmente el estado operativo al hardware ESP32 Andon
+        si la variable de entorno ESP32_HOST está configurada (ej. http://192.168.1.150)
+        """
+        import os
+        import urllib.request
+        import urllib.error
+
+        esp32_host = os.getenv("ESP32_HOST")
+        if not esp32_host:
+            return False
+
+        url = f"{esp32_host.rstrip('/')}/api/andon?state={estado_linea}"
+        try:
+            req = urllib.request.Request(url, method="POST")
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                if resp.status == 200:
+                    logging.getLogger("BRP_Audit").info(
+                        f"Hardware ESP32 Andon sincronizado exitosamente con estado: {estado_linea}"
+                    )
+                    return True
+        except Exception as e:
+            logging.getLogger("BRP_Audit").debug(f"ESP32 no alcanzable en {url}: {e}")
+            return False
+        return False
 
