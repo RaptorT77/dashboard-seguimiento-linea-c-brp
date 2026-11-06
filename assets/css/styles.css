@@ -1037,8 +1037,10 @@ body {
 }
 
 /* =============================================================================
-   10. RESPONSIVE DESIGN (MEDIA QUERIES)
+   10. RESPONSIVE DESIGN (OPTIMIZACIÓN TOTAL TABLETS Y MÓVILES)
    ============================================================================= */
+
+/* TABLETS EN MODO PAISAJE Y PANTALLAS MEDIANAS (<= 1280px) */
 @media (max-width: 1280px) {
   .operational-hero-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1051,36 +1053,188 @@ body {
   }
 }
 
-@media (max-width: 860px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
+/* TABLETS ESTÁNDAR / IPAD / GALAXY TAB (<= 1024px) */
+@media (max-width: 1024px) {
+  .header-title {
+    font-size: 16px;
   }
-  .kpi-grid {
+  .logo-img {
+    height: 40px;
+    max-width: 100px;
+  }
+  .kpi-value {
+    font-size: 22px;
+  }
+  .chart-body {
+    height: 230px;
+  }
+}
+
+/* TABLETS EN RETRATO Y SMARTPHONES GRANDES (<= 768px) */
+@media (max-width: 768px) {
+  .corporate-header {
+    padding: 6px 10px;
+  }
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-center {
+    order: 1;
+    width: calc(100% - 150px);
+  }
+  .logo-card:first-child {
+    order: 0;
+  }
+  .logo-card:last-child {
+    order: 2;
+  }
+  .header-actions {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    border-top: 1px solid var(--color-border);
+    padding-top: 6px;
+    margin-top: 2px;
+  }
+  .logo-img {
+    height: 34px;
+    max-width: 75px;
+  }
+  .header-title {
+    font-size: 13.5px;
+    line-height: 1.15;
+  }
+  .badge-corp {
+    font-size: 9px;
+  }
+  .pill-clock {
+    font-size: 9px;
+  }
+  .filter-toolbar {
+    padding: 6px 10px;
+  }
+  .quick-pills-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .quick-pills-row::-webkit-scrollbar {
+    display: none;
+  }
+  .filters-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .filters-group {
+    display: grid;
     grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+  .filter-item {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .filter-select, .filter-input {
+    width: 100%;
+  }
+  #btnResetFilters {
+    width: 100%;
+    justify-content: center;
+  }
+  .dashboard-main {
+    padding: 10px 10px 24px 10px;
+    gap: 12px;
   }
   .operational-hero-grid {
     grid-template-columns: 1fr;
   }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
   .stations-flow-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .header-title {
-    font-size: 15px;
+  .search-box {
+    width: 100%;
+    margin-top: 6px;
   }
 }
 
-@media (max-width: 600px) {
+/* SMARTPHONES Y DISPOSITIVOS MÓVILES (<= 520px) */
+@media (max-width: 520px) {
+  .header-actions {
+    gap: 4px;
+    justify-content: space-between;
+  }
+  .btn-corp {
+    padding: 6px 8px;
+    font-size: 10.5px;
+    flex: 1;
+    justify-content: center;
+  }
+  /* Ocultar etiquetas largas en teléfonos compactos para dar prioridad a los iconos */
+  .btn-corp .btn-label-text {
+    font-size: 9.5px;
+  }
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+  .kpi-card {
+    padding: 10px 12px;
+  }
+  .kpi-value {
+    font-size: 24px;
   }
   .stations-flow-grid {
     grid-template-columns: 1fr;
   }
-  .header-actions {
-    flex-wrap: wrap;
+  .station-name {
+    min-height: auto;
   }
-  .quick-pills-row {
+  .table-responsive-container {
+    -webkit-overflow-scrolling: touch;
+  }
+  .industrial-table th, .industrial-table td {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+  .alert-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .alert-header-row {
     flex-wrap: wrap;
+    gap: 4px;
+  }
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+  }
+}
+
+/* SMARTPHONES COMPACTOS (<= 380px) */
+@media (max-width: 380px) {
+  .header-title {
+    font-size: 11.5px;
+  }
+  .logo-img {
+    height: 28px;
+    max-width: 60px;
+  }
+  .filters-group {
+    grid-template-columns: 1fr;
+  }
+  .btn-corp .btn-label-text {
+    display: none;
   }
 }
 
@@ -1108,3 +1262,4 @@ body {
     height: 200px !important;
   }
 }
+
