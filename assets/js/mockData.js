@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
-    "updatedAt": "2026-11-06T20:14:01Z",
+    "updatedAt": "2026-11-06T20:40:41Z",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 480,
     "supervisorActual": "Líder Antonia",
@@ -20,20 +20,20 @@ const BRP_DATA = {
     "turnoActual": 1
   },
   "resumenKpis": {
-    "produccionDia": 270,
+    "produccionDia": 25,
     "metaDiaria": 480,
-    "porcentajeAvance": 56.2,
-    "unidadesCompletadas": 270,
-    "unidadesPendientes": 210,
-    "eficienciaOee": 18.3,
-    "disponibilidad": 18.5,
-    "rendimiento": 100.0,
-    "calidadFpy": 98.9,
-    "parosAcumuladosMin": 220,
-    "eventosParo": 3,
+    "porcentajeAvance": 5.2,
+    "unidadesCompletadas": 25,
+    "unidadesPendientes": 455,
+    "eficienciaOee": 1.0,
+    "disponibilidad": 17.8,
+    "rendimiento": 6.0,
+    "calidadFpy": 89.3,
+    "parosAcumuladosMin": 370,
+    "eventosParo": 5,
     "taktTimeSeg": 58.2,
     "scrapPiezas": 3,
-    "scrapPorcentaje": 1.1,
+    "scrapPorcentaje": 10.7,
     "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
@@ -43,8 +43,8 @@ const BRP_DATA = {
       "horario": "06:30 - 15:00",
       "supervisor": "Antonia",
       "meta": 480,
-      "real": 270,
-      "oee": 18.3,
+      "real": 25,
+      "oee": 1.0,
       "activo": true
     },
     {
@@ -131,9 +131,9 @@ const BRP_DATA = {
       "acumMeta": 300,
       "acumReal": 25,
       "oeeHora": 0.0,
-      "parosMin": 0,
+      "parosMin": 30,
       "malas": 0,
-      "comentario": "Hora en curso / Por fabricar"
+      "comentario": "Ajuste de perilla de avance maq. (OP30)"
     },
     {
       "hora": "12:00 - 13:00",
@@ -142,9 +142,9 @@ const BRP_DATA = {
       "acumMeta": 360,
       "acumReal": 25,
       "oeeHora": 0.0,
-      "parosMin": 0,
+      "parosMin": 60,
       "malas": 0,
-      "comentario": "Programado"
+      "comentario": "Alineación de barra y herramental (OP30)"
     },
     {
       "hora": "13:00 - 14:00",
@@ -153,20 +153,9 @@ const BRP_DATA = {
       "acumMeta": 420,
       "acumReal": 25,
       "oeeHora": 0.0,
-      "parosMin": 0,
+      "parosMin": 60,
       "malas": 0,
-      "comentario": "Programado"
-    },
-    {
-      "hora": "14:00 - 15:00",
-      "meta": 60,
-      "real": 0,
-      "acumMeta": 480,
-      "acumReal": 25,
-      "oeeHora": 0.0,
-      "parosMin": 0,
-      "malas": 0,
-      "comentario": "Programado"
+      "comentario": "Ajuste continuo de herramental (OP30)"
     }
   ],
   "parosIncidencias": [
@@ -183,21 +172,41 @@ const BRP_DATA = {
     {
       "id": "P-02",
       "estacion": "OP30",
-      "causa": "Ajuste offset - Manufactura (Paro total de máquina)",
-      "duracionMin": 60,
+      "causa": "Paro continuo en OP30 (Ajuste offset Manufactura)",
+      "duracionMin": 180,
       "categoria": "Mecánico / Herramental",
       "tipo": "Incidencia Pizarra",
-      "hora": "08:00 - 10:00",
+      "hora": "08:00 - 11:00",
       "estatus": "Reportado en Pizarra"
     },
     {
       "id": "P-03",
       "estacion": "OP30",
-      "causa": "Ajuste offset // Mantto. (Tornillo) / Ajuste perilla de avance maq.",
-      "duracionMin": 60,
-      "categoria": "Mantenimiento / Calidad",
+      "causa": "Ajuste de perilla de avance de máquina",
+      "duracionMin": 30,
+      "categoria": "Mantenimiento / Calibración",
       "tipo": "Incidencia Pizarra",
-      "hora": "10:00 - 11:00",
+      "hora": "11:00 - 12:00",
+      "estatus": "Reportado en Pizarra"
+    },
+    {
+      "id": "P-04",
+      "estacion": "OP30",
+      "causa": "Alineación de barra y herramental",
+      "duracionMin": 60,
+      "categoria": "Mecánico / Herramental",
+      "tipo": "Incidencia Pizarra",
+      "hora": "12:00 - 13:00",
+      "estatus": "Reportado en Pizarra"
+    },
+    {
+      "id": "P-05",
+      "estacion": "OP30",
+      "causa": "Ajuste continuo de herramental",
+      "duracionMin": 60,
+      "categoria": "Mantenimiento / Ajuste",
+      "tipo": "Incidencia Pizarra",
+      "hora": "13:00 - 14:00",
       "estatus": "Reportado en Pizarra"
     }
   ],
@@ -291,10 +300,10 @@ const BRP_DATA = {
     {
       "id": "ALT-DEFICIT-CRIT",
       "tipo": "CRITICA",
-      "titulo": "Déficit Crítico de Producción (-245 Uds vs Plan a las 11:00)",
-      "descripcion": "El Turno 1 acumula únicamente 25 unidades producidas de 270 esperadas al corte de las 11:00 hrs (9.3% de avance vs plan). Se activó alarma Andon.",
+      "titulo": "Déficit Crítico de Producción (-395 Uds vs Plan a las 14:00)",
+      "descripcion": "El Turno 1 acumula únicamente 25 unidades producidas de 420 esperadas al corte de las 14:00 hrs (6.0% de avance vs plan a la hora). Se activó alarma Andon.",
       "estacion": "LÍNEA C",
-      "hora": "11:00",
+      "hora": "14:00",
       "tiempoTranscurrido": "Turno 1 en curso",
       "resuelta": false
     },

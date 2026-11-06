@@ -123,7 +123,7 @@
         </div>
         <div class="quick-pill">
           <span class="quick-pill-label">SCRAP:</span>
-          <span class="quick-pill-val" style="color:#DC2626;">0.46% (2 PZ)</span>
+          <span class="quick-pill-val" id="pillToolbarScrap" style="color:#DC2626;">10.7% (3 PZ)</span>
         </div>
       </div>
 
@@ -264,21 +264,21 @@
       <article class="hero-card hero-card-oee">
         <div class="hero-card-header">
           <span class="hero-card-title">Eficiencia Operativa (OEE)</span>
-          <span class="chart-badge" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0;">META > 85%</span>
+          <span class="chart-badge" id="heroOeeBadge" style="background:#ECFDF5; color:#065F46; border-color:#A7F3D0;">META > 85%</span>
         </div>
         <div class="hero-card-body">
           <div style="display:flex; align-items:baseline; justify-content:space-between;">
-            <span style="font-size: 24px; font-weight: 900; color: #059669;">89.4%</span>
-            <span style="font-size: 10px; font-weight: 700; color: #166534;">+4.4% vs Meta</span>
+            <span id="heroOeeVal" style="font-size: 24px; font-weight: 900; color: #DC2626;">1.0%</span>
+            <span id="heroOeeDiff" style="font-size: 10px; font-weight: 700; color: #DC2626;">-84.0% vs Meta</span>
           </div>
           <div class="hero-meta-list">
             <div class="hero-meta-row">
               <span>Disponibilidad / Rendimiento:</span>
-              <strong><span id="heroAvail">94.1%</span> / <span id="heroPerf">95.5%</span></strong>
+              <strong><span id="heroAvail">17.8%</span> / <span id="heroPerf">6.0%</span></strong>
             </div>
             <div class="hero-meta-row">
               <span>Calidad (First Pass Yield):</span>
-              <strong id="heroQual">99.54%</strong>
+              <strong id="heroQual">89.3%</strong>
             </div>
           </div>
         </div>
@@ -291,12 +291,12 @@
       <article class="kpi-card">
         <div class="kpi-title">Producción Real</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiProdVal">432</span>
+          <span class="kpi-value" id="kpiProdVal">25</span>
           <span class="kpi-unit">unidades</span>
         </div>
-        <div class="kpi-target">Meta acumulada: 430 uds</div>
+        <div class="kpi-target" id="kpiTargetMetaAcum">Meta a la hora (14:00): 420 uds</div>
         <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill fill-green" style="width: 100%;"></div>
+          <div class="kpi-progress-fill fill-green" style="width: 5.2%;"></div>
         </div>
       </article>
 
@@ -304,10 +304,10 @@
       <article class="kpi-card">
         <div class="kpi-title">Meta Diaria</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiMetaVal">540</span>
+          <span class="kpi-value" id="kpiMetaVal">480</span>
           <span class="kpi-unit">unidades</span>
         </div>
-        <div class="kpi-target">Turno 1: 540 uds programadas</div>
+        <div class="kpi-target" id="kpiTargetMetaDia">Turno 1: 480 uds programadas</div>
         <div class="kpi-progress-bar">
           <div class="kpi-progress-fill" style="width: 100%; background:#64748B;"></div>
         </div>
@@ -317,12 +317,12 @@
       <article class="kpi-card">
         <div class="kpi-title">Porcentaje de Avance</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiAvanceVal">80.0%</span>
+          <span class="kpi-value" id="kpiAvanceVal">5.2%</span>
           <span class="kpi-unit">cumplido</span>
         </div>
-        <div class="kpi-target">Esperado a la hora: 79.6%</div>
+        <div class="kpi-target" id="kpiTargetEsperado">Esperado a la hora (14:00): 87.5%</div>
         <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill fill-green" id="barAvance" style="width: 80%;"></div>
+          <div class="kpi-progress-fill fill-green" id="barAvance" style="width: 5.2%;"></div>
         </div>
       </article>
 
@@ -330,12 +330,12 @@
       <article class="kpi-card">
         <div class="kpi-title">Unidades Pendientes</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiPendVal" style="color:#D97706;">108</span>
+          <span class="kpi-value" id="kpiPendVal" style="color:#D97706;">455</span>
           <span class="kpi-unit">por fabricar</span>
         </div>
-        <div class="kpi-target">Tiempo restante: 1h 15 min</div>
+        <div class="kpi-target" id="kpiTargetTiempoRest">Tiempo restante turno: 1h 00 min</div>
         <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill fill-amber" style="width: 20%;"></div>
+          <div class="kpi-progress-fill fill-amber" style="width: 94.8%;"></div>
         </div>
       </article>
 
@@ -343,12 +343,12 @@
       <article class="kpi-card">
         <div class="kpi-title">Eficiencia Global (OEE)</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiOeeVal" style="color:#1E3A8A;">89.4%</span>
+          <span class="kpi-value" id="kpiOeeVal" style="color:#DC2626;">1.0%</span>
           <span class="kpi-unit">OEE</span>
         </div>
         <div class="kpi-target">Clase Mundial: >85%</div>
         <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill fill-green" id="barOee" style="width: 89.4%;"></div>
+          <div class="kpi-progress-fill fill-red" id="barOee" style="width: 1.0%;"></div>
         </div>
       </article>
 
@@ -356,12 +356,12 @@
       <article class="kpi-card">
         <div class="kpi-title">Paros Acumulados</div>
         <div class="kpi-value-row">
-          <span class="kpi-value" id="kpiParosVal" style="color:#DC2626;">18 min</span>
-          <span class="kpi-unit">4 eventos</span>
+          <span class="kpi-value" id="kpiParosVal" style="color:#DC2626;">370 min</span>
+          <span class="kpi-unit" id="kpiParosEventos">7 eventos</span>
         </div>
-        <div class="kpi-target">MTTR: 4.5 min / evento</div>
+        <div class="kpi-target" id="kpiParosMttr">MTTR: 52.8 min / evento</div>
         <div class="kpi-progress-bar">
-          <div class="kpi-progress-fill fill-red" style="width: 25%;"></div>
+          <div class="kpi-progress-fill fill-red" style="width: 82.2%;"></div>
         </div>
       </article>
     </section>

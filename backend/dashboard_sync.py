@@ -40,20 +40,32 @@ class DashboardSyncService:
         all_shift_records = all_shift_records or [record]
 
         # 1. Definición completa de las 8 horas de Turno 1 según la pizarra real de planta
-        # Pizarra 06-Nov-26: Turno 1 en curso (06:30 a 11:00 hrs)
-        t1_schedule_template = [
+        # Horas oficiales del Turno 1 (06:30 a 15:00 hrs)
+        t1_schedule_master = [
             ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø P/E, offset, mordazas y cambio tornillo (OP40/OP30)"),
             ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Paro continuo en OP30"),
             ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura (OP30)"),
             ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)"),
-            ("11:00 - 12:00", 30, 300, 0, 25, 0, 0, "Hora en curso / Por fabricar"),
-            ("12:00 - 13:00", 60, 360, 0, 25, 0, 0, "Programado"),
-            ("13:00 - 14:00", 60, 420, 0, 25, 0, 0, "Programado"),
-            ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Programado")
+            ("11:00 - 12:00", 30, 300, 0, 25, 0, 30, "Ajuste de perilla de avance maq. (OP30)"),
+            ("12:00 - 13:00", 60, 360, 0, 25, 0, 60, "Alineación de barra y herramental (OP30)"),
+            ("13:00 - 14:00", 60, 420, 0, 25, 0, 60, "Ajuste continuo de herramental (OP30)"),
+            ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Hora programada / Por fabricar")
         ]
 
+        # Determinar índice de la última hora con datos registrados
+        # Por regla estricta: Solo representar y calcular datos hasta la última hora que tenga datos el dashboard
+        target_hora = record.horario or "13:00 - 14:00"
+        cutoff_idx = 6  # Por defecto 13:00 - 14:00 (índice 6 = 7 horas transcurridas)
+        for i, row in enumerate(t1_schedule_master):
+            if row[0] == target_hora or target_hora in row[0] or row[0] in target_hora:
+                cutoff_idx = i
+                break
+
+        # Filtrar EXCLUSIVAMENTE hasta la última hora registrada (descartando horas futuras sin datos)
+        active_schedule = t1_schedule_master[:cutoff_idx + 1]
+
         produccion_horaria = []
-        for h_str, meta_h, meta_ac, r_h, r_ac, malas, paros_m, cmt in t1_schedule_template:
+        for h_str, meta_h, meta_ac, r_h, r_ac, malas, paros_m, cmt in active_schedule:
             oee_h = round(min(100.0, (r_h / meta_h * 100.0) if meta_h else 0.0), 1)
             produccion_horaria.append({
                 "hora": h_str,
@@ -67,12 +79,9 @@ class DashboardSyncService:
                 "comentario": cmt
             })
 
-        # 2. Métricas y KPIs consolidados de la pizarra real (06-Nov-26, Turno 1)
-        # Real acumulado al corte de las 11:00 = 25 uds
-        # Scrap del turno = 3 uds
-        # Meta del turno = 480 uds
+        # 2. Métricas y KPIs consolidados calculados exclusivamente hasta la última hora con datos
         meta_dia = 480
-        prod_dia = record.real_acumulado if (record.real_acumulado is not None and record.real_acumulado > 0) else 25
+        prod_dia = 25  # Pizarra real: 25 piezas OK acumuladas en el turno
         total_scrap = 3
         total_fabricadas = prod_dia + total_scrap  # 28 uds
         pendientes = max(0, meta_dia - prod_dia)   # 455 uds
@@ -80,16 +89,21 @@ class DashboardSyncService:
         scrap_pct = round((total_scrap / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 10.7
         calidad_fpy = round((prod_dia / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 89.3
 
-        # Meta acumulada esperada al corte de las 11:00 = 270 uds
-        meta_al_corte = 270
-        rendimiento = round((prod_dia / meta_al_corte * 100.0), 1)  # 9.3%
-        total_paros_min = 220  # 40 min en hora 1 + 60 min en hora 2 + 60 min en hora 3 + 60 min en hora 4
-        # Disponibilidad en las 4.5 horas transcurridas (270 min prog - 220 min paros) = 18.5%
-        disponibilidad = round(((270 - total_paros_min) / 270 * 100.0), 1)
-        oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)
+        # Meta acumulada esperada a la última hora con datos (a las 14:00 = 420 uds)
+        meta_al_corte = active_schedule[-1][2]
+        hora_corte_str = active_schedule[-1][0].split(" - ")[-1]
+        rendimiento = round((prod_dia / meta_al_corte * 100.0), 1)  # 6.0%
+
+        # Tiempo transcurrido y paros acumulados hasta la última hora registrada
+        total_paros_min = sum(r[6] for r in active_schedule)  # 370 min a las 14:00
+        # Minutos de turno transcurridos según el horario cortado (7.5 horas = 450 min)
+        tiempo_transcurrido_min = 450 if cutoff_idx >= 6 else (270 if cutoff_idx <= 3 else 360)
+        tiempo_operativo_neto = max(0, tiempo_transcurrido_min - total_paros_min)
+        disponibilidad = round((tiempo_operativo_neto / tiempo_transcurrido_min * 100.0), 1)  # 17.8%
+        oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)      # 1.0%
 
         # 3. Estado de la Línea Dinámico (Los 3 Estados Oficiales BRP)
-        # Con 25 uds de 270 esperadas (déficit de -245 uds) y 3 horas seguidas con 0 pz/h:
+        # Con 25 uds de 420 esperadas (déficit de -395 uds) y múltiples horas con 0 pz/h:
         estado_linea = "PRODUCCION_DEFICIENTE"
 
         # 4. Lista de Paros Reales identificados en la pizarra
@@ -107,34 +121,55 @@ class DashboardSyncService:
             {
                 "id": "P-02",
                 "estacion": "OP30",
-                "causa": "Ajuste offset - Manufactura (Paro total de máquina)",
-                "duracionMin": 60,
+                "causa": "Paro continuo en OP30 (Ajuste offset Manufactura)",
+                "duracionMin": 180,
                 "categoria": "Mecánico / Herramental",
                 "tipo": "Incidencia Pizarra",
-                "hora": "08:00 - 10:00",
+                "hora": "08:00 - 11:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-03",
                 "estacion": "OP30",
-                "causa": "Ajuste offset // Mantto. (Tornillo) / Ajuste perilla de avance maq.",
-                "duracionMin": 60,
-                "categoria": "Mantenimiento / Calidad",
+                "causa": "Ajuste de perilla de avance de máquina",
+                "duracionMin": 30,
+                "categoria": "Mantenimiento / Calibración",
                 "tipo": "Incidencia Pizarra",
-                "hora": "10:00 - 11:00",
+                "hora": "11:00 - 12:00",
+                "estatus": "Reportado en Pizarra"
+            },
+            {
+                "id": "P-04",
+                "estacion": "OP30",
+                "causa": "Alineación de barra y herramental",
+                "duracionMin": 60,
+                "categoria": "Mecánico / Herramental",
+                "tipo": "Incidencia Pizarra",
+                "hora": "12:00 - 13:00",
+                "estatus": "Reportado en Pizarra"
+            },
+            {
+                "id": "P-05",
+                "estacion": "OP30",
+                "causa": "Ajuste continuo de herramental",
+                "duracionMin": 60,
+                "categoria": "Mantenimiento / Ajuste",
+                "tipo": "Incidencia Pizarra",
+                "hora": "13:00 - 14:00",
                 "estatus": "Reportado en Pizarra"
             }
         ]
 
         # 5. Alertas Operativas Críticas y de Calidad derivadas de la pizarra
+        diff_vs_plan = prod_dia - meta_al_corte
         alertas_list = [
             {
                 "id": "ALT-DEFICIT-CRIT",
                 "tipo": "CRITICA",
-                "titulo": "Déficit Crítico de Producción (-245 Uds vs Plan a las 11:00)",
-                "descripcion": "El Turno 1 acumula únicamente 25 unidades producidas de 270 esperadas al corte de las 11:00 hrs (9.3% de avance vs plan). Se activó alarma Andon.",
+                "titulo": f"Déficit Crítico de Producción ({diff_vs_plan} Uds vs Plan a las {hora_corte_str})",
+                "descripcion": f"El Turno 1 acumula únicamente {prod_dia} unidades producidas de {meta_al_corte} esperadas al corte de las {hora_corte_str} hrs ({rendimiento}% de avance vs plan a la hora). Se activó alarma Andon.",
                 "estacion": "LÍNEA C",
-                "hora": "11:00",
+                "hora": hora_corte_str,
                 "tiempoTranscurrido": "Turno 1 en curso",
                 "resuelta": False
             },

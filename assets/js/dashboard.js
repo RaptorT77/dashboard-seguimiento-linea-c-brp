@@ -193,6 +193,26 @@
 
     const heroQual = document.getElementById('heroQual');
     if (heroQual) heroQual.textContent = `${k.calidadFpy}%`;
+
+    // Actualización dinámica de Hero Card 4 (OEE y diferencia vs meta mundial 85%)
+    const heroOeeVal = document.getElementById('heroOeeVal');
+    const heroOeeDiff = document.getElementById('heroOeeDiff');
+    const heroOeeBadge = document.getElementById('heroOeeBadge');
+    if (heroOeeVal) {
+      heroOeeVal.textContent = `${k.eficienciaOee.toFixed(1)}%`;
+      heroOeeVal.style.color = k.eficienciaOee >= 85 ? '#059669' : '#DC2626';
+    }
+    if (heroOeeDiff) {
+      const diffOee = (k.eficienciaOee - 85.0).toFixed(1);
+      heroOeeDiff.textContent = `${diffOee >= 0 ? '+' : ''}${diffOee}% vs Meta`;
+      heroOeeDiff.style.color = diffOee >= 0 ? '#166534' : '#DC2626';
+    }
+    if (heroOeeBadge) {
+      heroOeeBadge.textContent = 'META > 85%';
+      heroOeeBadge.style.background = k.eficienciaOee >= 85 ? '#ECFDF5' : '#FEF2F2';
+      heroOeeBadge.style.color = k.eficienciaOee >= 85 ? '#065F46' : '#991B1B';
+      heroOeeBadge.style.borderColor = k.eficienciaOee >= 85 ? '#A7F3D0' : '#FECACA';
+    }
   }
 
   /**
@@ -212,7 +232,10 @@
     if (elMeta) elMeta.textContent = k.metaDiaria;
     if (elAvance) elAvance.textContent = `${k.porcentajeAvance.toFixed(1)}%`;
     if (elPend) elPend.textContent = k.unidadesPendientes;
-    if (elOee) elOee.textContent = `${k.eficienciaOee.toFixed(1)}%`;
+    if (elOee) {
+      elOee.textContent = `${k.eficienciaOee.toFixed(1)}%`;
+      elOee.style.color = k.eficienciaOee >= 85 ? '#1E3A8A' : '#DC2626';
+    }
     if (elParos) elParos.textContent = `${k.parosAcumuladosMin} min`;
 
     // Actualizar barras de progreso
@@ -220,32 +243,77 @@
     if (barAvance) barAvance.style.width = `${Math.min(k.porcentajeAvance, 100)}%`;
 
     const barOee = document.getElementById('barOee');
-    if (barOee) barOee.style.width = `${Math.min(k.eficienciaOee, 100)}%`;
+    if (barOee) {
+      barOee.style.width = `${Math.min(k.eficienciaOee, 100)}%`;
+      barOee.className = k.eficienciaOee >= 85 ? 'kpi-progress-fill fill-green' : 'kpi-progress-fill fill-red';
+    }
+
+    // Identificar la última hora registrada con datos
+    const activeHours = (state.data.produccionHoraria || []).filter(h =>
+      h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
+      (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+    );
+    const lastActive = activeHours.length > 0 ? activeHours[activeHours.length - 1] : null;
+    const metaALaHora = lastActive ? lastActive.acumMeta : k.metaDiaria;
+    const horaCorte = lastActive ? (lastActive.hora.split(' - ')[1] || lastActive.hora) : '14:00';
+    const esperadoPct = k.metaDiaria > 0 ? ((metaALaHora / k.metaDiaria) * 100).toFixed(1) : '0.0';
+
+    // Subtextos dinámicos en tarjetas de KPIs
+    const elMetaAcum = document.getElementById('kpiTargetMetaAcum');
+    if (elMetaAcum) elMetaAcum.textContent = `Meta esperada a la hora (${horaCorte}): ${metaALaHora} uds`;
+
+    const elMetaDia = document.getElementById('kpiTargetMetaDia');
+    if (elMetaDia) elMetaDia.textContent = `Turno ${state.data.planta?.turnoActual || 1}: ${k.metaDiaria} uds programadas`;
+
+    const elEsperado = document.getElementById('kpiTargetEsperado');
+    if (elEsperado) elEsperado.textContent = `Esperado a la hora (${horaCorte}): ${esperadoPct}%`;
+
+    const elTiempoRest = document.getElementById('kpiTargetTiempoRest');
+    if (elTiempoRest) {
+      elTiempoRest.textContent = 'Tiempo restante turno: 1h 00 min';
+    }
 
     // Pills de toolbar
     const pillMeta = document.getElementById('pillToolbarMeta');
     const pillReal = document.getElementById('pillToolbarReal');
     const pillOee = document.getElementById('pillToolbarOee');
     const pillPend = document.getElementById('pillToolbarPend');
+    const pillParos = document.getElementById('pillToolbarParos');
+    const pillScrap = document.getElementById('pillToolbarScrap');
+
     if (pillMeta) pillMeta.textContent = `${k.metaDiaria} UDS`;
     if (pillReal) pillReal.textContent = `${k.unidadesCompletadas} UDS (${k.porcentajeAvance.toFixed(1)}%)`;
-    if (pillOee) pillOee.textContent = `${k.eficienciaOee.toFixed(1)}%`;
+    if (pillOee) {
+      pillOee.textContent = `${k.eficienciaOee.toFixed(1)}%`;
+      pillOee.style.color = k.eficienciaOee >= 85 ? '#1E3A8A' : '#DC2626';
+    }
     if (pillPend) pillPend.textContent = `${k.unidadesPendientes} UDS`;
+    if (pillParos) pillParos.textContent = `${k.parosAcumuladosMin} MIN (${k.eventosParo || activeHours.length} EV)`;
+    if (pillScrap) pillScrap.textContent = `${(k.scrapPorcentaje || 0).toFixed(1)}% (${k.scrapPiezas || 0} PZ)`;
+
+    const elParosEventos = document.getElementById('kpiParosEventos');
+    if (elParosEventos) elParosEventos.textContent = `${k.eventosParo || activeHours.length} eventos`;
+
+    const elParosMttr = document.getElementById('kpiParosMttr');
+    if (elParosMttr) {
+      const evCount = k.eventosParo || activeHours.length || 1;
+      const mttr = (k.parosAcumuladosMin / evCount).toFixed(1);
+      elParosMttr.textContent = `MTTR: ${mttr} min / evento`;
+    }
 
     // Badges en cabecera de gráficas
     const elCumBadge = document.getElementById('chartCumulativeBadge');
     if (elCumBadge) {
-      if (k.unidadesCompletadas === 0) {
+      if (k.unidadesCompletadas === 0 && !lastActive) {
         elCumBadge.textContent = 'En espera de primer reporte';
         elCumBadge.style.color = '#64748B';
       } else {
-        const lastRec = state.data.produccionHoraria.filter(h => h.acumReal > 0).pop();
-        const diff = lastRec ? (lastRec.acumReal - lastRec.acumMeta) : (k.unidadesCompletadas - k.metaDiaria);
-        if (diff >= 0) {
-          elCumBadge.textContent = `Ritmo: +${diff} pzas vs Plan`;
+        const diffVsPlan = lastActive ? (lastActive.acumReal - lastActive.acumMeta) : (k.unidadesCompletadas - metaALaHora);
+        if (diffVsPlan >= 0) {
+          elCumBadge.textContent = `Ritmo: +${diffVsPlan} pzas vs Plan (${horaCorte})`;
           elCumBadge.style.color = '#166534';
         } else {
-          elCumBadge.textContent = `Ritmo: ${diff} pzas vs Plan`;
+          elCumBadge.textContent = `Ritmo: ${diffVsPlan} pzas vs Plan (${horaCorte})`;
           elCumBadge.style.color = '#DC2626';
         }
       }
@@ -413,12 +481,19 @@
     Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, sans-serif';
     Chart.defaults.color = '#475569';
 
+    // Filtrar estrictamente las horas que tienen registros reales de la pizarra (descartando horas futuras sin registrar)
+    const activeHourly = (state.data.produccionHoraria || []).filter(h =>
+      h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
+      (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+    );
+    const hoursToPlot = activeHourly.length > 0 ? activeHourly : (state.data.produccionHoraria || []);
+
     // 1. Gráfica Producción por Hora (Real vs Meta)
     const ctxHourly = document.getElementById('chartHourlyCanvas');
     if (ctxHourly) {
-      const labels = state.data.produccionHoraria.map(h => h.hora.split(' - ')[0]);
-      const dataMeta = state.data.produccionHoraria.map(h => h.meta);
-      const dataReal = state.data.produccionHoraria.map(h => h.real);
+      const labels = hoursToPlot.map(h => h.hora.split(' - ')[0]);
+      const dataMeta = hoursToPlot.map(h => h.meta);
+      const dataReal = hoursToPlot.map(h => h.real);
 
       chartHourly = new Chart(ctxHourly, {
         type: 'bar',
@@ -455,7 +530,7 @@
               callbacks: {
                 afterBody: (ctx) => {
                   const idx = ctx[0].dataIndex;
-                  return `Paros: ${state.data.produccionHoraria[idx].parosMin} min\n${state.data.produccionHoraria[idx].comentario}`;
+                  return `Paros: ${hoursToPlot[idx].parosMin} min\n${hoursToPlot[idx].comentario}`;
                 }
               }
             }
@@ -471,9 +546,9 @@
     // 2. Gráfica Curva de Avance Acumulado (Curva S)
     const ctxCumulative = document.getElementById('chartCumulativeCanvas');
     if (ctxCumulative) {
-      const labels = state.data.produccionHoraria.map(h => h.hora.split(' - ')[0]);
-      const acumMeta = state.data.produccionHoraria.map(h => h.acumMeta);
-      const acumReal = state.data.produccionHoraria.map(h => h.acumReal);
+      const labels = hoursToPlot.map(h => h.hora.split(' - ')[0]);
+      const acumMeta = hoursToPlot.map(h => h.acumMeta);
+      const acumReal = hoursToPlot.map(h => h.acumReal);
 
       chartCumulative = new Chart(ctxCumulative, {
         type: 'line',
@@ -1008,15 +1083,25 @@
           renderTable();
           renderAlerts();
           if (chartHourly && freshData.produccionHoraria) {
-            chartHourly.data.labels = freshData.produccionHoraria.map(h => h.hora);
-            chartHourly.data.datasets[0].data = freshData.produccionHoraria.map(h => h.real);
-            chartHourly.data.datasets[1].data = freshData.produccionHoraria.map(h => h.meta);
+            const activeFresh = freshData.produccionHoraria.filter(h =>
+              h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
+              (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+            );
+            const plotFresh = activeFresh.length > 0 ? activeFresh : freshData.produccionHoraria;
+            chartHourly.data.labels = plotFresh.map(h => h.hora.split(' - ')[0]);
+            chartHourly.data.datasets[0].data = plotFresh.map(h => h.real);
+            chartHourly.data.datasets[1].data = plotFresh.map(h => h.meta);
             chartHourly.update();
           }
           if (chartCumulative && freshData.produccionHoraria) {
-            chartCumulative.data.labels = freshData.produccionHoraria.map(h => h.hora);
-            chartCumulative.data.datasets[0].data = freshData.produccionHoraria.map(h => h.acumReal);
-            chartCumulative.data.datasets[1].data = freshData.produccionHoraria.map(h => h.acumMeta);
+            const activeFresh = freshData.produccionHoraria.filter(h =>
+              h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
+              (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+            );
+            const plotFresh = activeFresh.length > 0 ? activeFresh : freshData.produccionHoraria;
+            chartCumulative.data.labels = plotFresh.map(h => h.hora.split(' - ')[0]);
+            chartCumulative.data.datasets[0].data = plotFresh.map(h => h.acumReal);
+            chartCumulative.data.datasets[1].data = plotFresh.map(h => h.acumMeta);
             chartCumulative.update();
           }
           if (chartDowntime && freshData.parosIncidencias) {

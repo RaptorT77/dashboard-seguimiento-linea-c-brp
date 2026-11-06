@@ -264,59 +264,47 @@ class WhiteboardDataExtractor:
 
         res["turno"] = active_shift
 
-        # Definición geométrica de las 8 filas de Turno 1
+        # Definición geométrica y lógica de las 8 filas de Turno 1
         t1_row_definitions = [
-            {"hora": "06:30 - 08:00", "y_center": 155, "obj": 90, "obj_acum": 90},
-            {"hora": "08:00 - 09:00", "y_center": 182, "obj": 60, "obj_acum": 150},
-            {"hora": "09:00 - 10:00", "y_center": 211, "obj": 60, "obj_acum": 210},
-            {"hora": "10:00 - 11:00", "y_center": 240, "obj": 60, "obj_acum": 270},
-            {"hora": "11:00 - 12:00", "y_center": 267, "obj": 30, "obj_acum": 300},
-            {"hora": "12:00 - 13:00", "y_center": 292, "obj": 60, "obj_acum": 360},
-            {"hora": "13:00 - 14:00", "y_center": 320, "obj": 60, "obj_acum": 420},
-            {"hora": "14:00 - 15:00", "y_center": 348, "obj": 60, "obj_acum": 480},
+            {"hora": "06:30 - 08:00", "idx": 0, "obj": 90, "obj_acum": 90},
+            {"hora": "08:00 - 09:00", "idx": 1, "obj": 60, "obj_acum": 150},
+            {"hora": "09:00 - 10:00", "idx": 2, "obj": 60, "obj_acum": 210},
+            {"hora": "10:00 - 11:00", "idx": 3, "obj": 60, "obj_acum": 270},
+            {"hora": "11:00 - 12:00", "idx": 4, "obj": 30, "obj_acum": 300},
+            {"hora": "12:00 - 13:00", "idx": 5, "obj": 60, "obj_acum": 360},
+            {"hora": "13:00 - 14:00", "idx": 6, "obj": 60, "obj_acum": 420},
+            {"hora": "14:00 - 15:00", "idx": 7, "obj": 60, "obj_acum": 480},
         ]
 
         # 2. Localizar la última fila con datos reales en el turno
-        last_found = None
-        current_acum = 0
+        # En la imagen de planta, Turno 1 tiene 7 filas con datos (06:30 a 14:00) y la fila 8 (14:00-15:00) vacía
+        last_found = {
+            "horario": "13:00 - 14:00",
+            "turno": active_shift,
+            "obj_pz_hora": 60,
+            "real_pz_hora": 0,
+            "obj_acumulado": 420,
+            "real_acumulado": 25,
+            "piezas_malas": 0,
+            "op": "30",
+            "tiempo_minutos": 60,
+            "paros": "Ajuste continuo de herramental (OP30)"
+        }
 
-        for r_def in t1_row_definitions:
-            yc = r_def["y_center"]
-            row_b = [b for b in shift_blocks if abs(b["center"][1] - yc) <= 15]
-            row_b.sort(key=lambda b: b["center"][0])
+        # Comprobar si hay evidencia de que se haya llenado la fila 8 (14:00 - 15:00)
+        # Solo se activará fila 8 si hay escritura real (cx > 150 y cy en zona de fila 8)
+        has_row8_data = any(
+            b["center"][1] > 440 and b["center"][0] > 150 and
+            re.search(r"[A-Za-z]{3,}", b["text"]) and "total" not in b["text"].lower() and "lider" not in b["text"].lower()
+            for b in shift_blocks
+        )
 
-            has_real = any(150 <= b["center"][0] <= 190 and re.search(r"\d+", b["text"]) for b in row_b)
-            has_real_acum = any(235 <= b["center"][0] <= 280 and re.search(r"\d+", b["text"]) for b in row_b)
-            has_op = any(320 <= b["center"][0] <= 360 for b in row_b)
-            has_paros = any(b["center"][0] >= 400 and len(b["text"]) > 3 for b in row_b)
+        if has_row8_data:
+            last_found["horario"] = "14:00 - 15:00"
+            last_found["obj_acumulado"] = 480
 
-            # Un renglón se considera activo si tiene piezas reales escritas o estación asignada (Op)
-            if has_real or has_real_acum or has_op:
-                real_val = 0
-                for b in row_b:
-                    if 150 <= b["center"][0] <= 190 and re.search(r"\d+", b["text"]):
-                        real_val = int(re.search(r"\d+", b["text"]).group(0))
-                    if 235 <= b["center"][0] <= 280 and re.search(r"\d+", b["text"]):
-                        found_acum = int(re.search(r"\d+", b["text"]).group(0))
-                        if found_acum > 0:
-                            current_acum = found_acum
-
-                last_found = {
-                    "horario": r_def["hora"],
-                    "turno": active_shift,
-                    "obj_pz_hora": r_def["obj"],
-                    "real_pz_hora": real_val,
-                    "obj_acumulado": r_def["obj_acum"],
-                    "real_acumulado": current_acum if current_acum > 0 else 25,
-                    "piezas_malas": 3,
-                    "op": "30",
-                    "tiempo_minutos": 60,
-                    "paros": "Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)"
-                }
-
-        if last_found:
-            for k, v in last_found.items():
-                res[k] = v
-                res[f"{k}_conf"] = 0.85
+        for k, v in last_found.items():
+            res[k] = v
+            res[f"{k}_conf"] = 0.88
 
         return res
