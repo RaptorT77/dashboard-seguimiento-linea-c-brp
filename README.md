@@ -146,3 +146,4 @@ dashboard-seguimiento-linea-c-brp/
 - **Línea de Ensamble:** Línea C — Motores Rotax 900 ACE / 1630 ACE
 - **Colaboradores:** Kolbenschmidt Pierburg &amp; JI&FIX SIGMA S.A. de C.V.
 - **Desarrollo:** Ingeniería de Procesos y Automatización MES/SCADA
+
