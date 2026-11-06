@@ -172,9 +172,6 @@
     const heroProduct = document.getElementById('heroProduct');
     if (heroProduct) heroProduct.textContent = p.productoActual;
 
-    const heroOrder = document.getElementById('heroOrder');
-    if (heroOrder) heroOrder.textContent = p.ordenTrabajo;
-
     const heroAvail = document.getElementById('heroAvail');
     if (heroAvail) heroAvail.textContent = `${k.disponibilidad}%`;
 
@@ -474,36 +471,7 @@
       });
     }
 
-    // 3. Gráfica de OEE y Componentes
-    const ctxOee = document.getElementById('chartOeeCanvas');
-    if (ctxOee) {
-      const k = state.data.resumenKpis;
-      chartOee = new Chart(ctxOee, {
-        type: 'bar',
-        data: {
-          labels: ['Disponibilidad', 'Rendimiento', 'Calidad (FPY)', 'OEE Global'],
-          datasets: [{
-            data: [k.disponibilidad, k.rendimiento, k.calidadFpy, k.eficienciaOee],
-            backgroundColor: ['#2563EB', '#3B82F6', '#10B981', '#173D60'],
-            borderRadius: 6
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: { min: 70, max: 100, grid: { color: '#F1F5F9' } },
-            y: { grid: { display: false } }
-          }
-        }
-      });
-    }
-
-    // 4. Gráfica de Análisis de Paros (Pareto de Causas)
+    // 3. Gráfica de Análisis de Paros (Pareto de Causas)
     const ctxDowntime = document.getElementById('chartDowntimeCanvas');
     if (ctxDowntime) {
       chartDowntime = new Chart(ctxDowntime, {

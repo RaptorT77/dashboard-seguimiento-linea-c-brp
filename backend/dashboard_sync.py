@@ -198,7 +198,6 @@ class DashboardSyncService:
                 "metaTurnoUnidades": meta_dia,
                 "supervisorActual": f"Líder {record.lider}" if record.lider else "Líder Antonia",
                 "productoActual": f"{record.producto or 'WOLF V1'} (Pistón BRP)",
-                "ordenTrabajo": f"OT-{record.fecha or '2026'}-WOLF-V1",
                 "turnoActual": 1 if "Primero" in (record.turno or "") else (2 if "Segundo" in (record.turno or "") else 3)
             },
             "resumenKpis": {

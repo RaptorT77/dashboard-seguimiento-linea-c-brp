@@ -16,7 +16,6 @@ const BRP_DATA = {
     "metaTurnoUnidades": 480,
     "supervisorActual": "Líder Antonia",
     "productoActual": "WOLF V1 (Pistón BRP)",
-    "ordenTrabajo": "OT-2026-11-06-WOLF-V1",
     "turnoActual": 1
   },
   "resumenKpis": {
