@@ -1,11 +1,5 @@
 Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro,Estado_Validacion,Fecha_Registro
-2026-11-06,Primero: 06:30 a 15:00 hrs,06:30 - 08:00,C,WOLF V1,Antonia,90,96,90,80,16,0,,VALIDO,2026-11-06 08:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,08:00 - 09:00,C,WOLF V1,Antonia,60,42,150,100,22,25,* Golpe en cabeza op 20,VALIDO,2026-11-06 09:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,09:00 - 10:00,C,WOLF V1,Antonia,60,19,210,100,19,20,* Golpe en cabeza * marca de rebarba,VALIDO,2026-11-06 10:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,10:00 - 11:00,C,WOLF V1,Antonia,60,16,270,100,16,0,,VALIDO,2026-11-06 11:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,11:00 - 12:00,C,WOLF V1,Antonia,30,18,300,100,18,15,Ajuste DNs en TF,VALIDO,2026-11-06 12:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,12:00 - 13:00,C,WOLF V1,Antonia,60,36,360,120,16,0,,VALIDO,2026-11-06 13:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,59,420,165,14,0,,VALIDO,2026-11-06 14:00:00
-2026-11-06,Primero: 06:30 a 15:00 hrs,14:00 - 15:00,C,WOLF V1,Antonia,60,30,480,185,10,0,Venta => 185 | Scrap: 131,VALIDO,2026-11-06 15:00:00
-
-2026-11-06,Segundo: 15:00 a 23:00 hrs,16:00 - 17:00,C,WOLF V1,Antonia,60,60,120,0,0,0,,PARCIAL,2026-11-06 17:43:10
+2026-11-06,Primero: 06:30 a 15:00 hrs,06:30 - 08:00,C,WOLF V1,Antonia,90,28,90,25,3,40,"Ajuste Ø P/E, offset, mordazas y cambio tornillo (OP40/OP30)",VALIDO,2026-11-06 08:00:00
+2026-11-06,Primero: 06:30 a 15:00 hrs,08:00 - 09:00,C,WOLF V1,Antonia,60,0,150,25,0,60,"Paro continuo en OP30",VALIDO,2026-11-06 09:00:00
+2026-11-06,Primero: 06:30 a 15:00 hrs,09:00 - 10:00,C,WOLF V1,Antonia,60,0,210,25,0,60,"Ajuste offset - Manufactura (OP30)",VALIDO,2026-11-06 10:00:00
+2026-11-06,Primero: 06:30 a 15:00 hrs,10:00 - 11:00,C,WOLF V1,Antonia,60,0,270,25,0,60,"Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)",VALIDO,2026-11-06 11:00:00

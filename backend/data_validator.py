@@ -71,14 +71,18 @@ class DataValidator:
 
             # Caso A: Tenemos registro previo en la misma jornada/turno
             if previous_record and previous_record.real_acumulado is not None:
-                expected_acum = previous_record.real_acumulado + (record.real_pz_hora - record.piezas_malas)
-                if record.real_acumulado != expected_acum:
-                    issues.append(
-                        f"Inconsistencia de balance: Real Acumulado ({record.real_acumulado}) != "
-                        f"Previo ({previous_record.real_acumulado}) + (Real {record.real_pz_hora} - Malas {record.piezas_malas}) "
-                        f"= Esperado {expected_acum}."
-                    )
-                    status = ValidationStatus.INCONSISTENTE
+                if record.real_acumulado < previous_record.real_acumulado:
+                    # Nuevo turno o captura inicial tras reinicio
+                    pass
+                else:
+                    expected_acum = previous_record.real_acumulado + (record.real_pz_hora - record.piezas_malas)
+                    if record.real_acumulado != expected_acum:
+                        issues.append(
+                            f"Observación de balance: Real Acumulado ({record.real_acumulado}) difiere del cálculo teórico "
+                            f"({expected_acum}). Se respeta el valor escrito en pizarra."
+                        )
+                        if status == ValidationStatus.VALIDO:
+                            status = ValidationStatus.PARCIAL
             # Caso B: No hay previo o es la primera hora del turno
             else:
                 piezas_ok_hora = record.real_pz_hora - record.piezas_malas

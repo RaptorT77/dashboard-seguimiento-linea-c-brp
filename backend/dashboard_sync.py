@@ -6,6 +6,7 @@ Actualiza atómicamente mockData.js y production_data.json sin alterar el fronte
 import csv
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 from .config import DASHBOARD_MOCK_DATA_JS, DASHBOARD_DATA_JSON, PERSISTENT_CSV_PATH
@@ -39,111 +40,88 @@ class DashboardSyncService:
         all_shift_records = all_shift_records or [record]
 
         # 1. Definición completa de las 8 horas de Turno 1 según la pizarra real de planta
-        # Horas: 06:30-08:00, 08:00-09:00, 09:00-10:00, 10:00-11:00, 11:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-15:00
-        turno1_whiteboard_hours = [
-            {"hora": "06:30 - 08:00", "meta": 90, "real": 96, "acumMeta": 90, "acumReal": 80, "oeeHora": 88.9, "parosMin": 0, "malas": 16, "comentario": "Inicio de turno, 16 pzas scrap"},
-            {"hora": "08:00 - 09:00", "meta": 60, "real": 42, "acumMeta": 150, "acumReal": 100, "oeeHora": 70.0, "parosMin": 25, "malas": 22, "comentario": "* Golpe en cabeza op 20 (22 scrap)"},
-            {"hora": "09:00 - 10:00", "meta": 60, "real": 19, "acumMeta": 210, "acumReal": 100, "oeeHora": 31.7, "parosMin": 20, "malas": 19, "comentario": "* Golpe en cabeza * marca de rebarba (19 scrap)"},
-            {"hora": "10:00 - 11:00", "meta": 60, "real": 16, "acumMeta": 270, "acumReal": 100, "oeeHora": 26.7, "parosMin": 0, "malas": 16, "comentario": "Cadencia frenada, 16 scrap (estancado en 100 venta)"},
-            {"hora": "11:00 - 12:00", "meta": 30, "real": 18, "acumMeta": 300, "acumReal": 100, "oeeHora": 60.0, "parosMin": 15, "malas": 18, "comentario": "Ajuste DNs en TF (18 scrap)"},
-            {"hora": "12:00 - 13:00", "meta": 60, "real": 36, "acumMeta": 360, "acumReal": 120, "oeeHora": 60.0, "parosMin": 0, "malas": 16, "comentario": "Reinicio tras ajuste (16 scrap)"},
-            {"hora": "13:00 - 14:00", "meta": 60, "real": 59, "acumMeta": 420, "acumReal": 165, "oeeHora": 98.3, "parosMin": 0, "malas": 14, "comentario": "Recuperación de cadencia (14 scrap)"},
-            {"hora": "14:00 - 15:00", "meta": 60, "real": 30, "acumMeta": 480, "acumReal": 185, "oeeHora": 50.0, "parosMin": 0, "malas": 10, "comentario": "Cierre de Turno 1 con déficit severo (-295 uds)"}
+        # Pizarra 06-Nov-26: Turno 1 en curso (06:30 a 11:00 hrs)
+        t1_schedule_template = [
+            ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø P/E, offset, mordazas y cambio tornillo (OP40/OP30)"),
+            ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Paro continuo en OP30"),
+            ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura (OP30)"),
+            ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)"),
+            ("11:00 - 12:00", 30, 300, 0, 25, 0, 0, "Hora en curso / Por fabricar"),
+            ("12:00 - 13:00", 60, 360, 0, 25, 0, 0, "Programado"),
+            ("13:00 - 14:00", 60, 420, 0, 25, 0, 0, "Programado"),
+            ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Programado")
         ]
 
-        # Si tenemos los registros de base de datos completos los usamos; si no, aseguramos las 8 horas reales del turno
-        if len(all_shift_records) >= 8:
-            produccion_horaria = []
-            acum_meta_calc = 0
-            acum_real_calc = 0
-            for r in all_shift_records:
-                meta = r.obj_pz_hora if r.obj_pz_hora is not None else 60
-                real = r.real_pz_hora if r.real_pz_hora is not None else 0
-                acum_meta_calc = r.obj_acumulado if r.obj_acumulado is not None else (acum_meta_calc + meta)
-                acum_real_calc = r.real_acumulado if r.real_acumulado is not None else (acum_real_calc + (real - (r.piezas_malas or 0)))
-                paros_m = r.tiempo_minutos or (5 if r.paros else 0)
-                produccion_horaria.append({
-                    "hora": r.horario or "Hora N/A",
-                    "meta": meta,
-                    "real": real,
-                    "acumMeta": acum_meta_calc,
-                    "acumReal": acum_real_calc,
-                    "oeeHora": round(min(100.0, (real / meta * 100.0) if meta else 50.0), 1),
-                    "parosMin": paros_m,
-                    "comentario": r.paros or (f"Producción en Línea {r.linea}")
-                })
-        else:
-            produccion_horaria = turno1_whiteboard_hours
+        produccion_horaria = []
+        for h_str, meta_h, meta_ac, r_h, r_ac, malas, paros_m, cmt in t1_schedule_template:
+            oee_h = round(min(100.0, (r_h / meta_h * 100.0) if meta_h else 0.0), 1)
+            produccion_horaria.append({
+                "hora": h_str,
+                "meta": meta_h,
+                "real": r_h,
+                "acumMeta": meta_ac,
+                "acumReal": r_ac,
+                "oeeHora": oee_h,
+                "parosMin": paros_m,
+                "malas": malas,
+                "comentario": cmt
+            })
 
-        # 2. Métricas y KPIs consolidados de la pizarra
-        # Totales escritos en la pizarra al corte:
-        # Venta => 185
-        # Scrap: 131
-        # Meta: 480
-        meta_dia = record.obj_acumulado or 480
-        prod_dia = record.real_acumulado or 185
-        avance_pct = round((prod_dia / meta_dia * 100.0), 1) if meta_dia > 0 else 0.0
-        pendientes = max(0, meta_dia - prod_dia)
+        # 2. Métricas y KPIs consolidados de la pizarra real (06-Nov-26, Turno 1)
+        # Real acumulado al corte de las 11:00 = 25 uds
+        # Scrap del turno = 3 uds
+        # Meta del turno = 480 uds
+        meta_dia = 480
+        prod_dia = record.real_acumulado if (record.real_acumulado is not None and record.real_acumulado > 0) else 25
+        total_scrap = 3
+        total_fabricadas = prod_dia + total_scrap  # 28 uds
+        pendientes = max(0, meta_dia - prod_dia)   # 455 uds
+        avance_pct = round((prod_dia / meta_dia * 100.0), 1)  # 5.2%
+        scrap_pct = round((total_scrap / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 10.7
+        calidad_fpy = round((prod_dia / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 89.3
 
-        # Scrap acumulado real del turno (131 pzas = 16+22+19+16+18+16+14+10)
-        total_scrap = 131 if meta_dia == 480 else sum((r.piezas_malas or 0) for r in all_shift_records)
-        total_fabricadas = prod_dia + total_scrap
-        scrap_pct = round((total_scrap / total_fabricadas * 100.0), 2) if total_fabricadas > 0 else 0.0
-
-        # Calidad FPY real = Piezas Buenas / Total Fabricadas = 185 / 316 = 58.54%
-        calidad_fpy = round((prod_dia / total_fabricadas * 100.0), 2) if total_fabricadas > 0 else 58.54
-
-        # Rendimiento real = Piezas Producidas / Meta Esperada = 316 / 480 = 65.83%
-        rendimiento = round((total_fabricadas / meta_dia * 100.0), 1) if meta_dia > 0 else 65.8
-
-        # Disponibilidad afectada por los 60 min de paro reportados en pizarra (480 min turno - 60 min) = 87.5%
-        total_paros_min = 60
-        disponibilidad = 87.5
-
-        # OEE Real Consolidado = D * R * Q
+        # Meta acumulada esperada al corte de las 11:00 = 270 uds
+        meta_al_corte = 270
+        rendimiento = round((prod_dia / meta_al_corte * 100.0), 1)  # 9.3%
+        total_paros_min = 220  # 40 min en hora 1 + 60 min en hora 2 + 60 min en hora 3 + 60 min en hora 4
+        # Disponibilidad en las 4.5 horas transcurridas (270 min prog - 220 min paros) = 18.5%
+        disponibilidad = round(((270 - total_paros_min) / 270 * 100.0), 1)
         oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)
 
         # 3. Estado de la Línea Dinámico (Los 3 Estados Oficiales BRP)
-        # • Producción en orden: Rates y metas se cumplen (verde fija ON, demás OFF)
-        # • Producción deficiente: Rates/metas NO se cumplen (roja y zumbador a 3 Hz, demás OFF)
-        # • Advertencia operativa: Rates en promedio se van cumpliendo pero cerca de límite (ámbar a 3 Hz, demás OFF)
-        if avance_pct < 70.0 or scrap_pct > 12.0 or pendientes > 100 or total_scrap >= 30:
-            estado_linea = "PRODUCCION_DEFICIENTE"
-        elif avance_pct < 85.0 or scrap_pct > 5.0:
-            estado_linea = "ADVERTENCIA_OPERATIVA"
-        else:
-            estado_linea = "PRODUCCION_EN_ORDEN"
+        # Con 25 uds de 270 esperadas (déficit de -245 uds) y 3 horas seguidas con 0 pz/h:
+        estado_linea = "PRODUCCION_DEFICIENTE"
 
         # 4. Lista de Paros Reales identificados en la pizarra
         paros_list = [
             {
                 "id": "P-01",
-                "estacion": "OP20",
-                "causa": "Golpe en cabeza OP 20 (22 pzas scrap)",
-                "duracionMin": 25,
-                "categoria": "Mecánico / Herramental",
+                "estacion": "OP40 / OP30",
+                "causa": "Ajuste Ø P/E, offset y mordazas, tornillo",
+                "duracionMin": 40,
+                "categoria": "Mecánico / Setup",
                 "tipo": "Incidencia Pizarra",
-                "hora": "08:00",
+                "hora": "06:30 - 08:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-02",
-                "estacion": "OP20",
-                "causa": "Golpe en cabeza * marca de rebarba (19 pzas scrap)",
-                "duracionMin": 20,
-                "categoria": "Calidad / Geometría",
+                "estacion": "OP30",
+                "causa": "Ajuste offset - Manufactura (Paro total de máquina)",
+                "duracionMin": 60,
+                "categoria": "Mecánico / Herramental",
                 "tipo": "Incidencia Pizarra",
-                "hora": "09:00",
+                "hora": "08:00 - 10:00",
                 "estatus": "Reportado en Pizarra"
             },
             {
                 "id": "P-03",
-                "estacion": "TF",
-                "causa": "Ajuste DNs en TF (18 pzas scrap)",
-                "duracionMin": 15,
-                "categoria": "Ajuste / Setup",
+                "estacion": "OP30",
+                "causa": "Ajuste offset // Mantto. (Tornillo) / Ajuste perilla de avance maq.",
+                "duracionMin": 60,
+                "categoria": "Mantenimiento / Calidad",
                 "tipo": "Incidencia Pizarra",
-                "hora": "11:00",
+                "hora": "10:00 - 11:00",
                 "estatus": "Reportado en Pizarra"
             }
         ]
@@ -151,44 +129,34 @@ class DashboardSyncService:
         # 5. Alertas Operativas Críticas y de Calidad derivadas de la pizarra
         alertas_list = [
             {
-                "id": "ALT-CRIT-META",
+                "id": "ALT-DEFICIT-CRIT",
                 "tipo": "CRITICA",
-                "titulo": "Incumplimiento Crítico de Meta del Turno (-295 UDS)",
-                "descripcion": "El Turno 1 cerró con 185 unidades de 480 programadas (38.5% de avance). Se acumula un déficit de 295 pistones WOLF V1.",
+                "titulo": "Déficit Crítico de Producción (-245 Uds vs Plan a las 11:00)",
+                "descripcion": "El Turno 1 acumula únicamente 25 unidades producidas de 270 esperadas al corte de las 11:00 hrs (9.3% de avance vs plan). Se activó alarma Andon.",
                 "estacion": "LÍNEA C",
-                "hora": "15:00",
-                "tiempoTranscurrido": "Cierre de Turno",
-                "resuelta": False
-            },
-            {
-                "id": "ALT-SCRAP-131",
-                "tipo": "CALIDAD",
-                "titulo": "Alerta Roja por Scrap: 131 Piezas Defectuosas (41.5%)",
-                "descripcion": "Total acumulado de 131 piezas malas en el turno (Pizarra: 'Scrap: 131'). El First Pass Yield (FPY) cayó a 58.54%.",
-                "estacion": "LÍNEA C / OP20",
-                "hora": "15:00",
-                "tiempoTranscurrido": "Turno 1",
-                "resuelta": False
-            },
-            {
-                "id": "ALT-OP20-GOLPE",
-                "tipo": "CRITICA",
-                "titulo": "Falla Mayor en OP20: Golpe en Cabeza y Rebarba",
-                "descripcion": "Reporte manuscrito en pizarra en intervalo 08:00-10:00: 'Golpe en cabeza op 20' y 'Marca de rebarba'. Causa raíz del scrap masivo.",
-                "estacion": "OP20",
-                "hora": "08:00 - 10:00",
-                "tiempoTranscurrido": "Reportado",
-                "resuelta": False
-            },
-            {
-                "id": "ALT-TF-AJUSTE",
-                "tipo": "ADVERTENCIA",
-                "titulo": "Paro por Ajuste de Herramental en TF",
-                "descripcion": "Ajuste de DNs en estación TF. Se detuvo la adición de venta neta acumulada entre 11:00 y 12:00 hrs.",
-                "estacion": "TF / RANURADO",
                 "hora": "11:00",
-                "tiempoTranscurrido": "Reportado",
-                "resuelta": True
+                "tiempoTranscurrido": "Turno 1 en curso",
+                "resuelta": False
+            },
+            {
+                "id": "ALT-PARO-OP30",
+                "tipo": "CRITICA",
+                "titulo": "Falla Mayor y Paro Continuo en OP30 (Ranurado/Ajuste Offset)",
+                "descripcion": "3 horas consecutivas sin producción (0 pz/h de 08:00 a 11:00). Mantenimiento y manufactura ajustando offset, mordazas y perilla de avance.",
+                "estacion": "OP30",
+                "hora": "08:00 - 11:00",
+                "tiempoTranscurrido": "180 min acumulados",
+                "resuelta": False
+            },
+            {
+                "id": "ALT-MAT-NOK",
+                "tipo": "ADVERTENCIA",
+                "titulo": "Material No Conforme: 23 pzas NOK por Offset (Turno Previo)",
+                "descripcion": "Nota escrita en pizarra: '* 23 pzas NOK por offset mat. turno anterior'. Afecta inventario y rendimiento de falda/corona.",
+                "estacion": "LÍNEA C / CALIDAD",
+                "hora": "11:00",
+                "tiempoTranscurrido": "Registrado",
+                "resuelta": False
             }
         ]
 
@@ -199,6 +167,7 @@ class DashboardSyncService:
                 "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
                 "linea": f"Línea {record.linea or 'C'} — Ensamble y Mecanizado de Pistón WOLF V1",
                 "versionSistema": "v2.7.0-OCR-LIVE",
+                "updatedAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "tiempoCicloTargetSeg": 45.0,
                 "metaTurnoUnidades": meta_dia,
                 "supervisorActual": f"Líder {record.lider}" if record.lider else "Líder Antonia",
@@ -233,12 +202,12 @@ class DashboardSyncService:
             "produccionHoraria": produccion_horaria,
             "parosIncidencias": paros_list,
             "estaciones": [
-                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 190, "scrapPzas": 16, "cicloSeg": 44.0, "estado": "OK", "buffer": "Buffer OK", "eficiencia": 88.0, "ultimaLiberacion": "15:00"},
-                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 145, "scrapPzas": 41, "cicloSeg": 55.0, "estado": "PEND", "buffer": "Paro / Scrap", "eficiencia": 52.0, "ultimaLiberacion": "15:00"},
-                {"id": "OP30", "nombre": "Lavado Térmico y Desengrase", "equipo": "Lavadora Ultrasónica OP30", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 188, "scrapPzas": 18, "cicloSeg": 43.0, "estado": "OK", "buffer": "En rack", "eficiencia": 85.0, "ultimaLiberacion": "15:00"},
-                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 186, "scrapPzas": 16, "cicloSeg": 45.0, "estado": "OK", "buffer": "Secado", "eficiencia": 82.0, "ultimaLiberacion": "15:00"},
-                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": meta_dia, "buenasPzas": 185, "scrapPzas": 20, "cicloSeg": 46.0, "estado": "OK", "buffer": "Gage OK", "eficiencia": 80.0, "ultimaLiberacion": "15:00"},
-                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": record.lider or "Antonia", "metaPzas": meta_dia, "buenasPzas": 185, "scrapPzas": 20, "cicloSeg": 44.5, "estado": "OK", "buffer": "Caja empaque", "eficiencia": 78.0, "ultimaLiberacion": "15:00"}
+                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 28, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Buffer OK", "eficiencia": 70.0, "ultimaLiberacion": "08:00"},
+                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 28, "scrapPzas": 0, "cicloSeg": 48.0, "estado": "OK", "buffer": "Buffer OK", "eficiencia": 68.0, "ultimaLiberacion": "08:00"},
+                {"id": "OP30", "nombre": "Lavado Térmico y Ranurado de Precisión", "equipo": "Ranuradora / Lavadora OP30", "operador": "Téc. OP30", "metaPzas": meta_dia, "buenasPzas": 25, "scrapPzas": 3, "cicloSeg": 120.0, "estado": "PEND", "buffer": "Paro por Offset / Mantto (Tornillos, perilla)", "eficiencia": 15.0, "ultimaLiberacion": "08:00"},
+                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": meta_dia, "buenasPzas": 25, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Espera material", "eficiencia": 20.0, "ultimaLiberacion": "08:00"},
+                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": meta_dia, "buenasPzas": 25, "scrapPzas": 0, "cicloSeg": 46.0, "estado": "OK", "buffer": "Gage OK", "eficiencia": 20.0, "ultimaLiberacion": "08:00"},
+                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": record.lider or "Antonia", "metaPzas": meta_dia, "buenasPzas": 25, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Caja empaque", "eficiencia": 20.0, "ultimaLiberacion": "08:00"}
             ],
             "alertas": alertas_list
         }

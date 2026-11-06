@@ -999,6 +999,8 @@
 
         if (curProd !== freshProd || curStatus !== freshStatus || curHours !== freshHours) {
           console.log('[AUTO-SYNC] Nueva información horaria detectada, actualizando interfaz...');
+          localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
+          localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');
           state.data = freshData;
           renderKpis();
           renderHeroWidgets();

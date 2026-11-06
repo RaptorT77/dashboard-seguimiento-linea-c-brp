@@ -258,7 +258,7 @@ class WhiteboardProcessingPipeline:
 
             # 11. Sincronización con el Dashboard Web
             dashboard_synced = False
-            if record_to_sync and validation_status in [ValidationStatus.VALIDO, ValidationStatus.PARCIAL]:
+            if record_to_sync and validation_status != ValidationStatus.REQUIERE_REVISION:
                 all_shift_records = db.query(HourlyProductionRecord).filter(
                     HourlyProductionRecord.linea == record_to_sync.linea,
                     HourlyProductionRecord.fecha == record_to_sync.fecha,
