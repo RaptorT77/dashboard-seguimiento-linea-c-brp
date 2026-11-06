@@ -1149,12 +1149,7 @@
     if (selectStation) {
       selectStation.value = stationId;
       state.filterStation = stationId;
-      renderTable();
-      const tableSec = document.getElementById('tableSection');
-      if (tableSec) {
-        tableSec.scrollIntoView({ behavior: 'smooth' });
-      }
-      showToast(`Filtrado por estación: ${stationId}`);
+      showToast(`Estación seleccionada: ${stationId}`);
     }
   };
 
