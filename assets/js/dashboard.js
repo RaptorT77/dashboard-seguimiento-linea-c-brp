@@ -327,32 +327,10 @@
   }
 
   /**
-   * Renderizar Diagrama de Avance de Estaciones (Flow)
+   * Renderizar Diagrama de Avance de Estaciones (Flow - Retirado)
    */
   function renderStationsFlow() {
-    const container = document.getElementById('stationsFlowContainer');
-    if (!container) return;
-
-    container.innerHTML = state.data.estaciones.map(e => {
-      let badgeClass = 'status-ok';
-      if (e.estado === 'RUN') badgeClass = 'status-run';
-      if (e.estado === 'PEND' || e.estado === 'PARO') badgeClass = 'status-pend';
-
-      return `
-        <div class="station-node-card" data-station="${e.id}" onclick="window.filterByStationCard('${e.id}')">
-          <div class="station-node-header">
-            <span class="station-id">${e.id}</span>
-            <span class="station-status-pill ${badgeClass}">${e.estado}</span>
-          </div>
-          <div class="station-name" title="${e.nombre}">${e.nombre}</div>
-          <div class="station-metrics">
-            <div>Buenas: <strong>${e.buenasPzas}</strong> / Meta: ${e.metaPzas}</div>
-            <div>Ciclo: <strong>${e.cicloSeg}s</strong> | Scrap: ${e.scrapPzas}</div>
-            <div>Eficiencia: <strong>${e.eficiencia}%</strong></div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    // Apartado retirado
   }
 
   /**
