@@ -20,6 +20,7 @@ STORAGE_DIR = BASE_DIR / "storage"
 RAW_IMAGES_DIR = STORAGE_DIR / "raw_images"
 PROCESSED_IMAGES_DIR = STORAGE_DIR / "processed_images"
 AUDIT_LOGS_DIR = STORAGE_DIR / "audit_logs"
+SHIFT_ARCHIVE_DIR = STORAGE_DIR / "turnos"
 DATABASE_URL = f"sqlite:///{STORAGE_DIR / 'production_data.db'}"
 
 # Rutas de integración con el Dashboard Web existente

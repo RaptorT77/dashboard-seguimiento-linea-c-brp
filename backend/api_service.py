@@ -131,6 +131,80 @@ def reset_production_telemetry(db: Session = Depends(get_db)):
     }
 
 
+@app.post("/api/shift-change")
+def perform_shift_change(target_shift: Optional[int] = None, db: Session = Depends(get_db)):
+    """
+    Ejecuta el Cambio de Turno Oficial de Línea C:
+    1. Archiva todos los datos del turno saliente en un CSV oficial inmutable.
+    2. Restablece y limpia los datos del dashboard a ceros.
+    3. Inicializa la cuadrícula horaria y KPIs para el turno entrante.
+    """
+    from .dashboard_sync import DashboardSyncService
+    sync_svc = DashboardSyncService()
+
+    # 1. Determinar turno actual
+    current_shift = 1
+    if sync_svc.json_data_path.exists():
+        try:
+            with open(sync_svc.json_data_path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+                current_shift = d.get("planta", {}).get("turnoActual", 1)
+        except Exception:
+            pass
+
+    # 2. Archivar turno saliente en archivo CSV
+    archived_file = sync_svc.archive_shift_to_csv(turno_num=current_shift)
+
+    # 3. Desmarcar registros previos en base de datos
+    db.query(HourlyProductionRecord).update({HourlyProductionRecord.is_latest: False})
+    db.commit()
+
+    # 4. Determinar siguiente turno
+    next_shift = target_shift if target_shift in [1, 2, 3] else ((current_shift % 3) + 1)
+
+    # 5. Limpiar dashboard para el nuevo turno
+    new_data = sync_svc.reset_production_data(target_turno=next_shift)
+
+    return {
+        "status": "success",
+        "message": f"Turno {current_shift} archivado en CSV. Turno {next_shift} inicializado correctamente.",
+        "archived_csv": archived_file.name if archived_file else None,
+        "next_shift": next_shift,
+        "data": new_data
+    }
+
+
+@app.get("/api/shifts/archived")
+def list_archived_shifts():
+    """Lista todos los turnos archivados en formato CSV disponibles para descarga."""
+    from .config import SHIFT_ARCHIVE_DIR
+    if not SHIFT_ARCHIVE_DIR.exists():
+        return []
+    files = sorted(list(SHIFT_ARCHIVE_DIR.glob("Turno_*.csv")), key=lambda f: f.stat().st_mtime, reverse=True)
+    return [
+        {
+            "filename": f.name,
+            "size_bytes": f.stat().st_size,
+            "modified_at": datetime.fromtimestamp(f.stat().st_mtime).isoformat()
+        }
+        for f in files
+    ]
+
+
+@app.get("/api/shifts/download/{filename}")
+def download_archived_shift(filename: str):
+    """Permite descargar un archivo CSV de turno archivado específico."""
+    from .config import SHIFT_ARCHIVE_DIR
+    target_path = SHIFT_ARCHIVE_DIR / filename
+    if not target_path.exists():
+        raise HTTPException(status_code=404, detail=f"Archivo {filename} no encontrado")
+    return FileResponse(
+        target_path,
+        media_type="text/csv",
+        filename=filename
+    )
+
+
 @app.get("/api/production/export-csv")
 def export_persistent_csv():
     """Descarga el archivo CSV acumulado persistente oficial de Línea C."""

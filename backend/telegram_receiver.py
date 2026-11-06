@@ -43,6 +43,19 @@ class TelegramPhotoReceiver:
         except Exception as e:
             AuditLogger.log_event("TELEGRAM_SEND_ERROR", f"Error enviando mensaje: {e}", level="ERROR")
 
+    def send_document(self, chat_id: Union[int, str], file_path: Path, caption: Optional[str] = None):
+        """Envía un archivo (por ejemplo un CSV) al chat de Telegram."""
+        try:
+            with open(file_path, "rb") as f:
+                files = {"document": f}
+                data = {"chat_id": chat_id}
+                if caption:
+                    data["caption"] = caption
+                    data["parse_mode"] = "Markdown"
+                requests.post(f"{self.api_url}/sendDocument", data=data, files=files, timeout=20)
+        except Exception as e:
+            AuditLogger.log_event("TELEGRAM_SEND_DOC_ERROR", f"Error enviando documento: {e}", level="ERROR")
+
     def _git_push_background(self):
         """Actualiza el repositorio en segundo plano para reflejar datos en GitHub Pages."""
         def _task():
@@ -138,6 +151,7 @@ class TelegramPhotoReceiver:
                     "• /advertencia — 🟡 Advertencia operativa (Ámbar a 3 Hz)\n"
                     "• /deficiente — 🚨 Producción deficiente (Roja + Buzzer a 3 Hz)\n"
                     "• /status — 📊 Consultar telemetría y KPIs actuales\n"
+                    "• /cambioturno — 📁 Archivar turno en CSV y preparar siguiente turno\n"
                     "• /reset — 🔄 Restablecer dashboard a ceros (conserva historial CSV)\n\n"
                     "🌐 *Dashboard Web en Vivo:* [Ver en GitHub Pages](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)"
                 )
@@ -181,6 +195,34 @@ class TelegramPhotoReceiver:
             elif text.startswith("/status"):
                 status_text = self.get_system_status_summary()
                 self.send_message(chat_id, status_text, reply_to_message_id=msg_id)
+            elif text.startswith("/cambioturno"):
+                archived_path = self.pipeline.sync_service.archive_shift_to_csv()
+                current_shift = 1
+                try:
+                    with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+                        d = json.load(f)
+                        current_shift = d.get("planta", {}).get("turnoActual", 1)
+                except Exception:
+                    pass
+                next_shift = (current_shift % 3) + 1
+                self.pipeline.sync_service.reset_production_data(target_turno=next_shift)
+                self._git_push_background()
+
+                if archived_path and archived_path.exists():
+                    self.send_document(
+                        chat_id,
+                        archived_path,
+                        caption=f"📁 *Reporte Oficial de Cierre — Turno {current_shift}*\nArchivo CSV generado automáticamente para auditoría de Línea C."
+                    )
+                self.send_message(
+                    chat_id,
+                    f"🔄 *CAMBIO DE TURNO REALIZADO CON ÉXITO*\n\n"
+                    f"• *Turno Saliente:* Turno {current_shift} (Archivado y respaldado en CSV).\n"
+                    f"• *Turno Entrante:* Turno {next_shift} (Dashboard limpio a ceros).\n"
+                    f"• *Torre Andon:* Restablecida a PRODUCCIÓN EN ORDEN (Verde Fija).\n\n"
+                    f"📷 *Listo para recibir la primera fotografía del Turno {next_shift}.*",
+                    reply_to_message_id=msg_id
+                )
             elif text.startswith("/reset"):
                 self.pipeline.sync_service.reset_production_data()
                 self.send_message(

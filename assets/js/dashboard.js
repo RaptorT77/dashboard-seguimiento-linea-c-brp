@@ -700,6 +700,14 @@
       });
     }
 
+    // Botón Cambio de Turno Oficial (Esquina Superior Derecha)
+    const btnShiftChange = document.getElementById('btnShiftChange');
+    if (btnShiftChange) {
+      btnShiftChange.addEventListener('click', () => {
+        handleShiftChange();
+      });
+    }
+
     // Botón Reset General de Datos (Esquina Superior Derecha)
     const btnResetData = document.getElementById('btnResetData');
     if (btnResetData) {
@@ -787,6 +795,296 @@
     try {
       localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(records));
     } catch (e) {}
+  }
+
+  const SHIFT_CONFIGS = {
+    1: {
+      id: 1,
+      nombre: 'Turno 1 - Matutino',
+      horario: '06:30 - 15:00',
+      supervisor: 'Líder Antonia',
+      meta: 480,
+      horas: [
+        { hora: '06:30 - 08:00', meta: 90, acumMeta: 90 },
+        { hora: '08:00 - 09:00', meta: 60, acumMeta: 150 },
+        { hora: '09:00 - 10:00', meta: 60, acumMeta: 210 },
+        { hora: '10:00 - 11:00', meta: 60, acumMeta: 270 },
+        { hora: '11:00 - 12:00', meta: 30, acumMeta: 300 },
+        { hora: '12:00 - 13:00', meta: 60, acumMeta: 360 },
+        { hora: '13:00 - 14:00', meta: 60, acumMeta: 420 },
+        { hora: '14:00 - 15:00', meta: 60, acumMeta: 480 }
+      ]
+    },
+    2: {
+      id: 2,
+      nombre: 'Turno 2 - Vespertino',
+      horario: '15:00 - 23:00',
+      supervisor: 'Ing. Roberto Garza',
+      meta: 450,
+      horas: [
+        { hora: '15:00 - 16:00', meta: 60, acumMeta: 60 },
+        { hora: '16:00 - 17:00', meta: 60, acumMeta: 120 },
+        { hora: '17:00 - 18:00', meta: 60, acumMeta: 180 },
+        { hora: '18:00 - 19:00', meta: 60, acumMeta: 240 },
+        { hora: '19:00 - 20:00', meta: 30, acumMeta: 270 },
+        { hora: '20:00 - 21:00', meta: 60, acumMeta: 330 },
+        { hora: '21:00 - 22:00', meta: 60, acumMeta: 390 },
+        { hora: '22:00 - 23:00', meta: 60, acumMeta: 450 }
+      ]
+    },
+    3: {
+      id: 3,
+      nombre: 'Turno 3 - Nocturno',
+      horario: '23:00 - 06:30',
+      supervisor: 'Ing. Diana Soto',
+      meta: 420,
+      horas: [
+        { hora: '23:00 - 24:00', meta: 60, acumMeta: 60 },
+        { hora: '24:00 - 01:00', meta: 60, acumMeta: 120 },
+        { hora: '01:00 - 02:00', meta: 60, acumMeta: 180 },
+        { hora: '02:00 - 03:00', meta: 60, acumMeta: 240 },
+        { hora: '03:00 - 04:00', meta: 30, acumMeta: 270 },
+        { hora: '04:00 - 05:00', meta: 60, acumMeta: 330 },
+        { hora: '05:00 - 06:30', meta: 90, acumMeta: 420 }
+      ]
+    }
+  };
+
+  /**
+   * Genera y descarga el archivo CSV oficial dedicado para el turno saliente.
+   */
+  function archiveShiftToCsv(shiftId) {
+    const sId = shiftId || state.data.planta?.turnoActual || 1;
+    const cfg = SHIFT_CONFIGS[sId] || SHIFT_CONFIGS[1];
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const k = state.data.resumenKpis || {};
+    const supervisor = state.data.planta?.supervisorActual || cfg.supervisor;
+    const producto = state.data.planta?.productoActual || 'WOLF V1 (Pistón BRP)';
+
+    let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
+    csvContent += '# =============================================================================\r\n';
+    csvContent += '# BRP ROTAX MÉXICO — PLANTA KOLBEN SCHMIDT CELAYA\r\n';
+    csvContent += `# REPORTE OFICIAL DE CIERRE DE TURNO: ${cfg.nombre.toUpperCase()}\r\n`;
+    csvContent += `# Fecha: ${todayStr} | Turno: ${cfg.nombre} (${cfg.horario} hrs)\r\n`;
+    csvContent += `# Supervisor: ${supervisor} | Producto: ${producto}\r\n`;
+    csvContent += `# Producción Real: ${k.produccionDia || 0} uds | Meta: ${k.metaDiaria || cfg.meta} uds | Cumplimiento: ${(k.porcentajeAvance || 0).toFixed(1)}%\r\n`;
+    csvContent += `# Scrap / NOK: ${k.scrapPiezas || 0} uds (${(k.scrapPorcentaje || 0).toFixed(1)}%) | Paros: ${k.parosAcumuladosMin || 0} min (${k.eventosParo || 0} eventos)\r\n`;
+    csvContent += `# Eficiencia OEE: ${(k.eficienciaOee || 0).toFixed(1)}% | Estado Final: ${k.estadoLinea || 'PRODUCCION_EN_ORDEN'}\r\n`;
+    csvContent += `# Fecha/Hora de Cierre: ${new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC\r\n`;
+    csvContent += '# =============================================================================\r\n';
+    csvContent += 'Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro_Incidencia,Estado_Linea,Timestamp_Registro\r\n';
+
+    (state.data.produccionHoraria || []).forEach(h => {
+      const row = [
+        todayStr,
+        `"${cfg.nombre} (${cfg.horario})"`,
+        `"${h.hora}"`,
+        '"C"',
+        `"${producto}"`,
+        `"${supervisor}"`,
+        h.meta ?? 0,
+        h.real ?? 0,
+        h.acumMeta ?? 0,
+        h.acumReal ?? 0,
+        h.malas ?? 0,
+        h.parosMin ?? 0,
+        `"${(h.comentario || '').replace(/"/g, '""')}"`,
+        `"${k.estadoLinea || 'PRODUCCION_EN_ORDEN'}"`,
+        `"${new Date().toISOString()}"`
+      ];
+      csvContent += row.join(',') + '\r\n';
+    });
+
+    if (state.data.parosIncidencias && state.data.parosIncidencias.length > 0) {
+      csvContent += '\r\n';
+      csvContent += '# DESGLOSE DETALLADO DE PAROS E INCIDENCIAS DEL TURNO\r\n';
+      csvContent += 'ID,Horario,Duracion_Min,Estacion,Causa_Motivo,Tipo_Impacto,Estatus\r\n';
+      state.data.parosIncidencias.forEach(p => {
+        csvContent += [
+          p.id || 'PARO',
+          `"${p.hora || ''}"`,
+          p.duracionMin || 0,
+          `"${p.estacion || 'OP30'}"`,
+          `"${(p.causa || '').replace(/"/g, '""')}"`,
+          `"${p.categoria || 'CRITICA'}"`,
+          '"Registrado"'
+        ].join(',') + '\r\n';
+      });
+    }
+
+    const slug = cfg.nombre.split(' - ')[1] || 'Matutino';
+    const filename = `Turno_${cfg.id}_${slug}_${todayStr}.csv`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    try {
+      const archivedHistory = JSON.parse(localStorage.getItem('BRP_ARCHIVED_SHIFTS') || '[]');
+      archivedHistory.push({
+        shiftId: cfg.id,
+        shiftName: cfg.nombre,
+        date: todayStr,
+        filename: filename,
+        totalProduced: k.produccionDia || 0,
+        target: k.metaDiaria || cfg.meta,
+        totalDowntimeMin: k.parosAcumuladosMin || 0,
+        oee: k.eficienciaOee || 0.0,
+        archivedAt: new Date().toISOString()
+      });
+      localStorage.setItem('BRP_ARCHIVED_SHIFTS', JSON.stringify(archivedHistory));
+    } catch (e) {}
+
+    return filename;
+  }
+
+  /**
+   * Ejecuta el Cambio de Turno Oficial:
+   * 1. Archiva y descarga el CSV del turno saliente.
+   * 2. Limpia todos los datos del dashboard a ceros.
+   * 3. Configura la cuadrícula horaria y metas del nuevo turno.
+   */
+  function handleShiftChange(targetShiftNum) {
+    const currentShiftId = state.data.planta?.turnoActual || 1;
+    const currentCfg = SHIFT_CONFIGS[currentShiftId] || SHIFT_CONFIGS[1];
+    const nextShiftId = targetShiftNum || ((currentShiftId % 3) + 1);
+    const nextCfg = SHIFT_CONFIGS[nextShiftId] || SHIFT_CONFIGS[2];
+
+    const confirmed = window.confirm(
+      `¿Desea confirmar el CAMBIO DE TURNO?\n\n` +
+      `• Turno Saliente: ${currentCfg.nombre} (${currentCfg.horario} hrs)\n` +
+      `• Turno Entrante: ${nextCfg.nombre} (${nextCfg.horario} hrs)\n\n` +
+      `ACCIONES AUTOMÁTICAS:\n` +
+      `1. Se archivará y descargará el archivo CSV oficial de ${currentCfg.nombre}.\n` +
+      `2. Se restablecerán todos los datos del dashboard a ceros.\n` +
+      `3. Se activará la grilla de producción para el ${nextCfg.nombre} (Meta: ${nextCfg.meta} uds).`
+    );
+
+    if (!confirmed) return;
+
+    // 1. Archivar y descargar el documento CSV del turno saliente
+    const csvName = archiveShiftToCsv(currentShiftId);
+
+    // 2. Notificar al backend FastAPI para archivar en disco y reiniciar telemetría
+    try {
+      fetch(`/api/shift-change?target_shift=${nextShiftId}`, { method: 'POST' }).catch(() => {});
+    } catch (e) {}
+
+    // 3. Crear el estado limpio para el nuevo turno
+    const cleanHours = nextCfg.horas.map(h => ({
+      hora: h.hora,
+      meta: h.meta,
+      real: 0,
+      acumMeta: h.acumMeta,
+      acumReal: 0,
+      oeeHora: 0.0,
+      parosMin: 0,
+      malas: 0,
+      comentario: 'En espera de primer reporte Telegram'
+    }));
+
+    const cleanData = {
+      planta: {
+        nombre: 'BRP ROTAX MÉXICO S.A. de C.V.',
+        plantaId: 'PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C',
+        linea: 'Línea C — Ensamble y Mecanizado de Pistón WOLF V1',
+        versionSistema: 'v2.8.0-OCR-LIVE',
+        tiempoCicloTargetSeg: 45.0,
+        metaTurnoUnidades: nextCfg.meta,
+        supervisorActual: nextCfg.supervisor,
+        productoActual: 'WOLF V1 (Pistón BRP)',
+        turnoActual: nextShiftId
+      },
+      resumenKpis: {
+        produccionDia: 0,
+        metaDiaria: nextCfg.meta,
+        porcentajeAvance: 0.0,
+        unidadesCompletadas: 0,
+        unidadesPendientes: nextCfg.meta,
+        eficienciaOee: 0.0,
+        disponibilidad: 100.0,
+        rendimiento: 0.0,
+        calidadFpy: 100.0,
+        parosAcumuladosMin: 0,
+        eventosParo: 0,
+        taktTimeSeg: 45.0,
+        scrapPiezas: 0,
+        scrapPorcentaje: 0.0,
+        estadoLinea: 'PRODUCCION_EN_ORDEN'
+      },
+      turnos: [
+        { id: 1, nombre: 'Turno 1 - Matutino', horario: '06:30 - 15:00', supervisor: 'Líder Antonia', meta: 480, real: 0, oee: 0.0, activo: nextShiftId === 1 },
+        { id: 2, nombre: 'Turno 2 - Vespertino', horario: '15:00 - 23:00', supervisor: 'Ing. Roberto Garza', meta: 450, real: 0, oee: 0.0, activo: nextShiftId === 2 },
+        { id: 3, nombre: 'Turno 3 - Nocturno', horario: '23:00 - 06:30', supervisor: 'Ing. Diana Soto', meta: 420, real: 0, oee: 0.0, activo: nextShiftId === 3 }
+      ],
+      modelos: [
+        { id: 'M01', codigo: 'PISTON-WOLF-V1', nombre: 'Pistón WOLF V1 (Línea C)', cilindros: 1, hp: 0, plataforma: 'BRP Rotax Engine Program', activo: true }
+      ],
+      produccionHoraria: cleanHours,
+      parosIncidencias: [],
+      estaciones: [
+        { id: 'OP10', nombre: 'Mecanizado de Falda y Corona WOLF V1', equipo: 'Torno / Centro CNC OP10', operador: 'Téc. Línea C', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP20', nombre: 'Ranurado de Anillos y Barrenado de Perno', equipo: 'Ranuradora de Precisión OP20', operador: 'Téc. Línea C', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP30', nombre: 'Lavado Térmico y Desengrase', equipo: 'Lavadora Ultrasónica OP30', operador: 'Téc. Línea C', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP40', nombre: 'Acabado de Superficie / Recubrimiento', equipo: 'Cabina de Grafito / Moly OP40', operador: 'Téc. Línea C', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP50', nombre: 'Inspección Dimensional Neumática', equipo: 'Gage de Aire Multidiametral OP50', operador: 'Téc. Calidad', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP60', nombre: 'Inspección Final EOL & Marcado Láser', equipo: 'Estación de Visión y Embalaje OP60', operador: 'Téc. Calidad', metaPzas: nextCfg.meta, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' }
+      ],
+      alertas: [
+        {
+          id: 'ALT-NEW-SHIFT',
+          tipo: 'INFO',
+          titulo: `${nextCfg.nombre} Iniciado — Línea C`,
+          descripcion: `Dashboard limpio y preparado para ${nextCfg.nombre} (${nextCfg.horario} hrs). Meta programada: ${nextCfg.meta} unidades. En espera de la primera captura vía Telegram.`,
+          estacion: 'LÍNEA C COMPLETA',
+          hora: nextCfg.horas[0].hora,
+          tiempoTranscurrido: 'Inicio de Turno',
+          resuelta: true
+        }
+      ]
+    };
+
+    // 4. Aplicar al estado reactivo y guardar
+    state.data = JSON.parse(JSON.stringify(cleanData));
+    try {
+      localStorage.setItem('BRP_DASHBOARD_RESET_DATA', JSON.stringify(cleanData));
+      localStorage.setItem('BRP_DASHBOARD_RESET_TIME', Date.now().toString());
+    } catch (e) {}
+
+    // 5. Re-renderizar módulos visuales en ceros
+    renderKpis();
+    renderHeroWidgets();
+    renderAlerts();
+
+    // 6. Actualizar gráficas para el nuevo turno
+    if (chartHourly) {
+      chartHourly.data.labels = cleanHours.map(h => h.hora.split(' - ')[0]);
+      chartHourly.data.datasets[0].data = cleanHours.map(() => 0);
+      chartHourly.data.datasets[1].data = cleanHours.map(h => h.meta);
+      chartHourly.update();
+    }
+    if (chartCumulative) {
+      chartCumulative.data.labels = cleanHours.map(h => h.hora.split(' - ')[0]);
+      chartCumulative.data.datasets[0].data = cleanHours.map(() => 0);
+      chartCumulative.data.datasets[1].data = cleanHours.map(h => h.acumMeta);
+      chartCumulative.update();
+    }
+    if (chartDowntime) {
+      chartDowntime.data.labels = ['Sin paros activos'];
+      chartDowntime.data.datasets[0].data = [0];
+      chartDowntime.data.datasets[0].backgroundColor = ['#10B981'];
+      chartDowntime.update();
+    }
+
+    // 7. Notificar semáforo Andon ESP32 a Producción en Orden (Lámpara Verde Fija)
+    try {
+      fetch('http://192.168.0.200/api/andon?state=orden', { method: 'POST', mode: 'no-cors' }).catch(() => {});
+    } catch (e) {}
+
+    showToast(`📁 ${currentCfg.nombre} archivado en ${csvName}. ¡${nextCfg.nombre} iniciado con éxito!`);
   }
 
   /**
@@ -1055,8 +1353,10 @@
         const freshStatus = freshData.resumenKpis.estadoLinea;
         const curHours = (state.data.produccionHoraria || []).map(h => h.real).join(',');
         const freshHours = (freshData.produccionHoraria || []).map(h => h.real).join(',');
+        const curShift = state.data.planta?.turnoActual;
+        const freshShift = freshData.planta?.turnoActual;
 
-        if (curProd !== freshProd || curStatus !== freshStatus || curHours !== freshHours) {
+        if (curProd !== freshProd || curStatus !== freshStatus || curHours !== freshHours || curShift !== freshShift) {
           console.log('[AUTO-SYNC] Nueva información horaria detectada, actualizando interfaz...');
           localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
           localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');

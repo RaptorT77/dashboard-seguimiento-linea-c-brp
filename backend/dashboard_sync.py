@@ -9,8 +9,65 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
-from .config import DASHBOARD_MOCK_DATA_JS, DASHBOARD_DATA_JSON, PERSISTENT_CSV_PATH
+from .config import DASHBOARD_MOCK_DATA_JS, DASHBOARD_DATA_JSON, PERSISTENT_CSV_PATH, SHIFT_ARCHIVE_DIR, PROJECT_ROOT
 from .models import HourlyProductionRecord
+
+
+SHIFT_SCHEDULES = {
+    1: {
+        "id": 1,
+        "nombre": "Turno 1 - Matutino",
+        "turno_str": "Primero: 06:30 a 15:00 hrs",
+        "horario": "06:30 - 15:00",
+        "supervisor": "Líder Antonia",
+        "meta": 480,
+        "horas": [
+            ("06:30 - 08:00", 90, 90),
+            ("08:00 - 09:00", 60, 150),
+            ("09:00 - 10:00", 60, 210),
+            ("10:00 - 11:00", 60, 270),
+            ("11:00 - 12:00", 30, 300),
+            ("12:00 - 13:00", 60, 360),
+            ("13:00 - 14:00", 60, 420),
+            ("14:00 - 15:00", 60, 480)
+        ]
+    },
+    2: {
+        "id": 2,
+        "nombre": "Turno 2 - Vespertino",
+        "turno_str": "Segundo: 15:00 a 23:00 hrs",
+        "horario": "15:00 - 23:00",
+        "supervisor": "Ing. Roberto Garza",
+        "meta": 450,
+        "horas": [
+            ("15:00 - 16:00", 60, 60),
+            ("16:00 - 17:00", 60, 120),
+            ("17:00 - 18:00", 60, 180),
+            ("18:00 - 19:00", 60, 240),
+            ("19:00 - 20:00", 30, 270),
+            ("20:00 - 21:00", 60, 330),
+            ("21:00 - 22:00", 60, 390),
+            ("22:00 - 23:00", 60, 450)
+        ]
+    },
+    3: {
+        "id": 3,
+        "nombre": "Turno 3 - Nocturno",
+        "turno_str": "Tercero: 23:00 a 06:30 hrs",
+        "horario": "23:00 - 06:30",
+        "supervisor": "Ing. Diana Soto",
+        "meta": 420,
+        "horas": [
+            ("23:00 - 24:00", 60, 60),
+            ("24:00 - 01:00", 60, 120),
+            ("01:00 - 02:00", 60, 180),
+            ("02:00 - 03:00", 60, 240),
+            ("03:00 - 04:00", 30, 270),
+            ("04:00 - 05:00", 60, 330),
+            ("05:00 - 06:30", 90, 420)
+        ]
+    }
+}
 
 
 class DashboardSyncService:
@@ -38,6 +95,19 @@ class DashboardSyncService:
         Alinea fielmente el estado general, KPIs de calidad y alertas con la realidad de la pizarra.
         """
         all_shift_records = all_shift_records or [record]
+
+        # Comprobar si hay transición de turno con respecto a los datos previos
+        incoming_turno_id = 1 if "Primero" in (record.turno or "") else (2 if "Segundo" in (record.turno or "") else 3)
+        if self.json_data_path.exists():
+            try:
+                with open(self.json_data_path, "r", encoding="utf-8") as f:
+                    curr_d = json.load(f)
+                    curr_t = curr_d.get("planta", {}).get("turnoActual", 1)
+                    if curr_t != incoming_turno_id and curr_d.get("resumenKpis", {}).get("produccionDia", 0) > 0:
+                        logging.getLogger("BRP_Audit").info(f"Cambio de turno detectado: T{curr_t} -> T{incoming_turno_id}. Archivando turno saliente...")
+                        self.archive_shift_to_csv(turno_num=curr_t)
+            except Exception as e:
+                logging.getLogger("BRP_Audit").warning(f"Error comprobando cambio de turno previo: {e}")
 
         # 1. Definición completa de las 8 horas de Turno 1 según la pizarra real de planta
         # Horas oficiales del Turno 1 (06:30 a 15:00 hrs) con texto manuscrito fiel
@@ -410,29 +480,131 @@ if (typeof module !== 'undefined' && module.exports) {{
             ])
         return True
 
-    def reset_production_data(self) -> Dict[str, Any]:
+    def archive_shift_to_csv(self, turno_num: int = None, fecha_str: str = None) -> Path:
         """
-        Restablece los datos de producción a ceros (baseline inicial de turno)
-        listo para una nueva captura horaria desde Telegram.
+        Archiva todos los datos del turno saliente en un archivo CSV oficial dedicado.
+        Se guarda en backend/storage/turnos/ y en data/turnos_archivados/.
         """
+        current_data = {}
+        if self.json_data_path.exists():
+            try:
+                with open(self.json_data_path, "r", encoding="utf-8") as f:
+                    current_data = json.load(f)
+            except Exception:
+                pass
+
+        planta = current_data.get("planta", {})
+        kpis = current_data.get("resumenKpis", {})
+        turno_actual = turno_num or planta.get("turnoActual", 1)
+        fecha = fecha_str or datetime.utcnow().strftime("%Y-%m-%d")
+        shift_info = SHIFT_SCHEDULES.get(turno_actual, SHIFT_SCHEDULES[1])
+        shift_slug = shift_info["nombre"].split(" - ")[-1].replace(" ", "_")
+
+        filename = f"Turno_{turno_actual}_{shift_slug}_{fecha}.csv"
+        SHIFT_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        dest_archive_path = SHIFT_ARCHIVE_DIR / filename
+        public_archive_dir = PROJECT_ROOT / "data" / "turnos_archivados"
+        public_archive_dir.mkdir(parents=True, exist_ok=True)
+        dest_public_path = public_archive_dir / filename
+
+        supervisor = planta.get("supervisorActual", shift_info["supervisor"])
+        producto = planta.get("productoActual", "WOLF V1 (Pistón BRP)")
+        prod_real = kpis.get("produccionDia", 0)
+        meta_dia = kpis.get("metaDiaria", shift_info["meta"])
+        cumplimiento = kpis.get("porcentajeAvance", 0.0)
+        scrap = kpis.get("scrapPiezas", 0)
+        scrap_pct = kpis.get("scrapPorcentaje", 0.0)
+        paros_min = kpis.get("parosAcumuladosMin", 0)
+        eventos = kpis.get("eventosParo", 0)
+        oee = kpis.get("eficienciaOee", 0.0)
+        estado = kpis.get("estadoLinea", "PRODUCCION_EN_ORDEN")
+
+        lines = [
+            "# =============================================================================",
+            "# BRP ROTAX MÉXICO — PLANTA KOLBEN SCHMIDT CELAYA",
+            f"# REPORTE OFICIAL DE CIERRE DE TURNO: {shift_info['nombre'].upper()}",
+            f"# Fecha: {fecha} | Turno: {shift_info['turno_str']}",
+            f"# Supervisor / Líder: {supervisor} | Producto: {producto}",
+            f"# Producción Real: {prod_real} uds | Meta: {meta_dia} uds | Cumplimiento: {cumplimiento}%",
+            f"# Piezas Scrap (NOK): {scrap} uds ({scrap_pct}%) | Paros Acumulados: {paros_min} min ({eventos} eventos)",
+            f"# Eficiencia Operativa OEE: {oee}% | Estado de Línea Final: {estado}",
+            f"# Timestamp de Archivo: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            "# =============================================================================",
+            "Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro_Incidencia,Estado_Linea,Timestamp_Registro"
+        ]
+
+        # Agregar registros hora a hora
+        for h in current_data.get("produccionHoraria", []):
+            cmt = (h.get("comentario") or "").replace('"', '""')
+            lines.append(
+                f'{fecha},"{shift_info["turno_str"]}","{h.get("hora")}","C","{producto}","{supervisor}",'
+                f'{h.get("meta", 0)},{h.get("real", 0)},{h.get("acumMeta", 0)},{h.get("acumReal", 0)},'
+                f'{h.get("malas", 0)},{h.get("parosMin", 0)},"{cmt}","{estado}","{datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")}"'
+            )
+
+        # Anexar sección de desglose de paros
+        lines.append("")
+        lines.append("# DESGLOSE DETALLADO DE PAROS E INCIDENCIAS DEL TURNO")
+        lines.append("ID,Horario,Duracion_Min,Estacion,Causa_Motivo,Tipo_Impacto,Estatus")
+        for p in current_data.get("parosIncidencias", []):
+            causa = (p.get("causa") or "").replace('"', '""')
+            lines.append(
+                f'{p.get("id", "PARO")},"{p.get("hora", "")}",{p.get("duracionMin", 0)},"{p.get("estacion", "OP30")}","{causa}","{p.get("categoria", "CRITICA")}","Registrado"'
+            )
+
+        content = "\n".join(lines) + "\n"
+
+        with open(dest_archive_path, "w", encoding="utf-8-sig") as f:
+            f.write(content)
+        with open(dest_public_path, "w", encoding="utf-8-sig") as f:
+            f.write(content)
+
+        logging.getLogger("BRP_Audit").info(f"Turno archivado exitosamente en: {dest_archive_path.name}")
+        return dest_archive_path
+
+    def reset_production_data(self, target_turno: int = 1) -> Dict[str, Any]:
+        """
+        Limpia los datos del dashboard y prepara la cuadrícula para el nuevo turno de producción.
+        Soporta Turno 1 (Matutino), Turno 2 (Vespertino) o Turno 3 (Nocturno).
+        """
+        shift_info = SHIFT_SCHEDULES.get(target_turno, SHIFT_SCHEDULES[1])
+        meta_turno = shift_info["meta"]
+        supervisor = shift_info["supervisor"]
+
+        # Crear cuadrícula horaria en blanco para el nuevo turno
+        produccion_horaria = []
+        for h_str, m_h, m_ac in shift_info["horas"]:
+            produccion_horaria.append({
+                "hora": h_str,
+                "meta": m_h,
+                "real": 0,
+                "acumMeta": m_ac,
+                "acumReal": 0,
+                "oeeHora": 0.0,
+                "parosMin": 0,
+                "malas": 0,
+                "comentario": "En espera de primer reporte Telegram"
+            })
+
         clean_data = {
             "planta": {
                 "nombre": "BRP ROTAX MÉXICO S.A. de C.V.",
                 "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
                 "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
                 "versionSistema": "v2.7.0-OCR-LIVE",
+                "updatedAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "tiempoCicloTargetSeg": 45.0,
-                "metaTurnoUnidades": 480,
-                "supervisorActual": "Líder Turno",
+                "metaTurnoUnidades": meta_turno,
+                "supervisorActual": supervisor,
                 "productoActual": "WOLF V1 (Pistón BRP)",
-                "turnoActual": 1
+                "turnoActual": target_turno
             },
             "resumenKpis": {
                 "produccionDia": 0,
-                "metaDiaria": 480,
+                "metaDiaria": meta_turno,
                 "porcentajeAvance": 0.0,
                 "unidadesCompletadas": 0,
-                "unidadesPendientes": 480,
+                "unidadesPendientes": meta_turno,
                 "eficienciaOee": 0.0,
                 "disponibilidad": 100.0,
                 "rendimiento": 0.0,
@@ -445,33 +617,35 @@ if (typeof module !== 'undefined' && module.exports) {{
                 "estadoLinea": "PRODUCCION_EN_ORDEN"
             },
             "turnos": [
-                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Por Asignar", "meta": 480, "real": 0, "oee": 0.0, "activo": True},
-                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": False},
-                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": False}
+                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Líder Antonia", "meta": 480, "real": 0, "oee": 0.0, "activo": target_turno == 1},
+                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": target_turno == 2},
+                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": target_turno == 3}
             ],
             "modelos": [
                 {"id": "M01", "codigo": "PISTON-WOLF-V1", "nombre": "Pistón WOLF V1 (Línea C)", "cilindros": 1, "hp": 0, "plataforma": "BRP Rotax Engine Program", "activo": True}
             ],
-            "produccionHoraria": [
-                {"hora": "06:30 - 08:00", "meta": 90, "real": 0, "acumMeta": 90, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de primer reporte Telegram"},
-                {"hora": "08:00 - 09:00", "meta": 60, "real": 0, "acumMeta": 150, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "09:00 - 10:00", "meta": 60, "real": 0, "acumMeta": 210, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "10:00 - 11:00", "meta": 60, "real": 0, "acumMeta": 270, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "11:00 - 12:00", "meta": 30, "real": 0, "acumMeta": 300, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "12:00 - 13:00", "meta": 60, "real": 0, "acumMeta": 360, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "13:00 - 14:00", "meta": 60, "real": 0, "acumMeta": 420, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"},
-                {"hora": "14:00 - 15:00", "meta": 60, "real": 0, "acumMeta": 480, "acumReal": 0, "oeeHora": 0.0, "parosMin": 0, "malas": 0, "comentario": "En espera de reporte"}
-            ],
+            "produccionHoraria": produccion_horaria,
             "parosIncidencias": [],
             "estaciones": [
-                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
-                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
-                {"id": "OP30", "nombre": "Lavado Térmico y Desengrase", "equipo": "Lavadora Ultrasónica OP30", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
-                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
-                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
-                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": "Téc. Calidad", "metaPzas": 480, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"}
+                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP30", "nombre": "Lavado Térmico y Desengrase", "equipo": "Lavadora Ultrasónica OP30", "operador": "Téc. Línea C", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": "Téc. Calidad", "metaPzas": meta_turno, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"}
             ],
-            "alertas": []
+            "alertas": [
+                {
+                    "id": "ALT-NEW-SHIFT",
+                    "tipo": "INFO",
+                    "titulo": f"{shift_info['nombre']} Iniciado — Línea C",
+                    "descripcion": f"Dashboard limpio y preparado para {shift_info['nombre']} ({shift_info['horario']}). Meta programada: {meta_turno} unidades. En espera de la primera captura vía Telegram.",
+                    "estacion": "LÍNEA C COMPLETA",
+                    "hora": shift_info["horas"][0][0],
+                    "tiempoTranscurrido": "Inicio de Turno",
+                    "resuelta": True
+                }
+            ]
         }
 
         with open(self.json_data_path, "w", encoding="utf-8") as f:
@@ -481,7 +655,7 @@ if (typeof module !== 'undefined' && module.exports) {{
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Archivo de Datos Sincronizados Automáticamente vía OCR Telegram
- * Estado: Turno Nuevo Inicializado (Reset de Datos) | Producto: WOLF V1
+ * Estado: {shift_info['nombre']} Inicializado | Meta: {meta_turno} uds
  * =============================================================================
  */
 
