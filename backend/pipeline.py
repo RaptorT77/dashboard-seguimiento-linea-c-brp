@@ -256,9 +256,9 @@ class WhiteboardProcessingPipeline:
                     {"record_id": new_record.id}
                 )
 
-            # 11. Sincronización con el Dashboard Web
+            # 11. Sincronización con el Dashboard Web (se sincroniza siempre para dar visibilidad en tiempo real)
             dashboard_synced = False
-            if record_to_sync and validation_status != ValidationStatus.REQUIERE_REVISION:
+            if record_to_sync:
                 all_shift_records = db.query(HourlyProductionRecord).filter(
                     HourlyProductionRecord.linea == record_to_sync.linea,
                     HourlyProductionRecord.fecha == record_to_sync.fecha,

@@ -30,7 +30,7 @@ class TelegramPhotoReceiver:
         self.running = False
 
     def send_message(self, chat_id: str, text: str, reply_to_message_id: Optional[int] = None):
-        """Envía respuesta al operador en Telegram."""
+        """Envía respuesta al operador en Telegram con fallback a texto plano si falla Markdown."""
         try:
             payload = {
                 "chat_id": chat_id,
@@ -39,7 +39,11 @@ class TelegramPhotoReceiver:
             }
             if reply_to_message_id:
                 payload["reply_to_message_id"] = reply_to_message_id
-            requests.post(f"{self.api_url}/sendMessage", json=payload, timeout=10)
+            resp = requests.post(f"{self.api_url}/sendMessage", json=payload, timeout=10)
+            if not resp.ok:
+                # Si Telegram rechaza el formato Markdown (ej. guiones bajos o entidades sin cerrar), reenviar en texto plano
+                payload.pop("parse_mode", None)
+                requests.post(f"{self.api_url}/sendMessage", json=payload, timeout=10)
         except Exception as e:
             AuditLogger.log_event("TELEGRAM_SEND_ERROR", f"Error enviando mensaje: {e}", level="ERROR")
 

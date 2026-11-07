@@ -1,18 +1,10 @@
-/**
- * =============================================================================
- * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
- * Archivo de Datos Sincronizados Automáticamente vía OCR Telegram
- * Estado: Turno 2 - Vespertino Inicializado | Meta: 450 uds
- * =============================================================================
- */
-
 const BRP_DATA = {
   "planta": {
     "nombre": "BRP ROTAX MÉXICO S.A. de C.V.",
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
-    "updatedAt": "2026-11-07T22:55:58Z",
+    "updatedAt": "2026-11-07T23:20:00Z",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 450,
     "supervisorActual": "Ing. Roberto Garza",
@@ -20,31 +12,31 @@ const BRP_DATA = {
     "turnoActual": 2
   },
   "resumenKpis": {
-    "produccionDia": 0,
+    "produccionDia": 61,
     "metaDiaria": 450,
-    "porcentajeAvance": 0.0,
-    "unidadesCompletadas": 0,
-    "unidadesPendientes": 450,
-    "eficienciaOee": 0.0,
-    "disponibilidad": 100.0,
-    "rendimiento": 0.0,
-    "calidadFpy": 100.0,
-    "parosAcumuladosMin": 0,
-    "eventosParo": 0,
-    "taktTimeSeg": 45.0,
-    "scrapPiezas": 0,
-    "scrapPorcentaje": 0.0,
-    "estadoLinea": "PRODUCCION_EN_ORDEN"
+    "porcentajeAvance": 13.6,
+    "unidadesCompletadas": 61,
+    "unidadesPendientes": 389,
+    "eficienciaOee": 48.5,
+    "disponibilidad": 58.3,
+    "rendimiento": 50.8,
+    "calidadFpy": 92.4,
+    "parosAcumuladosMin": 50,
+    "eventosParo": 2,
+    "taktTimeSeg": 54.0,
+    "scrapPiezas": 5,
+    "scrapPorcentaje": 7.6,
+    "estadoLinea": "ADVERTENCIA_OPERATIVA"
   },
   "turnos": [
     {
       "id": 1,
       "nombre": "Turno 1 - Matutino",
       "horario": "06:30 - 15:00",
-      "supervisor": "Líder Antonia",
+      "supervisor": "Lider Antonia",
       "meta": 480,
-      "real": 0,
-      "oee": 0.0,
+      "real": 280,
+      "oee": 58.3,
       "activo": false
     },
     {
@@ -53,8 +45,8 @@ const BRP_DATA = {
       "horario": "15:00 - 23:00",
       "supervisor": "Ing. Roberto Garza",
       "meta": 450,
-      "real": 0,
-      "oee": 0.0,
+      "real": 61,
+      "oee": 48.5,
       "activo": true
     },
     {
@@ -83,93 +75,114 @@ const BRP_DATA = {
     {
       "hora": "15:00 - 16:00",
       "meta": 60,
-      "real": 0,
+      "real": 19,
       "acumMeta": 60,
-      "acumReal": 0,
-      "oeeHora": 0.0,
-      "parosMin": 0,
-      "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "acumReal": 16,
+      "oeeHora": 31.7,
+      "parosMin": 35,
+      "malas": 1,
+      "comentario": "Falta de material (OP30)"
     },
     {
       "hora": "16:00 - 17:00",
       "meta": 60,
-      "real": 0,
+      "real": 44,
       "acumMeta": 120,
-      "acumReal": 0,
-      "oeeHora": 0.0,
-      "parosMin": 0,
-      "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "acumReal": 61,
+      "oeeHora": 73.3,
+      "parosMin": 15,
+      "malas": 4,
+      "comentario": "Ajuste de perno"
     },
     {
       "hora": "17:00 - 18:00",
       "meta": 60,
       "real": 0,
       "acumMeta": 180,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora en curso / Produccion activa"
     },
     {
       "hora": "18:00 - 19:00",
       "meta": 60,
       "real": 0,
       "acumMeta": 240,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "19:00 - 20:00",
       "meta": 30,
       "real": 0,
       "acumMeta": 270,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "20:00 - 21:00",
       "meta": 60,
       "real": 0,
       "acumMeta": 330,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "21:00 - 22:00",
       "meta": 60,
       "real": 0,
       "acumMeta": 390,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "22:00 - 23:00",
       "meta": 60,
       "real": 0,
       "acumMeta": 450,
-      "acumReal": 0,
+      "acumReal": 61,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "En espera de primer reporte Telegram"
+      "comentario": "Hora programada / Por fabricar"
     }
   ],
-  "parosIncidencias": [],
+  "parosIncidencias": [
+    {
+      "id": "P-T2-01",
+      "estacion": "OP30",
+      "causa": "Falta de material en inicio de turno",
+      "duracionMin": 35,
+      "categoria": "Materiales",
+      "tipo": "Incidencia Pizarra",
+      "hora": "15:00 - 16:00",
+      "estatus": "Resuelto"
+    },
+    {
+      "id": "P-T2-02",
+      "estacion": "OP30",
+      "causa": "Ajuste de perno",
+      "duracionMin": 15,
+      "categoria": "Mecanico",
+      "tipo": "Incidencia Pizarra",
+      "hora": "16:00 - 17:00",
+      "estatus": "Resuelto"
+    }
+  ],
   "estaciones": [
     {
       "id": "OP10",
@@ -269,7 +282,3 @@ const BRP_DATA = {
     }
   ]
 };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = BRP_DATA;
-}

@@ -279,14 +279,15 @@ class WhiteboardDataExtractor:
             else:
                 h_name, obj_h, obj_ac = "22:00 - 23:00", 60, 450
 
-            # Buscar posibles números manuscritos en la imagen
+            # Buscar posibles números manuscritos en la imagen (piezas por hora realistas: 0 a 150)
             detected_numbers = []
             paro_texts = []
             for b in blocks:
                 t_str = b["text"].strip()
                 if t_str.isdigit():
                     val = int(t_str)
-                    if val not in [60, 120, 180, 240, 270, 330, 390, 420, 450, 480]:
+                    # Excluir metas impresas y números fuera de rango industrial
+                    if 0 <= val <= 200 and val not in [60, 120, 180, 240, 270, 330, 390, 420, 450, 480]:
                         detected_numbers.append(val)
                 elif len(t_str) > 4 and not any(kw in t_str.lower() for kw in ["piston", "wolf", "linea", "fecha"]):
                     paro_texts.append(t_str)
