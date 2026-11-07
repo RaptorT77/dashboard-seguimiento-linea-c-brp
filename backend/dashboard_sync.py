@@ -109,30 +109,78 @@ class DashboardSyncService:
             except Exception as e:
                 logging.getLogger("BRP_Audit").warning(f"Error comprobando cambio de turno previo: {e}")
 
-        # 1. Definición completa de las 8 horas de Turno 1 según la pizarra real de planta
-        # Horas oficiales del Turno 1 (06:30 a 15:00 hrs) con texto manuscrito fiel
-        t1_schedule_master = [
-            ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø R/S, offset y mordazas, tornillos (6). Se checó mat. x altura"),
-            ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Continuación de ajuste de offset y mordazas (//)"),
-            ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura"),
-            ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. (1047654)"),
-            ("11:00 - 12:00", 30, 300, 0, 25, 0, 30, "Ajuste de perilla de avance maq."),
-            ("12:00 - 13:00", 60, 360, 0, 25, 0, 60, "Alineación de barra"),
-            ("13:00 - 14:00", 60, 420, 0, 25, 0, 60, "Continuación de alineación de barra / ajuste herramental (//)"),
-            ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Hora programada / Por fabricar")
-        ]
+        # 1. Definición de horario según el turno activo (1, 2 o 3)
+        shift_info = SHIFT_SCHEDULES.get(incoming_turno_id, SHIFT_SCHEDULES[1])
+        meta_dia = shift_info["meta"]
+        supervisor = shift_info["supervisor"]
+
+        if incoming_turno_id == 1:
+            schedule_master = [
+                ("06:30 - 08:00", 90, 90, 28, 25, 3, 40, "Ajuste Ø R/S, offset y mordazas, tornillos (6). Se checó mat. x altura"),
+                ("08:00 - 09:00", 60, 150, 0, 25, 0, 60, "Continuación de ajuste de offset y mordazas (//)"),
+                ("09:00 - 10:00", 60, 210, 0, 25, 0, 60, "Ajuste offset - Manufactura"),
+                ("10:00 - 11:00", 60, 270, 0, 25, 0, 60, "Ajuste offset // Mantto. (1047654)"),
+                ("11:00 - 12:00", 30, 300, 0, 25, 0, 30, "Ajuste de perilla de avance maq."),
+                ("12:00 - 13:00", 60, 360, 0, 25, 0, 60, "Alineación de barra"),
+                ("13:00 - 14:00", 60, 420, 0, 25, 0, 60, "Continuación de alineación de barra / ajuste herramental (//)"),
+                ("14:00 - 15:00", 60, 480, 0, 25, 0, 0, "Hora programada / Por fabricar")
+            ]
+            default_cutoff = 6
+            prod_dia = 25
+            total_scrap = 3
+            paros_list = [
+                {"id": "P-01", "estacion": "OP40 / OP30", "causa": "Ajuste Ø R/S, offset y mordazas, tornillos (6)", "duracionMin": 40, "categoria": "Mecánico / Setup", "tipo": "Incidencia Pizarra", "hora": "06:30 - 08:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-02", "estacion": "OP30", "causa": "Continuación ajuste offset y mordazas (//)", "duracionMin": 60, "categoria": "Mecánico / Herramental", "tipo": "Incidencia Pizarra", "hora": "08:00 - 09:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-03", "estacion": "OP30", "causa": "Ajuste offset - Manufactura", "duracionMin": 60, "categoria": "Manufactura", "tipo": "Incidencia Pizarra", "hora": "09:00 - 10:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-04", "estacion": "OP30", "causa": "Ajuste offset // Mantto. (1047654)", "duracionMin": 60, "categoria": "Mantenimiento", "tipo": "Incidencia Pizarra", "hora": "10:00 - 11:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-05", "estacion": "OP30", "causa": "Ajuste de perilla de avance maq.", "duracionMin": 30, "categoria": "Calibración", "tipo": "Incidencia Pizarra", "hora": "11:00 - 12:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-06", "estacion": "OP30", "causa": "Alineación de barra", "duracionMin": 60, "categoria": "Mecánico", "tipo": "Incidencia Pizarra", "hora": "12:00 - 13:00", "estatus": "Reportado en Pizarra"},
+                {"id": "P-07", "estacion": "OP30", "causa": "Continuación alineación / ajuste herramental (//)", "duracionMin": 60, "categoria": "Herramental", "tipo": "Incidencia Pizarra", "hora": "13:00 - 14:00", "estatus": "Reportado en Pizarra"}
+            ]
+        else:
+            # Turno 2 o Turno 3
+            prod_dia = record.real_acumulado if record.real_acumulado is not None else (record.real_pz_hora or 0)
+            total_scrap = record.piezas_malas or 0
+            schedule_master = []
+            matched = False
+            for idx_h, (h_str, m_h, m_ac) in enumerate(shift_info["horas"]):
+                is_this_row = (record.horario and (h_str in record.horario or record.horario in h_str)) or (not matched and idx_h == 0)
+                if is_this_row:
+                    matched = True
+                    r_h = record.real_pz_hora or 0
+                    r_ac = prod_dia
+                    p_min = record.tiempo_minutos or 0
+                    cmt = record.paros or "Producción en curso"
+                else:
+                    r_h = 0
+                    r_ac = prod_dia if matched else 0
+                    p_min = 0
+                    cmt = "Hora programada / Por fabricar"
+                schedule_master.append((h_str, m_h, m_ac, r_h, r_ac, total_scrap if is_this_row else 0, p_min, cmt))
+            default_cutoff = 0
+            paros_list = []
+            if record.paros:
+                paros_list.append({
+                    "id": "P-01",
+                    "estacion": "OP30",
+                    "causa": record.paros,
+                    "duracionMin": record.tiempo_minutos or 0,
+                    "categoria": "Operación",
+                    "tipo": "Incidencia Pizarra",
+                    "hora": record.horario or shift_info["horas"][0][0],
+                    "estatus": "Reportado en Pizarra"
+                })
 
         # Determinar índice de la última hora con datos registrados
-        # Por regla estricta: Solo representar y calcular datos hasta la última hora que tenga datos el dashboard
-        target_hora = record.horario or "13:00 - 14:00"
-        cutoff_idx = 6  # Por defecto 13:00 - 14:00 (índice 6 = 7 horas transcurridas)
-        for i, row in enumerate(t1_schedule_master):
+        target_hora = record.horario or schedule_master[0][0]
+        cutoff_idx = default_cutoff
+        for i, row in enumerate(schedule_master):
             if row[0] == target_hora or target_hora in row[0] or row[0] in target_hora:
                 cutoff_idx = i
                 break
 
-        # Filtrar EXCLUSIVAMENTE hasta la última hora registrada (descartando horas futuras sin datos)
-        active_schedule = t1_schedule_master[:cutoff_idx + 1]
+        # Filtrar EXCLUSIVAMENTE hasta la última hora registrada
+        active_schedule = schedule_master[:cutoff_idx + 1]
 
         produccion_horaria = []
         for h_str, meta_h, meta_ac, r_h, r_ac, malas, paros_m, cmt in active_schedule:
@@ -149,105 +197,30 @@ class DashboardSyncService:
                 "comentario": cmt
             })
 
-        # 2. Métricas y KPIs consolidados calculados exclusivamente hasta la última hora con datos
-        meta_dia = 480
-        prod_dia = 25  # Pizarra real: 25 piezas OK acumuladas en el turno
-        total_scrap = 3
-        total_fabricadas = prod_dia + total_scrap  # 28 uds
-        pendientes = max(0, meta_dia - prod_dia)   # 455 uds
-        avance_pct = round((prod_dia / meta_dia * 100.0), 1)  # 5.2%
-        scrap_pct = round((total_scrap / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 10.7
-        calidad_fpy = round((prod_dia / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 89.3
+        # 2. Métricas y KPIs consolidados
+        total_fabricadas = prod_dia + total_scrap
+        pendientes = max(0, meta_dia - prod_dia)
+        avance_pct = round((prod_dia / meta_dia * 100.0), 1)
+        scrap_pct = round((total_scrap / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 0.0
+        calidad_fpy = round((prod_dia / total_fabricadas * 100.0), 1) if total_fabricadas > 0 else 100.0
 
-        # Meta acumulada esperada a la última hora con datos (a las 14:00 = 420 uds)
         meta_al_corte = active_schedule[-1][2]
         hora_corte_str = active_schedule[-1][0].split(" - ")[-1]
-        rendimiento = round((prod_dia / meta_al_corte * 100.0), 1)  # 6.0%
+        rendimiento = round((prod_dia / meta_al_corte * 100.0), 1) if meta_al_corte > 0 else 100.0
 
-        # Tiempo transcurrido y paros acumulados hasta la última hora registrada
-        total_paros_min = sum(r[6] for r in active_schedule)  # 370 min a las 14:00
-        # Minutos de turno transcurridos según el horario cortado (7.5 horas = 450 min)
-        tiempo_transcurrido_min = 450 if cutoff_idx >= 6 else (270 if cutoff_idx <= 3 else 360)
+        total_paros_min = sum(r[6] for r in active_schedule)
+        tiempo_transcurrido_min = max(60, (cutoff_idx + 1) * 60)
         tiempo_operativo_neto = max(0, tiempo_transcurrido_min - total_paros_min)
-        disponibilidad = round((tiempo_operativo_neto / tiempo_transcurrido_min * 100.0), 1)  # 17.8%
-        oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)      # 1.0%
+        disponibilidad = round((tiempo_operativo_neto / tiempo_transcurrido_min * 100.0), 1)
+        oee_calculado = round((disponibilidad * rendimiento * calidad_fpy) / 10000.0, 1)
 
-        # 3. Estado de la Línea Dinámico (Los 3 Estados Oficiales BRP)
-        estado_linea = "PRODUCCION_DEFICIENTE"
-
-        # 4. Lista de Paros Reales identificados fielmente de la pizarra
-        paros_list = [
-            {
-                "id": "P-01",
-                "estacion": "OP40 / OP30",
-                "causa": "Ajuste Ø R/S, offset y mordazas, tornillos (6)",
-                "duracionMin": 40,
-                "categoria": "Mecánico / Setup",
-                "tipo": "Incidencia Pizarra",
-                "hora": "06:30 - 08:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-02",
-                "estacion": "OP30",
-                "causa": "Continuación ajuste offset y mordazas (//)",
-                "duracionMin": 60,
-                "categoria": "Mecánico / Herramental",
-                "tipo": "Incidencia Pizarra",
-                "hora": "08:00 - 09:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-03",
-                "estacion": "OP30",
-                "causa": "Ajuste offset - Manufactura",
-                "duracionMin": 60,
-                "categoria": "Manufactura",
-                "tipo": "Incidencia Pizarra",
-                "hora": "09:00 - 10:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-04",
-                "estacion": "OP30",
-                "causa": "Ajuste offset // Mantto. (1047654)",
-                "duracionMin": 60,
-                "categoria": "Mantenimiento",
-                "tipo": "Incidencia Pizarra",
-                "hora": "10:00 - 11:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-05",
-                "estacion": "OP30",
-                "causa": "Ajuste de perilla de avance maq.",
-                "duracionMin": 30,
-                "categoria": "Calibración",
-                "tipo": "Incidencia Pizarra",
-                "hora": "11:00 - 12:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-06",
-                "estacion": "OP30",
-                "causa": "Alineación de barra",
-                "duracionMin": 60,
-                "categoria": "Mecánico",
-                "tipo": "Incidencia Pizarra",
-                "hora": "12:00 - 13:00",
-                "estatus": "Reportado en Pizarra"
-            },
-            {
-                "id": "P-07",
-                "estacion": "OP30",
-                "causa": "Continuación alineación / ajuste herramental (//)",
-                "duracionMin": 60,
-                "categoria": "Herramental",
-                "tipo": "Incidencia Pizarra",
-                "hora": "13:00 - 14:00",
-                "estatus": "Reportado en Pizarra"
-            }
-        ]
+        # 3. Estado de la Línea Dinámico
+        if total_paros_min >= 60 or (meta_al_corte > 0 and prod_dia < meta_al_corte * 0.6):
+            estado_linea = "PRODUCCION_DEFICIENTE"
+        elif meta_al_corte > 0 and prod_dia < meta_al_corte * 0.85:
+            estado_linea = "ADVERTENCIA_OPERATIVA"
+        else:
+            estado_linea = "PRODUCCION_EN_ORDEN"
 
         # 5. Alertas Operativas Críticas y de Paros visibles en el Centro de Alertas del Dashboard
         diff_vs_plan = prod_dia - meta_al_corte
@@ -354,9 +327,9 @@ class DashboardSyncService:
                 "updatedAt": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "tiempoCicloTargetSeg": 45.0,
                 "metaTurnoUnidades": meta_dia,
-                "supervisorActual": f"Líder {record.lider}" if record.lider else "Líder Antonia",
+                "supervisorActual": supervisor if incoming_turno_id != 1 else (f"Líder {record.lider}" if record.lider else "Líder Antonia"),
                 "productoActual": f"{record.producto or 'WOLF V1'} (Pistón BRP)",
-                "turnoActual": 1 if "Primero" in (record.turno or "") else (2 if "Segundo" in (record.turno or "") else 3)
+                "turnoActual": incoming_turno_id
             },
             "resumenKpis": {
                 "produccionDia": prod_dia,
@@ -376,9 +349,9 @@ class DashboardSyncService:
                 "estadoLinea": estado_linea
             },
             "turnos": [
-                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": record.lider or "Antonia", "meta": meta_dia, "real": prod_dia, "oee": oee_calculado, "activo": True},
-                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": False},
-                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": False}
+                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Líder Antonia", "meta": 480, "real": prod_dia if incoming_turno_id == 1 else 25, "oee": oee_calculado if incoming_turno_id == 1 else 1.0, "activo": incoming_turno_id == 1},
+                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": prod_dia if incoming_turno_id == 2 else 0, "oee": oee_calculado if incoming_turno_id == 2 else 0.0, "activo": incoming_turno_id == 2},
+                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": prod_dia if incoming_turno_id == 3 else 0, "oee": oee_calculado if incoming_turno_id == 3 else 0.0, "activo": incoming_turno_id == 3}
             ],
             "modelos": [
                 {"id": "M01", "codigo": "PISTON-WOLF-V1", "nombre": "Pistón WOLF V1 (Línea C)", "cilindros": 1, "hp": 0, "plataforma": "BRP Rotax Engine Program", "activo": True}

@@ -51,6 +51,48 @@ def run_keepalive_worker():
             print(f"[KEEPALIVE] Error temporal en ping de mantenimiento: {e}")
 
 
+def run_shift_scheduler():
+    """
+    Monitor automático de cambio de turno 24/7.
+    A las 06:30 (T1), 15:00 (T2) y 23:00 (T3) hora de Celaya (UTC-6),
+    archiva automáticamente el turno saliente en CSV y prepara el nuevo turno.
+    """
+    from datetime import datetime, timedelta
+    from backend.dashboard_sync import DashboardSyncService
+    from backend.config import DASHBOARD_DATA_JSON
+    import json
+
+    sync = DashboardSyncService()
+    print("[SCHEDULER] Monitor automático de cambio de turno 24/7 iniciado.")
+
+    while True:
+        try:
+            time.sleep(30)
+            now_mex = datetime.utcnow() - timedelta(hours=6)
+            cur_time = now_mex.hour + now_mex.minute / 60.0
+
+            if 6.5 <= cur_time < 15.0:
+                expected_shift = 1
+            elif 15.0 <= cur_time < 23.0:
+                expected_shift = 2
+            else:
+                expected_shift = 3
+
+            current_shift = 1
+            if DASHBOARD_DATA_JSON.exists():
+                with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+                    d = json.load(f)
+                    current_shift = d.get("planta", {}).get("turnoActual", 1)
+
+            if current_shift != expected_shift:
+                print(f"[SCHEDULER] Transición horaria detectada: Turno {current_shift} -> Turno {expected_shift}. Archivando y limpiando...")
+                sync.archive_shift_to_csv(turno_num=current_shift)
+                sync.reset_production_data(target_turno=expected_shift)
+                print(f"[SCHEDULER] Turno {expected_shift} activado exitosamente.")
+        except Exception as e:
+            print(f"[SCHEDULER] Error en monitor de turnos: {e}")
+
+
 def run_telegram_bot():
     """Inicia el receptor de fotografías de Telegram."""
     print("[TELEGRAM] Iniciando receptor de Telegram (@DASHBOARD_BRP_001_bot)...")
@@ -149,6 +191,10 @@ def main():
         # Iniciar worker de Keepalive para evitar suspensión en Render
         keepalive_thread = threading.Thread(target=run_keepalive_worker, daemon=True)
         keepalive_thread.start()
+
+        # Iniciar monitor de cambio de turno automático 24/7 (06:30, 15:00, 23:00)
+        shift_thread = threading.Thread(target=run_shift_scheduler, daemon=True)
+        shift_thread.start()
 
         time.sleep(1)
         run_api_server(args.host, effective_port)

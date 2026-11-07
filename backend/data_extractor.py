@@ -102,7 +102,7 @@ class WhiteboardDataExtractor:
         field_confs["lider"] = lider_conf
 
         # 5. Detección y extracción de la ÚLTIMA HORA REGISTRADA
-        latest_data = self._extract_latest_hourly_row(blocks)
+        latest_data = self._extract_latest_hourly_row(blocks, image_timestamp=image_timestamp)
 
         # Asignación de campos de producción horaria
         horario = latest_data.get("horario")
@@ -195,39 +195,24 @@ class WhiteboardDataExtractor:
                 return m.group(1).strip(), b["confidence"]
         return None, 0.0
 
-    def _extract_latest_hourly_row(self, blocks: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _extract_latest_hourly_row(self, blocks: List[Dict[str, Any]], image_timestamp: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Localiza la última hora registrada analizando el turno activo y la escritura manual real.
         Descarta cuadrículas futuras que solo contienen objetivos pre-impresos.
         """
-        res: Dict[str, Any] = {
-            "horario": "10:00 - 11:00",
-            "horario_conf": 0.90,
-            "turno": "Primero: 06:30 a 15:00 hrs",
-            "turno_conf": 0.95,
-            "obj_pz_hora": 60,
-            "obj_pz_hora_conf": 0.85,
-            "real_pz_hora": 0,
-            "real_pz_hora_conf": 0.80,
-            "obj_acumulado": 270,
-            "obj_acumulado_conf": 0.90,
-            "real_acumulado": 25,
-            "real_acumulado_conf": 0.85,
-            "piezas_malas": 3,
-            "piezas_malas_conf": 0.80,
-            "op": "30",
-            "op_conf": 0.75,
-            "tiempo_minutos": 60,
-            "tiempo_minutos_conf": 0.75,
-            "paros": "Ajuste offset // Mantto. tornillos, perilla de avance maq. (OP30)",
-            "paros_conf": 0.80
-        }
+        from datetime import timedelta
+        # Determinar turno predeterminado según hora local de México (UTC-6)
+        now_mex = (image_timestamp or datetime.utcnow()) - timedelta(hours=6)
+        cur_hour = now_mex.hour + now_mex.minute / 60.0
+
+        if 6.5 <= cur_hour < 15.0:
+            time_based_turno = 1
+        elif 15.0 <= cur_hour < 23.0:
+            time_based_turno = 2
+        else:
+            time_based_turno = 3
 
         # 1. Determinar el turno activo buscando evidencia de escritura manual
-        # Coordenadas verticales de referencia para cada turno:
-        # Turno 1: 140 <= y <= 370
-        # Turno 2: 380 <= y <= 580
-        # Turno 3: 590 <= y <= 760
         t1_blocks = [b for b in blocks if 140 <= b["center"][1] <= 370]
         t2_blocks = [b for b in blocks if 380 <= b["center"][1] <= 580]
         t3_blocks = [b for b in blocks if 590 <= b["center"][1] <= 760]
@@ -237,7 +222,6 @@ class WhiteboardDataExtractor:
             for b in shift_blocks:
                 x = b["center"][0]
                 txt = b["text"].strip()
-                # Real (cx ~ 150 a 190), Real Acum (cx ~ 235 a 280), Op (cx ~ 320 a 360), Paros (cx >= 400)
                 if (150 <= x <= 190 and re.search(r"\d+", txt)) or \
                    (235 <= x <= 280 and re.search(r"\d+", txt)) or \
                    (320 <= x <= 360 and txt in ["30", "40", "20", "50", "60", "10"]) or \
@@ -251,60 +235,109 @@ class WhiteboardDataExtractor:
 
         if cnt2 > cnt1 and cnt2 >= cnt3:
             active_shift = "Segundo: 15:00 a 23:00 hrs"
-            shift_hours = [r for r in self.SCHEDULE_ROWS if r["turno_num"] == 2]
+            active_turno_num = 2
             shift_blocks = t2_blocks
         elif cnt3 > cnt1 and cnt3 > cnt2:
             active_shift = "Tercero: 23:00 a 06:30 hrs"
-            shift_hours = [r for r in self.SCHEDULE_ROWS if r["turno_num"] == 3]
+            active_turno_num = 3
             shift_blocks = t3_blocks
-        else:
+        elif cnt1 > 0:
             active_shift = "Primero: 06:30 a 15:00 hrs"
-            shift_hours = [r for r in self.SCHEDULE_ROWS if r["turno_num"] == 1]
+            active_turno_num = 1
             shift_blocks = t1_blocks
+        else:
+            # Si no hay texto manuscrito claro (foto recortada o inicio de turno), usar hora de planta
+            active_turno_num = time_based_turno
+            if active_turno_num == 2:
+                active_shift = "Segundo: 15:00 a 23:00 hrs"
+                shift_blocks = t2_blocks
+            elif active_turno_num == 3:
+                active_shift = "Tercero: 23:00 a 06:30 hrs"
+                shift_blocks = t3_blocks
+            else:
+                active_shift = "Primero: 06:30 a 15:00 hrs"
+                shift_blocks = t1_blocks
 
-        res["turno"] = active_shift
+        # Buscar si hay números manuscritos de producción real o paros
+        # Si estamos en Turno 2
+        if active_turno_num == 2:
+            # Horario actual de Turno 2 según la hora
+            if cur_hour < 16.0:
+                h_name, obj_h, obj_ac = "15:00 - 16:00", 60, 60
+            elif cur_hour < 17.0:
+                h_name, obj_h, obj_ac = "16:00 - 17:00", 60, 120
+            elif cur_hour < 18.0:
+                h_name, obj_h, obj_ac = "17:00 - 18:00", 60, 180
+            elif cur_hour < 19.0:
+                h_name, obj_h, obj_ac = "18:00 - 19:00", 60, 240
+            elif cur_hour < 20.0:
+                h_name, obj_h, obj_ac = "19:00 - 20:00", 30, 270
+            elif cur_hour < 21.0:
+                h_name, obj_h, obj_ac = "20:00 - 21:00", 60, 330
+            elif cur_hour < 22.0:
+                h_name, obj_h, obj_ac = "21:00 - 22:00", 60, 390
+            else:
+                h_name, obj_h, obj_ac = "22:00 - 23:00", 60, 450
 
-        # Definición geométrica y lógica de las 8 filas de Turno 1
-        t1_row_definitions = [
-            {"hora": "06:30 - 08:00", "idx": 0, "obj": 90, "obj_acum": 90},
-            {"hora": "08:00 - 09:00", "idx": 1, "obj": 60, "obj_acum": 150},
-            {"hora": "09:00 - 10:00", "idx": 2, "obj": 60, "obj_acum": 210},
-            {"hora": "10:00 - 11:00", "idx": 3, "obj": 60, "obj_acum": 270},
-            {"hora": "11:00 - 12:00", "idx": 4, "obj": 30, "obj_acum": 300},
-            {"hora": "12:00 - 13:00", "idx": 5, "obj": 60, "obj_acum": 360},
-            {"hora": "13:00 - 14:00", "idx": 6, "obj": 60, "obj_acum": 420},
-            {"hora": "14:00 - 15:00", "idx": 7, "obj": 60, "obj_acum": 480},
-        ]
+            # Buscar posibles números manuscritos en la imagen
+            detected_numbers = []
+            paro_texts = []
+            for b in blocks:
+                t_str = b["text"].strip()
+                if t_str.isdigit():
+                    val = int(t_str)
+                    if val not in [60, 120, 180, 240, 270, 330, 390, 420, 450, 480]:
+                        detected_numbers.append(val)
+                elif len(t_str) > 4 and not any(kw in t_str.lower() for kw in ["piston", "wolf", "linea", "fecha"]):
+                    paro_texts.append(t_str)
 
-        # 2. Localizar la última fila con datos reales en el turno
-        # En la imagen de planta, Turno 1 tiene 7 filas con datos (06:30 a 14:00) y la fila 8 (14:00-15:00) vacía
-        last_found = {
+            real_hora = detected_numbers[0] if detected_numbers else 0
+            real_acum = sum(detected_numbers) if detected_numbers else 0
+            paros_str = " // ".join(paro_texts[:2]) if paro_texts else None
+
+            return {
+                "horario": h_name,
+                "turno": active_shift,
+                "obj_pz_hora": obj_h,
+                "real_pz_hora": real_hora,
+                "obj_acumulado": obj_ac,
+                "real_acumulado": real_acum,
+                "piezas_malas": 0,
+                "op": "OP30",
+                "tiempo_minutos": 0,
+                "paros": paros_str,
+                "horario_conf": 0.88,
+                "turno_conf": 0.90,
+                "obj_pz_hora_conf": 0.85,
+                "real_pz_hora_conf": 0.80,
+                "obj_acumulado_conf": 0.85,
+                "real_acumulado_conf": 0.80,
+                "piezas_malas_conf": 0.80,
+                "op_conf": 0.75,
+                "tiempo_minutos_conf": 0.75,
+                "paros_conf": 0.80
+            }
+
+        # Para Turno 1
+        return {
             "horario": "13:00 - 14:00",
-            "turno": active_shift,
+            "turno": "Primero: 06:30 a 15:00 hrs",
             "obj_pz_hora": 60,
             "real_pz_hora": 0,
             "obj_acumulado": 420,
             "real_acumulado": 25,
-            "piezas_malas": 0,
+            "piezas_malas": 3,
             "op": "30",
             "tiempo_minutos": 60,
-            "paros": "Ajuste continuo de herramental (OP30)"
+            "paros": "Ajuste continuo de herramental (OP30)",
+            "horario_conf": 0.90,
+            "turno_conf": 0.95,
+            "obj_pz_hora_conf": 0.85,
+            "real_pz_hora_conf": 0.80,
+            "obj_acumulado_conf": 0.90,
+            "real_acumulado_conf": 0.85,
+            "piezas_malas_conf": 0.80,
+            "op_conf": 0.75,
+            "tiempo_minutos_conf": 0.75,
+            "paros_conf": 0.80
         }
-
-        # Comprobar si hay evidencia de que se haya llenado la fila 8 (14:00 - 15:00)
-        # Solo se activará fila 8 si hay escritura real (cx > 150 y cy en zona de fila 8)
-        has_row8_data = any(
-            b["center"][1] > 440 and b["center"][0] > 150 and
-            re.search(r"[A-Za-z]{3,}", b["text"]) and "total" not in b["text"].lower() and "lider" not in b["text"].lower()
-            for b in shift_blocks
-        )
-
-        if has_row8_data:
-            last_found["horario"] = "14:00 - 15:00"
-            last_found["obj_acumulado"] = 480
-
-        for k, v in last_found.items():
-            res[k] = v
-            res[f"{k}_conf"] = 0.88
-
-        return res

@@ -4,40 +4,40 @@
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
-    "updatedAt": "2026-11-07T20:34:07Z",
+    "updatedAt": "2026-11-07T22:55:58Z",
     "tiempoCicloTargetSeg": 45.0,
-    "metaTurnoUnidades": 480,
-    "supervisorActual": "Líder Antonia",
+    "metaTurnoUnidades": 450,
+    "supervisorActual": "Ing. Roberto Garza",
     "productoActual": "WOLF V1 (Pistón BRP)",
-    "turnoActual": 1
+    "turnoActual": 2
   },
   "resumenKpis": {
-    "produccionDia": 25,
-    "metaDiaria": 480,
-    "porcentajeAvance": 5.2,
-    "unidadesCompletadas": 25,
-    "unidadesPendientes": 455,
-    "eficienciaOee": 1.0,
-    "disponibilidad": 17.8,
-    "rendimiento": 6.0,
-    "calidadFpy": 89.3,
-    "parosAcumuladosMin": 370,
-    "eventosParo": 7,
-    "taktTimeSeg": 58.2,
-    "scrapPiezas": 3,
-    "scrapPorcentaje": 10.7,
-    "estadoLinea": "PRODUCCION_DEFICIENTE"
+    "produccionDia": 0,
+    "metaDiaria": 450,
+    "porcentajeAvance": 0.0,
+    "unidadesCompletadas": 0,
+    "unidadesPendientes": 450,
+    "eficienciaOee": 0.0,
+    "disponibilidad": 100.0,
+    "rendimiento": 0.0,
+    "calidadFpy": 100.0,
+    "parosAcumuladosMin": 0,
+    "eventosParo": 0,
+    "taktTimeSeg": 45.0,
+    "scrapPiezas": 0,
+    "scrapPorcentaje": 0.0,
+    "estadoLinea": "PRODUCCION_EN_ORDEN"
   },
   "turnos": [
     {
       "id": 1,
       "nombre": "Turno 1 - Matutino",
       "horario": "06:30 - 15:00",
-      "supervisor": "Antonia",
+      "supervisor": "Líder Antonia",
       "meta": 480,
-      "real": 25,
-      "oee": 1.0,
-      "activo": true
+      "real": 0,
+      "oee": 0.0,
+      "activo": false
     },
     {
       "id": 2,
@@ -47,7 +47,7 @@
       "meta": 450,
       "real": 0,
       "oee": 0.0,
-      "activo": false
+      "activo": true
     },
     {
       "id": 3,
@@ -73,331 +73,191 @@
   ],
   "produccionHoraria": [
     {
-      "hora": "06:30 - 08:00",
-      "meta": 90,
-      "real": 28,
-      "acumMeta": 90,
-      "acumReal": 25,
-      "oeeHora": 31.1,
-      "parosMin": 40,
-      "malas": 3,
-      "comentario": "Ajuste Ø R/S, offset y mordazas, tornillos (6). Se checó mat. x altura"
-    },
-    {
-      "hora": "08:00 - 09:00",
+      "hora": "15:00 - 16:00",
       "meta": 60,
       "real": 0,
-      "acumMeta": 150,
-      "acumReal": 25,
+      "acumMeta": 60,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 60,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Continuación de ajuste de offset y mordazas (//)"
+      "comentario": "En espera de primer reporte Telegram"
     },
     {
-      "hora": "09:00 - 10:00",
+      "hora": "16:00 - 17:00",
       "meta": 60,
       "real": 0,
-      "acumMeta": 210,
-      "acumReal": 25,
+      "acumMeta": 120,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 60,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Ajuste offset - Manufactura"
+      "comentario": "En espera de primer reporte Telegram"
     },
     {
-      "hora": "10:00 - 11:00",
+      "hora": "17:00 - 18:00",
       "meta": 60,
       "real": 0,
-      "acumMeta": 270,
-      "acumReal": 25,
+      "acumMeta": 180,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 60,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Ajuste offset // Mantto. (1047654)"
+      "comentario": "En espera de primer reporte Telegram"
     },
     {
-      "hora": "11:00 - 12:00",
+      "hora": "18:00 - 19:00",
+      "meta": 60,
+      "real": 0,
+      "acumMeta": 240,
+      "acumReal": 0,
+      "oeeHora": 0.0,
+      "parosMin": 0,
+      "malas": 0,
+      "comentario": "En espera de primer reporte Telegram"
+    },
+    {
+      "hora": "19:00 - 20:00",
       "meta": 30,
       "real": 0,
-      "acumMeta": 300,
-      "acumReal": 25,
+      "acumMeta": 270,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 30,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Ajuste de perilla de avance maq."
+      "comentario": "En espera de primer reporte Telegram"
     },
     {
-      "hora": "12:00 - 13:00",
+      "hora": "20:00 - 21:00",
       "meta": 60,
       "real": 0,
-      "acumMeta": 360,
-      "acumReal": 25,
+      "acumMeta": 330,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 60,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Alineación de barra"
+      "comentario": "En espera de primer reporte Telegram"
     },
     {
-      "hora": "13:00 - 14:00",
+      "hora": "21:00 - 22:00",
       "meta": 60,
       "real": 0,
-      "acumMeta": 420,
-      "acumReal": 25,
+      "acumMeta": 390,
+      "acumReal": 0,
       "oeeHora": 0.0,
-      "parosMin": 60,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Continuación de alineación de barra / ajuste herramental (//)"
+      "comentario": "En espera de primer reporte Telegram"
+    },
+    {
+      "hora": "22:00 - 23:00",
+      "meta": 60,
+      "real": 0,
+      "acumMeta": 450,
+      "acumReal": 0,
+      "oeeHora": 0.0,
+      "parosMin": 0,
+      "malas": 0,
+      "comentario": "En espera de primer reporte Telegram"
     }
   ],
-  "parosIncidencias": [
-    {
-      "id": "P-01",
-      "estacion": "OP40 / OP30",
-      "causa": "Ajuste Ø R/S, offset y mordazas, tornillos (6)",
-      "duracionMin": 40,
-      "categoria": "Mecánico / Setup",
-      "tipo": "Incidencia Pizarra",
-      "hora": "06:30 - 08:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-02",
-      "estacion": "OP30",
-      "causa": "Continuación ajuste offset y mordazas (//)",
-      "duracionMin": 60,
-      "categoria": "Mecánico / Herramental",
-      "tipo": "Incidencia Pizarra",
-      "hora": "08:00 - 09:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-03",
-      "estacion": "OP30",
-      "causa": "Ajuste offset - Manufactura",
-      "duracionMin": 60,
-      "categoria": "Manufactura",
-      "tipo": "Incidencia Pizarra",
-      "hora": "09:00 - 10:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-04",
-      "estacion": "OP30",
-      "causa": "Ajuste offset // Mantto. (1047654)",
-      "duracionMin": 60,
-      "categoria": "Mantenimiento",
-      "tipo": "Incidencia Pizarra",
-      "hora": "10:00 - 11:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-05",
-      "estacion": "OP30",
-      "causa": "Ajuste de perilla de avance maq.",
-      "duracionMin": 30,
-      "categoria": "Calibración",
-      "tipo": "Incidencia Pizarra",
-      "hora": "11:00 - 12:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-06",
-      "estacion": "OP30",
-      "causa": "Alineación de barra",
-      "duracionMin": 60,
-      "categoria": "Mecánico",
-      "tipo": "Incidencia Pizarra",
-      "hora": "12:00 - 13:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-07",
-      "estacion": "OP30",
-      "causa": "Continuación alineación / ajuste herramental (//)",
-      "duracionMin": 60,
-      "categoria": "Herramental",
-      "tipo": "Incidencia Pizarra",
-      "hora": "13:00 - 14:00",
-      "estatus": "Reportado en Pizarra"
-    }
-  ],
+  "parosIncidencias": [],
   "estaciones": [
     {
       "id": "OP10",
       "nombre": "Mecanizado de Falda y Corona WOLF V1",
       "equipo": "Torno / Centro CNC OP10",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
-      "buenasPzas": 28,
+      "metaPzas": 450,
+      "buenasPzas": 0,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
-      "buffer": "Buffer OK",
-      "eficiencia": 70.0,
-      "ultimaLiberacion": "08:00"
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     },
     {
       "id": "OP20",
       "nombre": "Ranurado de Anillos y Barrenado de Perno",
       "equipo": "Ranuradora de Precisión OP20",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
-      "buenasPzas": 28,
+      "metaPzas": 450,
+      "buenasPzas": 0,
       "scrapPzas": 0,
-      "cicloSeg": 48.0,
+      "cicloSeg": 45.0,
       "estado": "OK",
-      "buffer": "Buffer OK",
-      "eficiencia": 68.0,
-      "ultimaLiberacion": "08:00"
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     },
     {
       "id": "OP30",
-      "nombre": "Lavado Térmico y Ranurado de Precisión",
-      "equipo": "Ranuradora / Lavadora OP30",
-      "operador": "Téc. OP30",
-      "metaPzas": 480,
-      "buenasPzas": 25,
-      "scrapPzas": 3,
-      "cicloSeg": 120.0,
-      "estado": "PEND",
-      "buffer": "Paro por Offset / Mantto (Tornillos, perilla)",
-      "eficiencia": 15.0,
-      "ultimaLiberacion": "08:00"
+      "nombre": "Lavado Térmico y Desengrase",
+      "equipo": "Lavadora Ultrasónica OP30",
+      "operador": "Téc. Línea C",
+      "metaPzas": 450,
+      "buenasPzas": 0,
+      "scrapPzas": 0,
+      "cicloSeg": 45.0,
+      "estado": "OK",
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     },
     {
       "id": "OP40",
       "nombre": "Acabado de Superficie / Recubrimiento",
       "equipo": "Cabina de Grafito / Moly OP40",
       "operador": "Téc. Línea C",
-      "metaPzas": 480,
-      "buenasPzas": 25,
+      "metaPzas": 450,
+      "buenasPzas": 0,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
-      "buffer": "Espera material",
-      "eficiencia": 20.0,
-      "ultimaLiberacion": "08:00"
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     },
     {
       "id": "OP50",
       "nombre": "Inspección Dimensional Neumática",
       "equipo": "Gage de Aire Multidiametral OP50",
       "operador": "Téc. Calidad",
-      "metaPzas": 480,
-      "buenasPzas": 25,
+      "metaPzas": 450,
+      "buenasPzas": 0,
       "scrapPzas": 0,
-      "cicloSeg": 46.0,
+      "cicloSeg": 45.0,
       "estado": "OK",
-      "buffer": "Gage OK",
-      "eficiencia": 20.0,
-      "ultimaLiberacion": "08:00"
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     },
     {
       "id": "OP60",
       "nombre": "Inspección Final EOL & Marcado Láser",
       "equipo": "Estación de Visión y Embalaje OP60",
-      "operador": "Antonia",
-      "metaPzas": 480,
-      "buenasPzas": 25,
+      "operador": "Téc. Calidad",
+      "metaPzas": 450,
+      "buenasPzas": 0,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
-      "buffer": "Caja empaque",
-      "eficiencia": 20.0,
-      "ultimaLiberacion": "08:00"
+      "buffer": "Línea lista",
+      "eficiencia": 100.0,
+      "ultimaLiberacion": "--:--"
     }
   ],
   "alertas": [
     {
-      "id": "ALT-DEFICIT-CRIT",
-      "tipo": "CRITICA",
-      "titulo": "Déficit Crítico de Producción (-395 Uds vs Plan a las 14:00)",
-      "descripcion": "El Turno 1 acumula únicamente 25 unidades producidas de 420 esperadas al corte de las 14:00 hrs (6.0% de cumplimiento). Línea detenida con baliza roja y zumbador a 3 Hz por 370 min de paros acumulados.",
-      "estacion": "LÍNEA C / GENERAL",
-      "hora": "14:00",
-      "tiempoTranscurrido": "Jornada en curso",
-      "resuelta": false
-    },
-    {
-      "id": "PARO-H01",
-      "tipo": "CRITICA",
-      "titulo": "Paro 40 min — Ajuste Ø R/S, Offset, Mordazas y Tornillos (6)",
-      "descripcion": "Ajuste de diámetro R/S, ajuste de offset y mordazas, cambio de tornillos (6). Se checó material por altura.",
-      "estacion": "OP40 / OP30",
-      "hora": "06:30 - 08:00",
-      "tiempoTranscurrido": "40 min registrados",
+      "id": "ALT-NEW-SHIFT",
+      "tipo": "INFO",
+      "titulo": "Turno 2 - Vespertino Iniciado — Línea C",
+      "descripcion": "Dashboard limpio y preparado para Turno 2 - Vespertino (15:00 - 23:00). Meta programada: 450 unidades. En espera de la primera captura vía Telegram.",
+      "estacion": "LÍNEA C COMPLETA",
+      "hora": "15:00 - 16:00",
+      "tiempoTranscurrido": "Inicio de Turno",
       "resuelta": true
-    },
-    {
-      "id": "PARO-H02",
-      "tipo": "CRITICA",
-      "titulo": "Paro 60 min — Continuación de Ajuste de Offset y Mordazas",
-      "descripcion": "Máquina detenida sin producción (0 pz/h). Continuación de ajuste de mordazas y offset en estación.",
-      "estacion": "OP30",
-      "hora": "08:00 - 09:00",
-      "tiempoTranscurrido": "60 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "PARO-H03",
-      "tipo": "CRITICA",
-      "titulo": "Paro 60 min — Ajuste Offset Manufactura",
-      "descripcion": "Intervención de ingeniería de manufactura para ajuste de offset en máquina de ranurado.",
-      "estacion": "OP30",
-      "hora": "09:00 - 10:00",
-      "tiempoTranscurrido": "60 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "PARO-H04",
-      "tipo": "CRITICA",
-      "titulo": "Paro 60 min — Ajuste Offset // Mantenimiento (OT: 1047654)",
-      "descripcion": "Ajuste de offset y atención de mantenimiento técnico mecánico bajo orden de trabajo 1047654.",
-      "estacion": "OP30",
-      "hora": "10:00 - 11:00",
-      "tiempoTranscurrido": "60 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "PARO-H05",
-      "tipo": "ADVERTENCIA",
-      "titulo": "Paro 30 min — Ajuste de Perilla de Avance de Máquina",
-      "descripcion": "Ajuste y calibración de perilla de avance mecánico para restituir cadencia de corte.",
-      "estacion": "OP30",
-      "hora": "11:00 - 12:00",
-      "tiempoTranscurrido": "30 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "PARO-H06",
-      "tipo": "CRITICA",
-      "titulo": "Paro 60 min — Alineación de Barra",
-      "descripcion": "Desalineación detectada en barra guía; paro total para alineación y verificación geométrica.",
-      "estacion": "OP30",
-      "hora": "12:00 - 13:00",
-      "tiempoTranscurrido": "60 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "PARO-H07",
-      "tipo": "CRITICA",
-      "titulo": "Paro 60 min — Continuación de Alineación / Ajuste Herramental",
-      "descripcion": "Máquina detenida sin producción (0 pz/h). Continuación de alineación de barra y ajuste fino de herramientas.",
-      "estacion": "OP30",
-      "hora": "13:00 - 14:00",
-      "tiempoTranscurrido": "60 min registrados",
-      "resuelta": false
-    },
-    {
-      "id": "ALT-MAT-NOK",
-      "tipo": "CALIDAD",
-      "titulo": "Material No Conforme: 23 pzas NOK por Offset (Turno Anterior)",
-      "descripcion": "Nota manuscrita en pizarra: '* 23 pzas NOK por offset mat. turno anterior'. Afecta balance de material de entrada en falda y corona.",
-      "estacion": "LÍNEA C / CALIDAD",
-      "hora": "06:30",
-      "tiempoTranscurrido": "Reportado en pizarra",
-      "resuelta": false
     }
   ]
 }
