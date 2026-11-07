@@ -48,7 +48,7 @@ if DATA_DIR.exists():
     app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def serve_dashboard():
     """Servir la interfaz web del Dashboard en la raíz."""
     index_path = ROOT_DIR / "index.html"
@@ -62,7 +62,7 @@ def serve_dashboard():
     }
 
 
-@app.get("/favicon.ico")
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
 def favicon():
     icon_path = ASSETS_DIR / "images" / "LOGO_KS-1.png"
     if icon_path.exists():
@@ -70,7 +70,7 @@ def favicon():
     return Response(status_code=204)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {
         "status": "healthy",
