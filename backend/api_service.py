@@ -48,6 +48,43 @@ def health_check():
     }
 
 
+@app.get("/api/andon/state")
+def get_andon_state():
+    """
+    Endpoint para que el hardware ESP32 consulte el estado operativo de Línea C
+    mediante polling saliente seguro HTTPS desde la planta hacia la nube.
+    """
+    if not DASHBOARD_DATA_JSON.exists():
+        return {"state": "PRODUCCION_EN_ORDEN", "timestamp": datetime.utcnow().isoformat()}
+
+    try:
+        with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+            d = json.load(f)
+            estado = d.get("resumenKpis", {}).get("estadoLinea", "PRODUCCION_EN_ORDEN")
+            return {
+                "state": estado,
+                "produccion_dia": d.get("resumenKpis", {}).get("produccionDia", 0),
+                "meta_diaria": d.get("resumenKpis", {}).get("metaDiaria", 480),
+                "paros_min": d.get("resumenKpis", {}).get("parosAcumuladosMin", 0),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    except Exception:
+        return {"state": "PRODUCCION_EN_ORDEN", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.post("/api/andon/state")
+def set_andon_state(state: str):
+    """Actualiza manualmente el estado del semáforo Andon."""
+    valid_states = ["PRODUCCION_EN_ORDEN", "ADVERTENCIA_OPERATIVA", "PRODUCCION_DEFICIENTE"]
+    if state not in valid_states:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Opciones: {valid_states}")
+
+    from .dashboard_sync import DashboardSyncService
+    sync_svc = DashboardSyncService()
+    sync_svc.notify_esp32_andon(state)
+    return {"status": "success", "new_state": state}
+
+
 @app.get("/api/production/latest")
 def get_latest_production(db: Session = Depends(get_db)):
     """Retorna el último registro horario validado de la pizarra."""

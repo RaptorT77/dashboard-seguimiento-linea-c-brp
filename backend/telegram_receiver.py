@@ -60,11 +60,18 @@ class TelegramPhotoReceiver:
         """Actualiza el repositorio en segundo plano para reflejar datos en GitHub Pages."""
         def _task():
             try:
-                subprocess.run(["git", "add", "data/", "assets/js/mockData.js"], cwd=str(Path(__file__).resolve().parent.parent), check=False)
-                subprocess.run(["git", "commit", "-m", "chore(telemetry): auto-sync production data from whiteboard photo [skip ci]"], cwd=str(Path(__file__).resolve().parent.parent), check=False)
-                subprocess.run(["git", "push"], cwd=str(Path(__file__).resolve().parent.parent), check=False, timeout=15)
-            except Exception:
-                pass
+                repo_dir = str(Path(__file__).resolve().parent.parent)
+                token = os.getenv("GITHUB_TOKEN")
+                if token:
+                    subprocess.run(["git", "config", "user.name", "BRP Telemetry Bot"], cwd=repo_dir, check=False)
+                    subprocess.run(["git", "config", "user.email", "bot@brp-telemetry.local"], cwd=repo_dir, check=False)
+                    remote_url = f"https://x-access-token:{token}@github.com/RaptorT77/dashboard-seguimiento-linea-c-brp.git"
+                    subprocess.run(["git", "remote", "set-url", "origin", remote_url], cwd=repo_dir, check=False)
+                subprocess.run(["git", "add", "data/", "assets/js/mockData.js"], cwd=repo_dir, check=False)
+                subprocess.run(["git", "commit", "-m", "chore(telemetry): auto-sync production data from whiteboard photo [skip ci]"], cwd=repo_dir, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, check=False, timeout=25)
+            except Exception as e:
+                AuditLogger.log_event("GIT_PUSH_ERROR", f"Error en sincronización git: {e}", level="WARNING")
         threading.Thread(target=_task, daemon=True).start()
 
     def get_system_status_summary(self) -> str:

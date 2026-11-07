@@ -1,5 +1,5 @@
 # Dependencias del Pipeline de Datos y Backend Línea C BRP
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 numpy>=1.24.0
 rapidocr-onnxruntime>=1.3.0
 sqlalchemy>=2.0.0

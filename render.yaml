@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: dashboard-linea-c-brp
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: ESP32_HOST
+        value: http://192.168.0.200

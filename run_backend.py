@@ -3,6 +3,7 @@ Punto de Entrada y Orquestador del Backend — Línea C BRP
 Planta Kolben Schmidt Celaya — BRP Rotax México
 """
 
+import os
 import sys
 import argparse
 import subprocess
@@ -106,6 +107,7 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Puerto para API REST")
 
     args = parser.parse_args()
+    effective_port = int(os.getenv("PORT", args.port))
 
     if args.mode == "test":
         run_tests()
@@ -117,14 +119,14 @@ def main():
     elif args.mode == "bot":
         run_telegram_bot()
     elif args.mode == "api":
-        run_api_server(args.host, args.port)
+        run_api_server(args.host, effective_port)
     elif args.mode == "all":
         # Ejecutar Bot y API en paralelo
         bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
         bot_thread.start()
         print("[SISTEMA] Bot de Telegram iniciado en hilo de fondo.")
         time.sleep(1)
-        run_api_server(args.host, args.port)
+        run_api_server(args.host, effective_port)
 
 
 if __name__ == "__main__":
