@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v2.7.0-OCR-LIVE",
-    "updatedAt": "2026-11-06T21:31:37Z",
+    "updatedAt": "2026-11-07T20:34:07Z",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 480,
     "supervisorActual": "Líder Antonia",
