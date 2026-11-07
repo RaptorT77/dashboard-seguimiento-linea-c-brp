@@ -31,6 +31,26 @@ def print_banner():
     print(banner)
 
 
+def run_keepalive_worker():
+    """
+    Auto-Keepalive que realiza pings periódicos a la URL pública de Render
+    cada 10 minutos para evitar que el contenedor entre en suspensión por inactividad.
+    """
+    import requests
+    time.sleep(25)  # Esperar inicio de FastAPI
+    public_url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("PUBLIC_APP_URL") or "https://dashboard-seguimiento-linea-c-brp.onrender.com"
+    health_url = f"{public_url.rstrip('/')}/health"
+    print(f"[KEEPALIVE] Auto-Keepalive activado hacia {health_url} (ciclo: cada 10 min)")
+
+    while True:
+        try:
+            time.sleep(600)  # Cada 10 minutos (Render duerme a los 15 min)
+            resp = requests.get(health_url, timeout=15)
+            print(f"[KEEPALIVE] Ping exitoso a {health_url} | Código: {resp.status_code}")
+        except Exception as e:
+            print(f"[KEEPALIVE] Error temporal en ping de mantenimiento: {e}")
+
+
 def run_telegram_bot():
     """Inicia el receptor de fotografías de Telegram."""
     print("[TELEGRAM] Iniciando receptor de Telegram (@DASHBOARD_BRP_001_bot)...")
@@ -125,6 +145,11 @@ def main():
         bot_thread = threading.Thread(target=run_telegram_bot, daemon=True)
         bot_thread.start()
         print("[SISTEMA] Bot de Telegram iniciado en hilo de fondo.")
+
+        # Iniciar worker de Keepalive para evitar suspensión en Render
+        keepalive_thread = threading.Thread(target=run_keepalive_worker, daemon=True)
+        keepalive_thread.start()
+
         time.sleep(1)
         run_api_server(args.host, effective_port)
 
