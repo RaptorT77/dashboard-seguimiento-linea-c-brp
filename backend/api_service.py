@@ -8,8 +8,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from .config import DASHBOARD_DATA_JSON, RAW_IMAGES_DIR, PERSISTENT_CSV_PATH
@@ -35,6 +36,38 @@ app.add_middleware(
 # Inicializar tablas y pipeline
 init_db()
 pipeline = WhiteboardProcessingPipeline()
+
+# Servir estáticos del Dashboard Web directamente desde FastAPI
+ROOT_DIR = Path(__file__).resolve().parent.parent
+ASSETS_DIR = ROOT_DIR / "assets"
+DATA_DIR = ROOT_DIR / "data"
+
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+if DATA_DIR.exists():
+    app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
+
+
+@app.get("/")
+def serve_dashboard():
+    """Servir la interfaz web del Dashboard en la raíz."""
+    index_path = ROOT_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return {
+        "status": "online",
+        "service": "BRP Linea C Telemetry Service",
+        "health": "/health",
+        "api_andon": "/api/andon/state"
+    }
+
+
+@app.get("/favicon.ico")
+def favicon():
+    icon_path = ASSETS_DIR / "images" / "LOGO_KS-1.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    return Response(status_code=204)
 
 
 @app.get("/health")
