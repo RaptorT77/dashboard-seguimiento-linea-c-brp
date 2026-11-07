@@ -11,7 +11,7 @@ import subprocess
 import requests
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union, List
 
 from .config import TELEGRAM_BOT_TOKEN, RAW_IMAGES_DIR, ESP32_HOST, DASHBOARD_DATA_JSON
 from .pipeline import WhiteboardProcessingPipeline

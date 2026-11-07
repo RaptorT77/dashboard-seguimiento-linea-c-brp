@@ -16,3 +16,4 @@ services:
         sync: false
       - key: ESP32_HOST
         value: http://192.168.0.200
+

@@ -47,3 +47,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Start command: runs Telegram bot polling and FastAPI concurrently
 CMD ["python", "run_backend.py", "--mode", "all"]
+
