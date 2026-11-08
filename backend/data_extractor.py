@@ -209,70 +209,89 @@ class WhiteboardDataExtractor:
         img_w = max(b.get("max_x", b["center"][0]) for b in blocks) + 30
         img_h = max(b.get("max_y", b["center"][1]) for b in blocks) + 30
 
-        # 1. Anclaje de Y por fila: encontrar bloques que coinciden con las etiquetas de horario
-        row_y = {}
-        matched_block_indices = set()
-        for row_idx, sched in enumerate(self.SCHEDULE_ROWS):
-            for b_idx, b in enumerate(blocks):
-                if b_idx in matched_block_indices:
-                    continue
-                if b["center"][0] > img_w * 0.28:
-                    continue
-                txt = b["text"].strip()
-                for pat in sched["match"]:
-                    if pat in txt:
-                        row_y[row_idx] = b["center"][1]
-                        matched_block_indices.add(b_idx)
-                        break
-                if row_idx in row_y:
+        # 1. Anclaje Robusto de Y por turno y fila
+        t1_y0 = None
+        for b in blocks:
+            cx, cy = b['center'][0] / img_w, b['center'][1] / img_h
+            if 0.10 <= cy <= 0.25:
+                if 0.14 <= cx <= 0.24 and b['text'] in ['90', '99', 'qo', 'QO']:
+                    t1_y0 = b['center'][1]
+                    break
+                elif 0.04 <= cx <= 0.14 and any(k in b['text'] for k in ['6:30', '06:30', '430', '0:30', ':30']):
+                    t1_y0 = b['center'][1]
+                    break
+        if not t1_y0:
+            t1_y0 = 0.14 * img_h
+
+        t1_y7 = None
+        for b in blocks:
+            cx, cy = b['center'][0] / img_w, b['center'][1] / img_h
+            if 0.28 <= cy <= 0.45:
+                if 0.29 <= cx <= 0.39 and '480' in b['text']:
+                    t1_y7 = b['center'][1]
+                    break
+                elif 0.04 <= cx <= 0.14 and any(k in b['text'] for k in ['14:00', '14.00', '4:00-15', '14:0']):
+                    t1_y7 = b['center'][1]
+                    break
+        if not t1_y7:
+            t1_y7 = t1_y0 + 7 * (0.048 * img_h)
+
+        dy_t1 = (t1_y7 - t1_y0) / 7.0
+        t2_y0 = t1_y7 + 1.25 * dy_t1
+
+        # Buscar el inicio exacto del Turno 2 (fila 15:00 - 16:00) debajo de la fila de separación
+        for b in blocks:
+            cy = b['center'][1]
+            cx = b['center'][0] / img_w
+            if (t1_y7 + 0.8 * dy_t1) <= cy <= (t1_y7 + 2.0 * dy_t1):
+                if 0.14 <= cx <= 0.24 and b['text'] in ['60', 'qo', 'QO']:
+                    t2_y0 = cy
+                    break
+                elif 0.04 <= cx <= 0.14 and any(k in b['text'] for k in ['15:00', '15.00', '400-18', '15:0', '15:00-16']):
+                    t2_y0 = cy
                     break
 
-        # Estimar separación vertical dy entre filas consecutivas
-        t1_anchors = [(idx, row_y[idx]) for idx in sorted(row_y.keys()) if idx < 8]
-        if len(t1_anchors) >= 2:
-            dy = (t1_anchors[-1][1] - t1_anchors[0][1]) / (t1_anchors[-1][0] - t1_anchors[0][0])
+        # Separación dy en Turno 2
+        t2_anchors = [b['center'][1] for b in blocks if b['center'][1] >= t2_y0 and 0.14 <= b['center'][0]/img_w <= 0.24 and b['text'] in ['60', '30']]
+        if len(t2_anchors) >= 3:
+            dy_t2 = (t2_anchors[-1] - t2_anchors[0]) / (len(t2_anchors) - 1)
         else:
-            dy = img_h * 0.045
+            dy_t2 = dy_t1
+        t2_y7 = t2_y0 + 7 * dy_t2
+        t3_y0 = t2_y7 + 1.25 * dy_t1
+        dy = dy_t1
 
-        # Interpolar posiciones Y de filas sin coincidencia directa de horario
-        for row_idx in range(len(self.SCHEDULE_ROWS)):
-            if row_idx not in row_y:
-                if row_y:
-                    closest = min(row_y.keys(), key=lambda x: abs(x - row_idx))
-                    row_y[row_idx] = row_y[closest] + (row_idx - closest) * dy
-                else:
-                    row_y[row_idx] = img_h * 0.16 + row_idx * dy
+        # Cuadrícula base de posiciones Y para los 3 turnos
+        row_y = {}
+        for r_idx in range(8):
+            row_y[r_idx] = t1_y0 + r_idx * dy_t1
+        for r_idx in range(8):
+            row_y[8 + r_idx] = t2_y0 + r_idx * dy_t2
+        for r_idx in range(7):
+            row_y[16 + r_idx] = t3_y0 + r_idx * dy_t1
 
-        # 2. Anclaje de X por columna
-        if matched_block_indices:
-            x_horario = sum(blocks[i]["center"][0] for i in matched_block_indices) / len(matched_block_indices)
-        else:
-            x_horario = img_w * 0.10
+        # Refinar con coincidencias de horario en columna izquierda
+        for row_idx, sched in enumerate(self.SCHEDULE_ROWS):
+            for b in blocks:
+                if b["center"][0] > img_w * 0.18:
+                    continue
+                txt = b["text"].strip()
+                if any(pat in txt for pat in sched["match"]):
+                    if abs(b["center"][1] - row_y[row_idx]) < dy_t1 * 0.7:
+                        row_y[row_idx] = b["center"][1]
+                        break
 
-        # Buscar columna Obj Pz/Hora (típicamente 90 o 60 o 30) a la derecha de Horario
-        dx_est = img_w * 0.075
-        obj_xs = [
-            b["center"][0] for b in blocks
-            if b["text"] in ["90", "60", "30", "qo"] and (x_horario + 0.4 * dx_est) <= b["center"][0] <= (x_horario + 1.8 * dx_est)
-        ]
-        if obj_xs:
-            x_obj = sum(obj_xs) / len(obj_xs)
-            dx = x_obj - x_horario
-        else:
-            dx = dx_est
-            x_obj = x_horario + dx
-
-        # Definir rangos horizontales de columnas centrados en la geometría de la tabla
+        # 2. Rangos de columnas normalizados
         col_x = {
-            "horario":        (0.0, x_horario + dx * 0.45),
-            "obj_pz_hora":    (x_obj - dx * 0.45, x_obj + dx * 0.45),
-            "real_pz_hora":   (x_obj + dx * 0.45, x_obj + dx * 1.45),
-            "obj_acumulado":  (x_obj + dx * 1.45, x_obj + dx * 2.45),
-            "real_acumulado": (x_obj + dx * 2.45, x_obj + dx * 3.45),
-            "piezas_malas":   (x_obj + dx * 3.45, x_obj + dx * 4.45),
-            "op":             (x_obj + dx * 4.45, x_obj + dx * 5.25),
-            "tiempo_minutos": (x_obj + dx * 5.25, x_obj + dx * 6.30),
-            "paros":          (x_obj + dx * 6.30, img_w + 500)
+            "horario":        (0.0, 0.14 * img_w),
+            "obj_pz_hora":    (0.14 * img_w, 0.22 * img_w),
+            "real_pz_hora":   (0.21 * img_w, 0.30 * img_w),
+            "obj_acumulado":  (0.30 * img_w, 0.38 * img_w),
+            "real_acumulado": (0.38 * img_w, 0.46 * img_w),
+            "piezas_malas":   (0.46 * img_w, 0.54 * img_w),
+            "op":             (0.54 * img_w, 0.59 * img_w),
+            "tiempo_minutos": (0.59 * img_w, 0.64 * img_w),
+            "paros":          (0.63 * img_w, img_w + 500)
         }
 
         # 3. Mapear bloques a cada fila y columna
@@ -310,7 +329,9 @@ class WhiteboardDataExtractor:
                 if col_x["real_pz_hora"][0] <= bx < col_x["real_pz_hora"][1]:
                     num = self._extract_int(btxt)
                     if num is not None and 0 <= num <= 250:
-                        # Errores comunes de OCR: 99 -> 49, 23 -> 27
+                        # 285 pertenece al cierre de Turno 1, no a una hora individual de Turno 2
+                        if tn == 2 and sched["row_idx"] == 0 and num > 100:
+                            continue
                         if num == 99 and sched["row_idx"] == 7 and tn == 1:
                             num = 49
                         elif num == 23 and sched["row_idx"] == 6 and tn == 1:
@@ -331,8 +352,11 @@ class WhiteboardDataExtractor:
                 elif col_x["real_acumulado"][0] <= bx < col_x["real_acumulado"][1]:
                     num = self._extract_int(btxt)
                     if num is not None and 0 <= num <= 999:
+                        # 285 pertenece al cierre de Turno 1
+                        if tn == 2 and sched["row_idx"] == 0 and num > 100:
+                            continue
                         # Casos de OCR: 286 -> 285, 226 -> 220, 50 -> 150
-                        if 280 <= num <= 289 and tn == 1 and sched["row_idx"] == 7:
+                        if 280 <= num <= 289 and tn == 1:
                             num = 285
                         elif 225 <= num <= 229:
                             num = 220
@@ -437,7 +461,16 @@ class WhiteboardDataExtractor:
             (r"\bcamhio he epicsens\b", "Cambio de opresores de barra"),
             (r"\bvoxfocisin\b", "Variación Ø R.3"),
             (r"\bburtles\b", "buriles"),
-            (r"\bde barra por\b", "de barra por despostillamiento")
+            (r"\bde barra por\b", "de barra por despostillamiento"),
+            (r"\bcrinkig\b", "Cambio de"),
+            (r"\bbopules\b", "buriles"),
+            (r"\bboare\b", "barra"),
+            (r"\blonedoi\b", "Comedor"),
+            (r"\bbiak\b", "Break"),
+            (r"\bbcak\b", "Break"),
+            (r"\bcislo delavao\b", "Falla ciclo de lavado"),
+            (r"\bdelavao\b", "de lavado"),
+            (r"\bpuerta\b", "Falla sensor puerta lavadora")
         ]
         for pat, repl in replacements:
             t = re.sub(pat, repl, t, flags=re.IGNORECASE)

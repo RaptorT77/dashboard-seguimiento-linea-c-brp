@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Sincronización Automática 24H — Acumulado Continuo 0:00 a 24:00 hrs
- * Última Actualización: 2026-11-08 02:45:43 UTC
+ * Última Actualización: 2026-11-08 03:58:24 UTC
  * =============================================================================
  */
 
@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v3.0.0-24H-LIVE",
-    "updatedAt": "2026-11-08T02:45:43Z",
+    "updatedAt": "2026-11-08T03:58:24Z",
     "fechaProduccion": "2026-11-08",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 450,
@@ -21,20 +21,20 @@ const BRP_DATA = {
     "turnoActual": 2
   },
   "resumenKpis": {
-    "produccionDia": 422,
+    "produccionDia": 252,
     "metaDiaria": 1350,
-    "porcentajeAvance": 31.3,
-    "unidadesCompletadas": 422,
-    "unidadesPendientes": 928,
-    "eficienciaOee": 45.2,
-    "disponibilidad": 83.3,
-    "rendimiento": 56.3,
-    "calidadFpy": 96.3,
-    "parosAcumuladosMin": 120,
-    "eventosParo": 4,
+    "porcentajeAvance": 18.7,
+    "unidadesCompletadas": 252,
+    "unidadesPendientes": 1098,
+    "eficienciaOee": 25.7,
+    "disponibilidad": 86.4,
+    "rendimiento": 33.6,
+    "calidadFpy": 88.7,
+    "parosAcumuladosMin": 90,
+    "eventosParo": 3,
     "taktTimeSeg": 58.2,
-    "scrapPiezas": 16,
-    "scrapPorcentaje": 3.7,
+    "scrapPiezas": 32,
+    "scrapPorcentaje": 11.3,
     "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
@@ -44,8 +44,8 @@ const BRP_DATA = {
       "horario": "06:30 - 15:00",
       "supervisor": "Líder Antonia",
       "meta": 480,
-      "real": 285,
-      "oee": 59.4,
+      "real": 220,
+      "oee": 45.8,
       "activo": false
     },
     {
@@ -54,8 +54,8 @@ const BRP_DATA = {
       "horario": "15:00 - 23:00",
       "supervisor": "Ing. Roberto Garza",
       "meta": 450,
-      "real": 137,
-      "oee": 30.4,
+      "real": 285,
+      "oee": 63.3,
       "activo": true
     },
     {
@@ -86,13 +86,13 @@ const BRP_DATA = {
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 90,
-      "real": 0,
+      "real": 99,
       "acumMeta": 90,
-      "acumReal": 0,
-      "oeeHora": 0.0,
-      "parosMin": 30,
+      "acumReal": 99,
+      "oeeHora": 100.0,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Paros // INSECOLOCARRSXARB"
+      "comentario": "Producción en curso"
     },
     {
       "hora": "08:00 - 09:00",
@@ -101,7 +101,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 63,
       "acumMeta": 150,
-      "acumReal": 150,
+      "acumReal": 59,
       "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
@@ -114,21 +114,21 @@ const BRP_DATA = {
       "meta": 60,
       "real": 31,
       "acumMeta": 210,
-      "acumReal": 181,
+      "acumReal": 90,
       "oeeHora": 51.7,
       "parosMin": 30,
       "malas": 0,
-      "comentario": "Cambio se // 3EE"
+      "comentario": "Cambio de de // deloamepor"
     },
     {
       "hora": "10:00 - 11:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 58,
+      "real": 130,
       "acumMeta": 270,
-      "acumReal": 239,
-      "oeeHora": 96.7,
+      "acumReal": 220,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
       "comentario": "Producción en curso"
@@ -140,32 +140,45 @@ const BRP_DATA = {
       "meta": 30,
       "real": 0,
       "acumMeta": 300,
-      "acumReal": 120,
+      "acumReal": 220,
       "oeeHora": 0.0,
-      "parosMin": 30,
+      "parosMin": 0,
       "malas": 0,
-      "comentario": "Comedor"
+      "comentario": "Sin incidencias reportadas"
     },
     {
       "hora": "12:00 - 13:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 110,
+      "real": 0,
       "acumMeta": 360,
-      "acumReal": 230,
-      "oeeHora": 100.0,
+      "acumReal": 126,
+      "oeeHora": 0.0,
       "parosMin": 30,
       "malas": 0,
-      "comentario": "Cambio de opresores de barra"
+      "comentario": "Comedor"
     },
     {
       "hora": "13:00 - 14:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 0,
+      "real": 94,
       "acumMeta": 420,
+      "acumReal": 220,
+      "oeeHora": 100.0,
+      "parosMin": 0,
+      "malas": 0,
+      "comentario": "Producción en curso"
+    },
+    {
+      "hora": "14:00 - 15:00",
+      "turno": "Turno 1 - Matutino",
+      "turnoNum": 1,
+      "meta": 60,
+      "real": 0,
+      "acumMeta": 480,
       "acumReal": 216,
       "oeeHora": 0.0,
       "parosMin": 0,
@@ -173,27 +186,14 @@ const BRP_DATA = {
       "comentario": "Sin incidencias reportadas"
     },
     {
-      "hora": "14:00 - 15:00",
-      "turno": "Turno 1 - Matutino",
-      "turnoNum": 1,
-      "meta": 60,
-      "real": 69,
-      "acumMeta": 480,
-      "acumReal": 285,
-      "oeeHora": 100.0,
-      "parosMin": 0,
-      "malas": 0,
-      "comentario": "Producción en curso"
-    },
-    {
       "hora": "15:00 - 16:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 16,
+      "real": 285,
       "acumMeta": 540,
-      "acumReal": 301,
-      "oeeHora": 26.7,
+      "acumReal": 505,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
       "comentario": "Producción en curso"
@@ -203,10 +203,10 @@ const BRP_DATA = {
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 16,
+      "real": 285,
       "acumMeta": 600,
-      "acumReal": 301,
-      "oeeHora": 26.7,
+      "acumReal": 505,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
       "comentario": "Producción en curso"
@@ -218,23 +218,23 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 660,
-      "acumReal": 301,
+      "acumReal": 505,
       "oeeHora": 0.0,
-      "parosMin": 0,
-      "malas": 16,
-      "comentario": "Sin incidencias reportadas"
+      "parosMin": 30,
+      "malas": 0,
+      "comentario": "Brcak"
     },
     {
       "hora": "18:00 - 19:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 121,
+      "real": 116,
       "acumMeta": 720,
-      "acumReal": 422,
+      "acumReal": 336,
       "oeeHora": 100.0,
       "parosMin": 0,
-      "malas": 0,
+      "malas": 16,
       "comentario": "Producción en curso"
     },
     {
@@ -242,13 +242,13 @@ const BRP_DATA = {
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 30,
-      "real": 121,
+      "real": 0,
       "acumMeta": 750,
-      "acumReal": 422,
-      "oeeHora": 100.0,
+      "acumReal": 336,
+      "oeeHora": 0.0,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Producción en curso"
+      "malas": 16,
+      "comentario": "Sin incidencias reportadas"
     },
     {
       "hora": "20:00 - 21:00",
@@ -257,11 +257,11 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 810,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Sin incidencias reportadas"
     },
     {
       "hora": "21:00 - 22:00",
@@ -270,11 +270,11 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 870,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Sin incidencias reportadas"
     },
     {
       "hora": "22:00 - 23:00",
@@ -283,11 +283,11 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 930,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Sin incidencias reportadas"
     },
     {
       "hora": "23:00 - 24:00",
@@ -296,7 +296,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 990,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -309,7 +309,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1050,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -322,7 +322,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1110,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -335,7 +335,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1170,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -348,7 +348,7 @@ const BRP_DATA = {
       "meta": 30,
       "real": 0,
       "acumMeta": 1200,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -361,7 +361,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1260,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -374,7 +374,7 @@ const BRP_DATA = {
       "meta": 90,
       "real": 0,
       "acumMeta": 1350,
-      "acumReal": 422,
+      "acumReal": 252,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -385,17 +385,7 @@ const BRP_DATA = {
     {
       "id": "P-01",
       "estacion": "OP30",
-      "causa": "Paros // INSECOLOCARRSXARB",
-      "duracionMin": 30,
-      "categoria": "Mecánico",
-      "tipo": "Incidencia Pizarra",
-      "hora": "06:30 - 08:00",
-      "estatus": "Reportado en Pizarra"
-    },
-    {
-      "id": "P-02",
-      "estacion": "OP30",
-      "causa": "Cambio se // 3EE",
+      "causa": "Cambio de de // deloamepor",
       "duracionMin": 30,
       "categoria": "Mecánico",
       "tipo": "Incidencia Pizarra",
@@ -403,23 +393,23 @@ const BRP_DATA = {
       "estatus": "Reportado en Pizarra"
     },
     {
-      "id": "P-03",
+      "id": "P-02",
       "estacion": "OP30",
       "causa": "Comedor",
       "duracionMin": 30,
       "categoria": "Operación / Descanso",
       "tipo": "Incidencia Pizarra",
-      "hora": "11:00 - 12:00",
+      "hora": "12:00 - 13:00",
       "estatus": "Reportado en Pizarra"
     },
     {
-      "id": "P-04",
-      "estacion": "OP30",
-      "causa": "Cambio de opresores de barra",
+      "id": "P-03",
+      "estacion": "OP20",
+      "causa": "Brcak",
       "duracionMin": 30,
       "categoria": "Mecánico",
       "tipo": "Incidencia Pizarra",
-      "hora": "12:00 - 13:00",
+      "hora": "17:00 - 18:00",
       "estatus": "Reportado en Pizarra"
     }
   ],
@@ -430,12 +420,12 @@ const BRP_DATA = {
       "equipo": "Torno / Centro CNC OP10",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 422,
+      "buenasPzas": 252,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 60.2,
+      "eficiencia": 40.7,
       "ultimaLiberacion": "20:00"
     },
     {
@@ -444,12 +434,12 @@ const BRP_DATA = {
       "equipo": "Ranuradora de Precisión OP20",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 422,
+      "buenasPzas": 252,
       "scrapPzas": 0,
       "cicloSeg": 48.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 55.2,
+      "eficiencia": 35.7,
       "ultimaLiberacion": "20:00"
     },
     {
@@ -458,12 +448,12 @@ const BRP_DATA = {
       "equipo": "Ranuradora / Lavadora OP30",
       "operador": "Téc. OP30",
       "metaPzas": 1350,
-      "buenasPzas": 422,
-      "scrapPzas": 16,
+      "buenasPzas": 252,
+      "scrapPzas": 32,
       "cicloSeg": 120.0,
       "estado": "PARO",
       "buffer": "Atención de paros reportados",
-      "eficiencia": 35.2,
+      "eficiencia": 15.7,
       "ultimaLiberacion": "20:00"
     },
     {
@@ -472,12 +462,12 @@ const BRP_DATA = {
       "equipo": "Cabina de Grafito / Moly OP40",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 422,
+      "buenasPzas": 252,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Espera material",
-      "eficiencia": 45.2,
+      "eficiencia": 25.7,
       "ultimaLiberacion": "20:00"
     },
     {
@@ -486,12 +476,12 @@ const BRP_DATA = {
       "equipo": "Gage de Aire Multidiametral OP50",
       "operador": "Téc. Calidad",
       "metaPzas": 1350,
-      "buenasPzas": 422,
+      "buenasPzas": 252,
       "scrapPzas": 0,
       "cicloSeg": 46.0,
       "estado": "OK",
       "buffer": "Gage OK",
-      "eficiencia": 45.2,
+      "eficiencia": 25.7,
       "ultimaLiberacion": "20:00"
     },
     {
@@ -500,12 +490,12 @@ const BRP_DATA = {
       "equipo": "Estación de Visión y Embalaje OP60",
       "operador": "Antonia",
       "metaPzas": 1350,
-      "buenasPzas": 422,
+      "buenasPzas": 252,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Caja empaque",
-      "eficiencia": 45.2,
+      "eficiencia": 25.7,
       "ultimaLiberacion": "20:00"
     }
   ],
@@ -513,8 +503,8 @@ const BRP_DATA = {
     {
       "id": "ALT-DEFICIT-DIA",
       "tipo": "CRITICA",
-      "titulo": "Déficit Acumulado (-328 Uds vs Plan a las 20:00)",
-      "descripcion": "La línea acumula 422 unidades de 750 programadas al corte (56.3% de cumplimiento). Paros acumulados: 120 min en la jornada.",
+      "titulo": "Déficit Acumulado (-498 Uds vs Plan a las 20:00)",
+      "descripcion": "La línea acumula 252 unidades de 750 programadas al corte (33.6% de cumplimiento). Paros acumulados: 90 min en la jornada.",
       "estacion": "LÍNEA C / GENERAL",
       "hora": "20:00",
       "tiempoTranscurrido": "Jornada 24h en curso",
@@ -523,48 +513,38 @@ const BRP_DATA = {
     {
       "id": "ALT-P-01",
       "tipo": "ADVERTENCIA",
-      "titulo": "Paro 30 min — Paros // INSECOLOCARRSXARB",
-      "descripcion": "Estación OP30: Paros // INSECOLOCARRSXARB registrado durante el horario 06:30 - 08:00.",
-      "estacion": "OP30",
-      "hora": "06:30 - 08:00",
-      "tiempoTranscurrido": "30 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "ALT-P-02",
-      "tipo": "ADVERTENCIA",
-      "titulo": "Paro 30 min — Cambio se // 3EE",
-      "descripcion": "Estación OP30: Cambio se // 3EE registrado durante el horario 09:00 - 10:00.",
+      "titulo": "Paro 30 min — Cambio de de // deloamepor",
+      "descripcion": "Estación OP30: Cambio de de // deloamepor registrado durante el horario 09:00 - 10:00.",
       "estacion": "OP30",
       "hora": "09:00 - 10:00",
       "tiempoTranscurrido": "30 min registrados",
       "resuelta": true
     },
     {
-      "id": "ALT-P-03",
+      "id": "ALT-P-02",
       "tipo": "ADVERTENCIA",
       "titulo": "Paro 30 min — Comedor",
-      "descripcion": "Estación OP30: Comedor registrado durante el horario 11:00 - 12:00.",
-      "estacion": "OP30",
-      "hora": "11:00 - 12:00",
-      "tiempoTranscurrido": "30 min registrados",
-      "resuelta": true
-    },
-    {
-      "id": "ALT-P-04",
-      "tipo": "ADVERTENCIA",
-      "titulo": "Paro 30 min — Cambio de opresores de barra",
-      "descripcion": "Estación OP30: Cambio de opresores de barra registrado durante el horario 12:00 - 13:00.",
+      "descripcion": "Estación OP30: Comedor registrado durante el horario 12:00 - 13:00.",
       "estacion": "OP30",
       "hora": "12:00 - 13:00",
       "tiempoTranscurrido": "30 min registrados",
       "resuelta": true
     },
     {
+      "id": "ALT-P-03",
+      "tipo": "ADVERTENCIA",
+      "titulo": "Paro 30 min — Brcak",
+      "descripcion": "Estación OP20: Brcak registrado durante el horario 17:00 - 18:00.",
+      "estacion": "OP20",
+      "hora": "17:00 - 18:00",
+      "tiempoTranscurrido": "30 min registrados",
+      "resuelta": true
+    },
+    {
       "id": "ALT-SCRAP-DIA",
       "tipo": "CALIDAD",
-      "titulo": "Piezas Scrap Acumuladas: 16 pzas (3.7%)",
-      "descripcion": "Se han registrado 16 unidades defectuosas (NOK) acumuladas en los turnos reportados.",
+      "titulo": "Piezas Scrap Acumuladas: 32 pzas (11.3%)",
+      "descripcion": "Se han registrado 32 unidades defectuosas (NOK) acumuladas en los turnos reportados.",
       "estacion": "LÍNEA C / CALIDAD",
       "hora": "20:00",
       "tiempoTranscurrido": "Acumulado día",
