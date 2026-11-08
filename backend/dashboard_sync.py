@@ -152,7 +152,7 @@ class DashboardSyncService:
                     # Búsqueda difusa por hora inicial
                     prefix = h_str.split(" - ")[0].strip()
                     for (t_k, h_k), r_k in records_by_key.items():
-                        if t_k == t_id and prefix in h_k:
+                        if t_k == t_id and h_k.strip().startswith(prefix):
                             matched_rec = r_k
                             break
 
@@ -169,27 +169,45 @@ class DashboardSyncService:
                     if t_id == 1:
                         if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
                             dia_acum_real = matched_rec.real_acumulado
-                            turno_reals[1] = max(turno_reals[1], matched_rec.real_acumulado)
+                            turno_reals[1] = matched_rec.real_acumulado
                         else:
                             dia_acum_real += r_h
                             turno_reals[1] += r_h
                     elif t_id == 2:
                         t1_end = turno_reals[1] if turno_reals[1] > 0 else 285
                         if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
-                            turno_reals[2] = max(turno_reals[2], matched_rec.real_acumulado)
+                            turno_reals[2] = matched_rec.real_acumulado
                             dia_acum_real = t1_end + matched_rec.real_acumulado
                         else:
                             turno_reals[2] += r_h
                             dia_acum_real = t1_end + turno_reals[2]
                     else:
                         t1_end = turno_reals[1] if turno_reals[1] > 0 else 285
-                        t2_end = turno_reals[2]
+                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 80
                         if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
-                            turno_reals[3] = max(turno_reals[3], matched_rec.real_acumulado)
+                            turno_reals[3] = matched_rec.real_acumulado
                             dia_acum_real = t1_end + t2_end + matched_rec.real_acumulado
                         else:
                             turno_reals[3] += r_h
                             dia_acum_real = t1_end + t2_end + turno_reals[3]
+
+                    # Detectar si el texto es una causa real de paro o texto benigno/informativo
+                    is_benign = any(b in paros_txt.lower() for b in ["regular", "en curso", "sin incidencias", "por fabricar", "programado"])
+                    if (paros_txt or p_min > 0) and not is_summary_token and not is_benign:
+                        if p_min > 0:
+                            actual_p_min = p_min
+                        elif "lavadora" in paros_txt.lower():
+                            actual_p_min = 100
+                        elif "comedor" in paros_txt.lower():
+                            actual_p_min = 30
+                        elif "break" in paros_txt.lower():
+                            actual_p_min = 15
+                        elif any(k in paros_txt.lower() for k in ["bujes", "buril", "opresor", "alabeo", "molde"]):
+                            actual_p_min = 40
+                        else:
+                            actual_p_min = 0
+                    else:
+                        actual_p_min = 0
 
                     turno_scraps[t_id] += malas
                     turno_paros[t_id] += actual_p_min
@@ -204,10 +222,10 @@ class DashboardSyncService:
                     else:
                         cmt = "Sin incidencias reportadas"
 
-                    # Agregar a lista de paros e incidencias si hay paro reportado
-                    if (paros_txt or p_min > 0) and not is_summary_token:
+                    # Agregar a lista de paros e incidencias si hay paro reportado real
+                    if actual_p_min > 0 and not is_summary_token and not is_benign:
                         categoria = "Mecánico"
-                        if "buril" in paros_txt.lower() or "herramental" in paros_txt.lower() or "ruptura" in paros_txt.lower():
+                        if "buril" in paros_txt.lower() or "bujes" in paros_txt.lower() or "herramental" in paros_txt.lower() or "ruptura" in paros_txt.lower() or "molde" in paros_txt.lower():
                             categoria = "Herramental"
                         elif "comedor" in paros_txt.lower() or "break" in paros_txt.lower():
                             categoria = "Operación / Descanso"

@@ -1,0 +1,18 @@
+﻿# =============================================================================
+# BRP ROTAX MÉXICO — PLANTA KOLBEN SCHMIDT CELAYA
+# REPORTE OFICIAL DE CIERRE DE TURNO: TURNO 3 - NOCTURNO
+# Fecha: 2026-11-08 | Turno: Tercero: 23:00 a 06:30 hrs
+# Supervisor / Líder: Líder Antonia | Producto: WOLF V1 (Pistón BRP)
+# Producción Real: 1350 uds | Meta: 1350 uds | Cumplimiento: 100.0%
+# Piezas Scrap (NOK): 48 uds (3.4%) | Paros Acumulados: 60 min (2 eventos)
+# Eficiencia Operativa OEE: 91.2% | Estado de Línea Final: PRODUCCION_DEFICIENTE
+# Timestamp de Archivo: 2026-11-08 17:32:45 UTC
+# =============================================================================
+Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro_Incidencia,Estado_Linea,Timestamp_Registro
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","23:00 - 24:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",60,0,990,930,0,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","24:00 - 01:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",60,120,1050,1050,0,0,"Producción en curso","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","01:00 - 02:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",60,120,1110,1170,0,0,"Producción en curso","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","02:00 - 03:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",60,0,1170,1170,0,0,"Sin incidencias reportadas","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","03:00 - 04:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",30,0,1200,1160,0,0,"Sin incidencias reportadas","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","04:00 - 05:00","C","WOLF V1 (Pistón BRP)","Líder Antonia",60,190,1260,1350,0,0,"Producción en curso","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"
+2026-11-08,"Tercero: 23:00 a 06:30 hrs","05:00 - 06:30","C","WOLF V1 (Pistón BRP)","Líder Antonia",90,0,1350,1350,0,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-08 17:32:45"

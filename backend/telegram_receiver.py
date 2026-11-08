@@ -99,18 +99,28 @@ class TelegramPhotoReceiver:
                 d = json.load(f)
                 k = d.get("resumenKpis", {})
                 prod = k.get("produccionDia", 0)
-                meta = k.get("metaDiaria", 480)
+                meta = k.get("metaDiaria", 1350)
                 avance = k.get("porcentajeAvance", 0.0)
                 scrap = k.get("scrapPiezas", 0)
+                turnos = d.get("turnos", [])
+                t1_real = turnos[0].get("real", 0) if len(turnos) > 0 else 0
+                t2_real = turnos[1].get("real", 0) if len(turnos) > 1 else 0
+                t3_real = turnos[2].get("real", 0) if len(turnos) > 2 else 0
+                paros_min = k.get("parosAcumuladosMin", 0)
+                estado = k.get("estadoLinea", "PRODUCCION_DEFICIENTE")
         except Exception:
-            prod, meta, avance, scrap = 0, 480, 0.0, 0
+            prod, meta, avance, scrap, t1_real, t2_real, t3_real, paros_min, estado = 0, 1350, 0.0, 0, 0, 0, 0, 0, "DESCONOCIDO"
 
         return (
-            "📊 *ESTADO ACTUAL — SISTEMA LÍNEA C BRP*\n"
-            "Planta Kolben Schmidt Celaya\n\n"
-            f"🚦 *Semáforo Andon:* `{line_state}`\n"
-            f"📦 *Producción Real:* *{prod}* / *{meta}* uds ({avance:.1f}%)\n"
-            f"🗑 *Scrap Acumulado:* *{scrap}* pzas\n\n"
+            "📊 *ESTADO ACTUAL — SISTEMA LÍNEA C BRP (24 HORAS)*\n"
+            "Planta Kolben Schmidt Celaya | Producto: WOLF V1\n\n"
+            f"🚦 *Semáforo Andon:* `{estado}` (Torre: `{line_state}`)\n"
+            f"📦 *Producción Real Total del Día:* *{prod}* / *{meta}* uds ({avance:.1f}%)\n"
+            f"  • *Turno 1 (Matutino):* {t1_real} / 480 uds (Cerrado)\n"
+            f"  • *Turno 2 (Vespertino):* {t2_real} / 450 uds (En Curso)\n"
+            f"  • *Turno 3 (Nocturno):* {t3_real} / 420 uds (Programado)\n\n"
+            f"🗑 *Scrap Total Acumulado:* *{scrap}* pzas\n"
+            f"⏱ *Paros de Línea:* *{paros_min}* minutos registrados\n"
             f"🌐 *Hardware ESP32:* `{ip}` ({rssi} dBm) | Uptime: `{uptime}`\n"
             "🔗 *Dashboard Web:* [Abrir en Vivo](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)"
         )
@@ -283,7 +293,7 @@ class TelegramPhotoReceiver:
 
             fields = result["extracted_fields"]
             status = result["validation_status"]
-            is_dup = result["is_duplicate"]
+            is_dup = result.get("is_duplicate", False)
 
             if is_dup:
                 reply = (

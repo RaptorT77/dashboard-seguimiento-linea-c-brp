@@ -58,6 +58,8 @@ class OcrProcessor:
             "blocks": merged_blocks,
             "raw_text": raw_text,
             "total_blocks": len(merged_blocks),
+            "image_width": int(bgr_image.shape[1]),
+            "image_height": int(bgr_image.shape[0]),
             "execution_time_ms": elapsed_ms
         }
 
