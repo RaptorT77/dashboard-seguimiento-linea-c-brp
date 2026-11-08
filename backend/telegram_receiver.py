@@ -292,20 +292,26 @@ class TelegramPhotoReceiver:
                     f"• *Producto:* `{fields['producto']}`\n"
                     f"Los datos son idénticos a los vigentes. No se generaron duplicados."
                 )
-            elif status == "VALIDO":
+            elif status in ["VALIDO", "PARCIAL"]:
+                icon = "✅" if status == "VALIDO" else "⚠️"
+                total_rows = result.get("total_rows_extracted", 1)
                 reply = (
-                    f"✅ *Pizarra Procesada y Validada Exitosamente*\n\n"
-                    f"🕒 *Última Hora:* `{fields['horario']}`\n"
-                    f"📦 *Producto:* `{fields['producto']}` (Línea {fields['linea']})\n"
-                    f"👤 *Líder:* `{fields['lider'] or 'N/A'}`\n\n"
+                    f"{icon} *Pizarra Procesada y Sincronizada Exitosamente*\n\n"
+                    f"📅 *Fecha:* `{fields['fecha']}` | *Línea:* `{fields['linea']}`\n"
+                    f"📦 *Producto:* `{fields['producto']}`\n"
+                    f"👤 *Líder:* `{fields['lider'] or 'Antonia'}`\n"
+                    f"🕒 *Última Hora:* `{fields['horario']}` ({fields['turno']})\n"
+                    f"📋 *Horas procesadas en la jornada:* *{total_rows} horas*\n\n"
                     f"📊 *Producción de la Hora:*\n"
                     f"• Real Hora: *{fields['real_pz_hora']} pzas* (Obj: {fields['obj_pz_hora']})\n"
-                    f"• Acumulado OK: *{fields['real_acumulado']} pzas* (Meta: {fields['obj_acumulado']})\n"
+                    f"• Acumulado Turno: *{fields['real_acumulado']} pzas* (Meta: {fields['obj_acumulado']})\n"
                     f"• Piezas Malas (Scrap): *{fields['piezas_malas'] or 0} pzas*\n"
                 )
                 if fields.get("paros"):
                     reply += f"⚠️ *Paro Reportado:* `{fields['paros']}`\n"
-                reply += "\n🌐 *Dashboard web actualizado en vivo.*"
+                if status == "PARCIAL" and result.get("validation_notes"):
+                    reply += f"\nℹ️ *Nota:* {result['validation_notes'][0]}\n"
+                reply += "\n🌐 *Dashboard web 24H actualizado en vivo.*"
             else:
                 notes = "\n".join([f"• {n}" for n in result["validation_notes"]])
                 reply = (

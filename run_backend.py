@@ -85,9 +85,32 @@ def run_shift_scheduler():
                     current_shift = d.get("planta", {}).get("turnoActual", 1)
 
             if current_shift != expected_shift:
-                print(f"[SCHEDULER] Transición horaria detectada: Turno {current_shift} -> Turno {expected_shift}. Archivando y limpiando...")
+                print(f"[SCHEDULER] Transición horaria detectada: Turno {current_shift} -> Turno {expected_shift}.")
+                # Archivar turno saliente en CSV dedicado para auditoría
                 sync.archive_shift_to_csv(turno_num=current_shift)
-                sync.reset_production_data(target_turno=expected_shift)
+
+                # Si la transición es hacia Turno 1 (06:30 hrs = inicio de nueva jornada industrial de 24h),
+                # se prepara una nueva cuadrícula en blanco. Durante Turno 2 y 3 se conservan las horas previas
+                # para mantener la acumulación continua 0:00 a 24:00 hrs.
+                if expected_shift == 1:
+                    print("[SCHEDULER] Nueva jornada 24H iniciada (06:30 hrs). Restableciendo cuadrícula para nuevo día...")
+                    sync.reset_production_data(target_turno=1)
+                else:
+                    # Actualizar solo el turno activo en el dashboard sin borrar datos acumulados del día
+                    try:
+                        if DASHBOARD_DATA_JSON.exists():
+                            with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+                                d = json.load(f)
+                            d["planta"]["turnoActual"] = expected_shift
+                            shift_info = sync.json_data_path.parent / "config.py"
+                            supervisor_map = {2: "Ing. Roberto Garza", 3: "Ing. Diana Soto"}
+                            d["planta"]["supervisorActual"] = supervisor_map.get(expected_shift, "Supervisor en turno")
+                            for t in d.get("turnos", []):
+                                t["activo"] = (t["id"] == expected_shift)
+                            with open(DASHBOARD_DATA_JSON, "w", encoding="utf-8") as f:
+                                json.dump(d, f, indent=2, ensure_ascii=False)
+                    except Exception as e_up:
+                        print(f"[SCHEDULER] Error actualizando turno activo: {e_up}")
                 print(f"[SCHEDULER] Turno {expected_shift} activado exitosamente.")
         except Exception as e:
             print(f"[SCHEDULER] Error en monitor de turnos: {e}")
