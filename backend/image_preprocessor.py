@@ -51,6 +51,14 @@ class ImagePreprocessor:
         img = cv2.imread(str(image_path))
         h_orig, w_orig = img.shape[:2]
 
+        # Redimensionar si la imagen es excesivamente grande para evitar OOM (Out Of Memory) en servidores cloud (512MB RAM)
+        MAX_DIM = 1600
+        if max(h_orig, w_orig) > MAX_DIM:
+            scale = MAX_DIM / float(max(h_orig, w_orig))
+            new_w = int(w_orig * scale)
+            new_h = int(h_orig * scale)
+            img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
         # 1. Corrección de orientación y detección de contorno de la pizarra
         board_crop, bbox = self._detect_and_crop_board(img)
 

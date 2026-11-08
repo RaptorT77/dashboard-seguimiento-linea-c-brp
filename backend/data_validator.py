@@ -96,10 +96,12 @@ class DataValidator:
 
         # 4. Verificación de umbral de confianza OCR
         for field, conf in record.field_confidences.items():
+            if field in ["linea", "producto"]:
+                continue  # Valores conocidos de la línea, no degradan estado
             if conf > 0.0 and conf < self.min_confidence:
-                issues.append(f"Confianza baja ({conf:.2f} < {self.min_confidence}) en campo: '{field}'.")
+                issues.append(f"Confianza moderada ({conf:.2f} < {self.min_confidence}) en campo: '{field}'.")
                 if status == ValidationStatus.VALIDO:
-                    status = ValidationStatus.REQUIERE_REVISION
+                    status = ValidationStatus.PARCIAL
 
         # 5. Detección de campos parciales (faltan algunos campos no críticos)
         if record.real_pz_hora is None or record.real_acumulado is None:

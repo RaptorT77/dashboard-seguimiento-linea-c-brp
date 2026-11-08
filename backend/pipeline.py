@@ -1,6 +1,8 @@
 """
 Orquestador Principal del Pipeline de Procesamiento de Pizarras.
 Conecta Recepción -> Preprocesamiento -> OCR -> Extracción -> Validación -> Persistencia -> Sincronización.
+
+Versión 3.5 — Persistencia y Sincronización de todas las horas (24H acumuladas).
 """
 
 import hashlib
@@ -8,7 +10,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from .config import RAW_IMAGES_DIR
 from .database import SessionLocal, init_db
@@ -112,26 +114,24 @@ class WhiteboardProcessingPipeline:
             db.add(ocr_log_rec)
             db.commit()
 
-            # 7. Extracción de los 14 campos estructurados (Última Hora)
+            # 7. Extracción de los campos estructurados (incluye todas las filas de la pizarra)
             extracted: ExtractedRecord = self.extractor.extract_latest_record(
                 ocr_result,
                 image_timestamp=received_at
             )
             AuditLogger.log_event(
                 "EXTRACTION_COMPLETED",
-                f"Última hora detectada: {extracted.horario} en {extracted.turno}",
+                f"Extracción completada. Fecha: {extracted.fecha}, Filas detectadas: {len(extracted.all_hourly_rows)}",
                 {"record": extracted.to_dict()}
             )
 
             # 8. Obtener registro previo para validación de coherencia matemática
             prev_record = db.query(HourlyProductionRecord).filter(
                 HourlyProductionRecord.linea == extracted.linea,
-                HourlyProductionRecord.fecha == extracted.fecha,
-                HourlyProductionRecord.turno == extracted.turno,
-                HourlyProductionRecord.horario != extracted.horario
+                HourlyProductionRecord.fecha == extracted.fecha
             ).order_by(HourlyProductionRecord.id.desc()).first()
 
-            # 9. Validación Estricta
+            # 9. Validación
             validation_status, validation_notes = self.validator.validate(extracted, prev_record)
             AuditLogger.log_event(
                 "VALIDATION_COMPLETED",
@@ -139,146 +139,127 @@ class WhiteboardProcessingPipeline:
                 {"status": validation_status, "notes": validation_notes}
             )
 
-            # 10. Persistencia con Idempotencia y Versionado
-            existing_record = db.query(HourlyProductionRecord).filter(
-                HourlyProductionRecord.linea == extracted.linea,
-                HourlyProductionRecord.fecha == extracted.fecha,
-                HourlyProductionRecord.turno == extracted.turno,
-                HourlyProductionRecord.horario == extracted.horario
-            ).first()
-
+            # 10. Persistencia de TODAS las filas horarias extraídas de la pizarra
             record_to_sync = None
-            is_duplicate = False
+            for row in extracted.all_hourly_rows:
+                r_horario = row["horario"]
+                r_turno = row["turno"]
+                r_obj_h = row["obj_pz_hora"]
+                r_real_h = row["real_pz_hora"]
+                r_obj_ac = row["obj_acumulado"]
+                r_real_ac = row["real_acumulado"]
+                r_malas = row["piezas_malas"]
+                r_op = row.get("op")
+                r_tiempo = row.get("tiempo_minutos")
+                r_paros = row.get("paros")
 
-            if existing_record:
-                # Comprobar si los datos son idénticos (duplicado exacto)
-                identical = (
-                    existing_record.real_pz_hora == extracted.real_pz_hora and
-                    existing_record.real_acumulado == extracted.real_acumulado and
-                    existing_record.piezas_malas == extracted.piezas_malas and
-                    existing_record.paros == extracted.paros
-                )
-
-                if identical:
-                    is_duplicate = True
-                    record_to_sync = existing_record
-                    raw_img_rec.status = "DUPLICADO_IGNORADO"
-                    db.commit()
-                    AuditLogger.log_event(
-                        "IDEMPOTENCY_DUPLICATE",
-                        f"Imagen idéntica para horario {extracted.horario}; se ignora duplicado.",
-                        {"record_id": existing_record.id}
-                    )
-                else:
-                    # Actualización de hora: archivar versión anterior en historial
-                    history_entry = ProductionHistory(
-                        record_id=existing_record.id,
-                        version=existing_record.version,
-                        snapshot_json=json.dumps({
-                            "real_pz_hora": existing_record.real_pz_hora,
-                            "real_acumulado": existing_record.real_acumulado,
-                            "piezas_malas": existing_record.piezas_malas,
-                            "paros": existing_record.paros,
-                            "raw_image_id": existing_record.raw_image_id
-                        }, ensure_ascii=False),
-                        update_reason="Actualización/Corrección recibida por nueva foto",
-                        archived_at=datetime.utcnow()
-                    )
-                    db.add(history_entry)
-
-                    # Actualizar valores del registro existente
-                    existing_record.raw_image_id = raw_img_rec.id
-                    existing_record.obj_pz_hora = extracted.obj_pz_hora
-                    existing_record.real_pz_hora = extracted.real_pz_hora
-                    existing_record.obj_acumulado = extracted.obj_acumulado
-                    existing_record.real_acumulado = extracted.real_acumulado
-                    existing_record.piezas_malas = extracted.piezas_malas
-                    existing_record.lider = extracted.lider
-                    existing_record.op = extracted.op
-                    existing_record.tiempo_minutos = extracted.tiempo_minutos
-                    existing_record.paros = extracted.paros
-                    existing_record.validation_status = validation_status
-                    existing_record.validation_notes = "\n".join(validation_notes)
-                    existing_record.confidence_score = extracted.confidence_score
-                    existing_record.field_confidences_json = json.dumps(extracted.field_confidences)
-                    existing_record.version += 1
-                    existing_record.updated_at = datetime.utcnow()
-
-                    db.commit()
-                    record_to_sync = existing_record
-                    AuditLogger.log_event(
-                        "RECORD_UPDATED",
-                        f"Registro ID {existing_record.id} actualizado a versión {existing_record.version}",
-                        {"record_id": existing_record.id, "version": existing_record.version}
-                    )
-            else:
-                # Nuevo registro horario
-                # Desmarcar anterior is_latest
-                db.query(HourlyProductionRecord).filter(
+                existing = db.query(HourlyProductionRecord).filter(
                     HourlyProductionRecord.linea == extracted.linea,
                     HourlyProductionRecord.fecha == extracted.fecha,
-                    HourlyProductionRecord.is_latest == True
+                    HourlyProductionRecord.turno == r_turno,
+                    HourlyProductionRecord.horario == r_horario
+                ).first()
+
+                if existing:
+                    # Actualizar con nuevos valores si hay cambio
+                    if (existing.real_pz_hora != r_real_h or
+                        existing.real_acumulado != r_real_ac or
+                        existing.piezas_malas != r_malas or
+                        existing.paros != r_paros):
+                        
+                        history_entry = ProductionHistory(
+                            record_id=existing.id,
+                            version=existing.version,
+                            snapshot_json=json.dumps({
+                                "real_pz_hora": existing.real_pz_hora,
+                                "real_acumulado": existing.real_acumulado,
+                                "piezas_malas": existing.piezas_malas,
+                                "paros": existing.paros,
+                                "raw_image_id": existing.raw_image_id
+                            }, ensure_ascii=False),
+                            update_reason="Actualización/Corrección por nueva foto",
+                            archived_at=datetime.utcnow()
+                        )
+                        db.add(history_entry)
+
+                        existing.raw_image_id = raw_img_rec.id
+                        existing.obj_pz_hora = r_obj_h
+                        existing.real_pz_hora = r_real_h
+                        existing.obj_acumulado = r_obj_ac
+                        existing.real_acumulado = r_real_ac
+                        existing.piezas_malas = r_malas
+                        existing.lider = extracted.lider
+                        existing.op = r_op
+                        existing.tiempo_minutos = r_tiempo
+                        existing.paros = r_paros
+                        existing.validation_status = validation_status
+                        existing.version += 1
+                        existing.updated_at = datetime.utcnow()
+                    record_to_sync = existing
+                else:
+                    new_rec = HourlyProductionRecord(
+                        raw_image_id=raw_img_rec.id,
+                        linea=extracted.linea,
+                        producto=extracted.producto,
+                        fecha=extracted.fecha,
+                        turno=r_turno,
+                        horario=r_horario,
+                        obj_pz_hora=r_obj_h,
+                        real_pz_hora=r_real_h,
+                        obj_acumulado=r_obj_ac,
+                        real_acumulado=r_real_ac,
+                        piezas_malas=r_malas,
+                        lider=extracted.lider,
+                        op=r_op,
+                        tiempo_minutos=r_tiempo,
+                        paros=r_paros,
+                        validation_status=validation_status,
+                        validation_notes="\n".join(validation_notes),
+                        confidence_score=row.get("confidence", 0.85),
+                        is_latest=False,
+                        version=1,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+                    db.add(new_rec)
+                    db.flush()
+                    record_to_sync = new_rec
+
+            # Marcar el último registro como is_latest
+            if record_to_sync:
+                db.query(HourlyProductionRecord).filter(
+                    HourlyProductionRecord.linea == extracted.linea,
+                    HourlyProductionRecord.fecha == extracted.fecha
                 ).update({"is_latest": False})
+                record_to_sync.is_latest = True
 
-                new_record = HourlyProductionRecord(
-                    raw_image_id=raw_img_rec.id,
-                    linea=extracted.linea,
-                    producto=extracted.producto,
-                    fecha=extracted.fecha,
-                    turno=extracted.turno,
-                    horario=extracted.horario,
-                    obj_pz_hora=extracted.obj_pz_hora,
-                    real_pz_hora=extracted.real_pz_hora,
-                    obj_acumulado=extracted.obj_acumulado,
-                    real_acumulado=extracted.real_acumulado,
-                    piezas_malas=extracted.piezas_malas,
-                    lider=extracted.lider,
-                    op=extracted.op,
-                    tiempo_minutos=extracted.tiempo_minutos,
-                    paros=extracted.paros,
-                    validation_status=validation_status,
-                    validation_notes="\n".join(validation_notes),
-                    confidence_score=extracted.confidence_score,
-                    field_confidences_json=json.dumps(extracted.field_confidences),
-                    is_latest=True,
-                    version=1,
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow()
-                )
-                db.add(new_record)
-                db.commit()
-                db.refresh(new_record)
-                record_to_sync = new_record
+            db.commit()
 
-                AuditLogger.log_event(
-                    "RECORD_CREATED",
-                    f"Nuevo registro horario creado con ID {new_record.id} para {new_record.horario}",
-                    {"record_id": new_record.id}
-                )
-
-            # 11. Sincronización con el Dashboard Web
+            # 11. Sincronización con el Dashboard Web con TODAS las horas de la jornada 24H
             dashboard_synced = False
-            if record_to_sync and validation_status != ValidationStatus.REQUIERE_REVISION:
-                all_shift_records = db.query(HourlyProductionRecord).filter(
-                    HourlyProductionRecord.linea == record_to_sync.linea,
-                    HourlyProductionRecord.fecha == record_to_sync.fecha,
-                    HourlyProductionRecord.turno == record_to_sync.turno
-                ).order_by(HourlyProductionRecord.id.asc()).all()
+            all_day_records = db.query(HourlyProductionRecord).filter(
+                HourlyProductionRecord.linea == extracted.linea,
+                HourlyProductionRecord.fecha == extracted.fecha
+            ).order_by(HourlyProductionRecord.id.asc()).all()
 
-                dashboard_synced = self.sync_service.sync_latest_record(record_to_sync, all_shift_records)
-                AuditLogger.log_event("DASHBOARD_SYNC_SUCCESS", "Datos inyectados exitosamente en mockData.js y JSON")
+            if not record_to_sync and all_day_records:
+                record_to_sync = all_day_records[-1]
 
-            raw_img_rec.status = "PROCESADA" if validation_status == ValidationStatus.VALIDO else validation_status
+            if record_to_sync:
+                dashboard_synced = self.sync_service.sync_latest_record(record_to_sync, all_day_records)
+                AuditLogger.log_event("DASHBOARD_SYNC_SUCCESS", "Datos inyectados exitosamente en mockData.js y JSON (24H acumuladas)")
+
+            raw_img_rec.status = "PROCESADA"
             db.commit()
 
             return {
                 "success": True,
                 "raw_image_id": raw_img_rec.id,
                 "record_id": record_to_sync.id if record_to_sync else None,
-                "is_duplicate": is_duplicate,
                 "validation_status": validation_status,
                 "validation_notes": validation_notes,
                 "confidence_score": extracted.confidence_score,
+                "total_rows_extracted": len(extracted.all_hourly_rows),
                 "extracted_fields": extracted.to_dict(),
                 "dashboard_synced": dashboard_synced
             }

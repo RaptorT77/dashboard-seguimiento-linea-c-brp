@@ -8,8 +8,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from .config import DASHBOARD_DATA_JSON, RAW_IMAGES_DIR, PERSISTENT_CSV_PATH
@@ -36,8 +37,40 @@ app.add_middleware(
 init_db()
 pipeline = WhiteboardProcessingPipeline()
 
+# Servir estáticos del Dashboard Web directamente desde FastAPI
+ROOT_DIR = Path(__file__).resolve().parent.parent
+ASSETS_DIR = ROOT_DIR / "assets"
+DATA_DIR = ROOT_DIR / "data"
 
-@app.get("/health")
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+if DATA_DIR.exists():
+    app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
+
+
+@app.api_route("/", methods=["GET", "HEAD"])
+def serve_dashboard():
+    """Servir la interfaz web del Dashboard en la raíz."""
+    index_path = ROOT_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return {
+        "status": "online",
+        "service": "BRP Linea C Telemetry Service",
+        "health": "/health",
+        "api_andon": "/api/andon/state"
+    }
+
+
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
+def favicon():
+    icon_path = ASSETS_DIR / "images" / "LOGO_KS-1.png"
+    if icon_path.exists():
+        return FileResponse(icon_path, media_type="image/png")
+    return Response(status_code=204)
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {
         "status": "healthy",
@@ -46,6 +79,43 @@ def health_check():
         "planta": "Kolben Schmidt Celaya",
         "producto": "WOLF V1"
     }
+
+
+@app.get("/api/andon/state")
+def get_andon_state():
+    """
+    Endpoint para que el hardware ESP32 consulte el estado operativo de Línea C
+    mediante polling saliente seguro HTTPS desde la planta hacia la nube.
+    """
+    if not DASHBOARD_DATA_JSON.exists():
+        return {"state": "PRODUCCION_EN_ORDEN", "timestamp": datetime.utcnow().isoformat()}
+
+    try:
+        with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+            d = json.load(f)
+            estado = d.get("resumenKpis", {}).get("estadoLinea", "PRODUCCION_EN_ORDEN")
+            return {
+                "state": estado,
+                "produccion_dia": d.get("resumenKpis", {}).get("produccionDia", 0),
+                "meta_diaria": d.get("resumenKpis", {}).get("metaDiaria", 480),
+                "paros_min": d.get("resumenKpis", {}).get("parosAcumuladosMin", 0),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+    except Exception:
+        return {"state": "PRODUCCION_EN_ORDEN", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.post("/api/andon/state")
+def set_andon_state(state: str):
+    """Actualiza manualmente el estado del semáforo Andon."""
+    valid_states = ["PRODUCCION_EN_ORDEN", "ADVERTENCIA_OPERATIVA", "PRODUCCION_DEFICIENTE"]
+    if state not in valid_states:
+        raise HTTPException(status_code=400, detail=f"Estado inválido. Opciones: {valid_states}")
+
+    from .dashboard_sync import DashboardSyncService
+    sync_svc = DashboardSyncService()
+    sync_svc.notify_esp32_andon(state)
+    return {"status": "success", "new_state": state}
 
 
 @app.get("/api/production/latest")

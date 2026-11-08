@@ -1,0 +1,13 @@
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.vscode
+.idea
+*.log
+backend/storage/raw_images/*
+!backend/storage/raw_images/.gitkeep
+

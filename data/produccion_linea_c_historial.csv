@@ -6,4 +6,8 @@ Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,
 2026-11-06,Primero: 06:30 a 15:00 hrs,11:00 - 12:00,C,WOLF V1,Antonia,30,0,300,25,0,30,"Ajuste de perilla de avance maq. (OP30)",VALIDO,2026-11-06 12:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,12:00 - 13:00,C,WOLF V1,Antonia,60,0,360,25,0,60,"Alineación de barra y herramental (OP30)",VALIDO,2026-11-06 13:00:00
 2026-11-06,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,0,420,25,0,60,"Ajuste continuo de herramental (OP30)",VALIDO,2026-11-06 14:00:00
-2026-11-08,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,0,420,25,0,60,Ajuste continuo de herramental (OP30),VALIDO,2026-11-08 03:42:03
+2026-11-07,Primero: 06:30 a 15:00 hrs,13:00 - 14:00,C,WOLF V1,Antonia,60,0,420,25,0,60,Ajuste continuo de herramental (OP30),VALIDO,2026-11-07 20:34:07
+2026-11-08,Segundo: 15:00 a 23:00 hrs,15:00 - 16:00,C,WOLF V1,Antonia,60,0,60,0,0,0,denle:285,VALIDO,2026-11-08 02:27:14
+2026-11-08,Segundo: 15:00 a 23:00 hrs,17:00 - 18:00,C,WOLF V1,Antonia,60,0,180,0,16,0,,PARCIAL,2026-11-08 02:27:53
+2026-11-08,Segundo: 15:00 a 23:00 hrs,16:00 - 17:00,C,WOLF V1,Antonia,60,16,120,16,0,0,,VALIDO,2026-11-08 02:31:41
+2026-11-08,Segundo: 15:00 a 23:00 hrs,18:00 - 19:00,C,WOLF V1,Antonia,60,121,240,137,0,0,,VALIDO,2026-11-08 02:37:20

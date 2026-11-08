@@ -615,8 +615,9 @@
     if (selectShift) {
       selectShift.addEventListener('change', (e) => {
         state.filterShift = e.target.value;
-        showToast(`Filtro aplicado: Turno ${e.target.options[e.target.selectedIndex].text}`);
+        showToast(`Filtro aplicado: ${e.target.options[e.target.selectedIndex].text}`);
         renderTable();
+        updateChartsForFilter();
       });
     }
 
@@ -696,8 +697,35 @@
         if (selectStatus) selectStatus.value = 'all';
         if (searchInput) searchInput.value = '';
         renderTable();
+        updateChartsForFilter();
         showToast('Filtros restablecidos');
       });
+    }
+
+    // Actualizar gráficas según filtro de turno
+    function updateChartsForFilter() {
+      let hours = state.data.produccionHoraria || [];
+      if (state.filterShift !== 'all') {
+        const tId = parseInt(state.filterShift, 10);
+        hours = hours.filter(h => h.turnoNum === tId);
+      }
+      const active = hours.filter(h =>
+        h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
+        (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+      );
+      const plot = active.length > 0 ? active : hours;
+      if (chartHourly) {
+        chartHourly.data.labels = plot.map(h => h.hora.split(' - ')[0]);
+        chartHourly.data.datasets[0].data = plot.map(h => h.real);
+        chartHourly.data.datasets[1].data = plot.map(h => h.meta);
+        chartHourly.update();
+      }
+      if (chartCumulative) {
+        chartCumulative.data.labels = plot.map(h => h.hora.split(' - ')[0]);
+        chartCumulative.data.datasets[0].data = plot.map(h => h.acumReal);
+        chartCumulative.data.datasets[1].data = plot.map(h => h.acumMeta);
+        chartCumulative.update();
+      }
     }
 
     // Botón Cambio de Turno Oficial (Esquina Superior Derecha)
