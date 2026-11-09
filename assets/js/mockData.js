@@ -184,7 +184,8 @@ const BRP_DATA = {
       "op": "OP40",
       "comentario": "Ajuste / Relevo de personal",
       "paros": "Ajuste / Relevo de personal",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "13:00 - 14:00",
