@@ -677,11 +677,19 @@ if (typeof module !== 'undefined' && module.exports) {{
                 res_diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_dir, check=False)
                 if res_diff.returncode != 0:
                     subprocess.run(["git", "commit", "-m", commit_msg], cwd=repo_dir, check=False)
+                    # Pull con rebase previo para evitar rechazos por commits remotos desincronizados
+                    subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
                     res_push = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=35)
                     if res_push.returncode == 0:
                         logger.info(f"[GIT_SYNC] Sincronización exitosa con GitHub Pages: {commit_msg}")
                     else:
-                        logger.warning(f"[GIT_SYNC] Error en git push hacia GitHub Pages: {res_push.stderr}")
+                        logger.warning(f"[GIT_SYNC] Reintentando push tras rebase: {res_push.stderr}")
+                        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=30)
+                        res_push2 = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=35)
+                        if res_push2.returncode == 0:
+                            logger.info(f"[GIT_SYNC] Sincronización exitosa en reintento: {commit_msg}")
+                        else:
+                            logger.error(f"[GIT_SYNC] Error definitivo en git push: {res_push2.stderr}")
                 else:
                     logger.info("[GIT_SYNC] Sin cambios en mockData.js o JSON para git commit.")
             except Exception as e:

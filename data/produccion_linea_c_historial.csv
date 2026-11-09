@@ -23,3 +23,4 @@ Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,
 2026-11-09,Primero: 06:30 a 15:00 hrs,06:30 - 08:00,C,WOLF V1,Javier,90,18,90,18,0,0,Producción en curso,VALIDO,2026-11-09 17:16:01
 2026-11-09,Primero: 06:30 a 15:00 hrs,08:00 - 09:00,C,WOLF V1,Javier,60,66,150,90,16,30,Cambio de buril chaflán interior L.O. por despostillamiento,VALIDO,2026-11-09 17:46:11
 2026-11-09,Tercero: 23:00 a 06:30 hrs,01:00 - 02:00,C,WOLF V1,Javier,60,18,180,0,0,30,Producción en curso,VALIDO,2026-11-09 19:46:58
+2026-11-09,Primero: 06:30 a 15:00 hrs,12:00 - 13:00,C,WOLF V1,Javier,60,56,360,265,11,30,AjoskVelevendRs,VALIDO,2026-11-09 20:09:16

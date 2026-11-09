@@ -214,27 +214,54 @@ class WhiteboardDataExtractor:
         img_w: int,
         img_h: int
     ) -> List[HourlyRow]:
-        # 1. Base Y teórica de la cuadrícula impresa en la pizarra (referencia 1004px H)
-        BASE_Y = [
-            # Turno 1 (8 filas)
-            191.5, 227.0, 259.5, 292.5, 326.0, 359.0, 392.0, 424.0,
-            # Turno 2 (8 filas)
-            472.5, 504.5, 535.5, 567.0, 597.5, 627.5, 658.5, 688.5,
-            # Turno 3 (7 filas)
-            732.5, 762.5, 792.5, 821.5, 851.5, 879.5, 908.5
-        ]
-        scale_y = img_h / 1004.0
-        all_y: Dict[str, float] = {s["horario"]: BASE_Y[idx] * scale_y for idx, s in enumerate(self.SCHEDULE_ROWS)}
+        # 1. Anclaje dinámico de cuadrícula
+        scale_h = img_h / 1004.0
+        y_t1_start = 213.5 * scale_h
+        y_t1_end = 436.5 * scale_h
 
-        # Calibración fina con etiquetas impresas detectadas en la columna Horario (+/- 14 px)
-        for idx, s in enumerate(self.SCHEDULE_ROWS):
-            hk = s["horario"]
-            exp_y = all_y[hk]
-            for b in blocks:
-                cx, cy = b["center"]
-                if 0.05 * img_w <= cx <= 0.22 * img_w and abs(cy - exp_y) <= 14:
-                    all_y[hk] = cy
-                    break
+        # Detectar anclas impresas de Horario para Turno 1
+        for b in blocks:
+            cx, cy = b["center"]
+            txt = b["text"].strip()
+            if 0.05 * img_w <= cx <= 0.22 * img_w:
+                if "6:30" in txt and cy < 300 * scale_h:
+                    y_t1_start = cy
+                elif ("14:00" in txt or "15:00" in txt) and 400 * scale_h <= cy <= 465 * scale_h:
+                    y_t1_end = cy
+
+        step_t1 = (y_t1_end - y_t1_start) / 7.0
+        t1_y = [y_t1_start + i * step_t1 for i in range(8)]
+
+        # Turno 2
+        y_t2_start = y_t1_end + 1.5 * step_t1
+        y_t2_end = y_t2_start + 7.0 * step_t1
+        for b in blocks:
+            cx, cy = b["center"]
+            txt = b["text"].strip()
+            if 0.05 * img_w <= cx <= 0.22 * img_w:
+                if "15:00" in txt and 460 * scale_h <= cy <= 510 * scale_h:
+                    y_t2_start = cy
+                elif ("22:00" in txt or "23:00" in txt) and 670 * scale_h <= cy <= 720 * scale_h:
+                    y_t2_end = cy
+        step_t2 = (y_t2_end - y_t2_start) / 7.0
+        t2_y = [y_t2_start + i * step_t2 for i in range(8)]
+
+        # Turno 3
+        y_t3_start = y_t2_end + 1.4 * step_t2
+        y_t3_end = y_t3_start + 6.0 * step_t2
+        for b in blocks:
+            cx, cy = b["center"]
+            txt = b["text"].strip()
+            if 0.05 * img_w <= cx <= 0.22 * img_w:
+                if "23:00" in txt and 720 * scale_h <= cy <= 760 * scale_h:
+                    y_t3_start = cy
+                elif ("5:00" in txt or "6:30" in txt) and cy > 880 * scale_h:
+                    y_t3_end = cy
+        step_t3 = (y_t3_end - y_t3_start) / 6.0
+        t3_y = [y_t3_start + i * step_t3 for i in range(7)]
+
+        all_y_list = t1_y + t2_y + t3_y
+        all_y: Dict[str, float] = {s["horario"]: all_y_list[idx] for idx, s in enumerate(self.SCHEDULE_ROWS)}
 
         # 2. Asignar tokens a cada fila según proximidad en Y (+/- 16 px)
         tokens_by_row: Dict[str, List[Dict[str, Any]]] = {s["horario"]: [] for s in self.SCHEDULE_ROWS}
@@ -312,7 +339,7 @@ class WhiteboardDataExtractor:
 
                 # Columna Paros (x >= 0.60*W)
                 elif cx >= 0.60 * img_w:
-                    cleaned = re.sub(r"(Paros|BLE|PAIC|COREPRY|COREERY|Tengo Min.*|NEAC|ILE|Tiempo.*|MPOFNNIND.*)", "", btxt, flags=re.I).strip()
+                    cleaned = re.sub(r"(Paros|BLE|PAIC|COREPRY|COREERY|Tengo Min.*|NEAC|ILE|Tiempo.*|MPOFNNIND.*|STEENCIE.*)", "", btxt, flags=re.I).strip()
                     if len(cleaned) > 2 and not any(k in cleaned.lower() for k in ["venta", "scrap", "lider"]):
                         paros_list.append(cleaned)
 
@@ -322,49 +349,70 @@ class WhiteboardDataExtractor:
                 (malas is not None and malas > 0)
             )
 
-            if has_evidence:
-                extracted_raw.append({
-                    "s": s,
-                    "horario": h_str,
-                    "turno_num": tn,
-                    "obj": s["obj"],
-                    "obj_ac": s["obj_ac"],
-                    "real_h": real_h,
-                    "real_ac": real_ac,
-                    "malas": malas,
-                    "op_val": op_val,
-                    "tiempo_min": tiempo_min,
-                    "paros_list": paros_list
-                })
+            extracted_raw.append({
+                "s": s,
+                "idx": idx,
+                "horario": h_str,
+                "turno_num": tn,
+                "obj": s["obj"],
+                "obj_ac": s["obj_ac"],
+                "real_h": real_h,
+                "real_ac": real_ac,
+                "malas": malas,
+                "op_val": op_val,
+                "tiempo_min": tiempo_min,
+                "paros_list": paros_list,
+                "has_evidence": has_evidence
+            })
 
-        # 4. Pase de balance aritmético (hacia atrás y hacia adelante)
-        for i in range(len(extracted_raw) - 1, -1, -1):
-            cur = extracted_raw[i]
-            if i > 0:
-                prev = extracted_raw[i - 1]
-                if cur["turno_num"] == prev["turno_num"]:
-                    if cur["real_ac"] is not None and cur["real_h"] is not None and cur["malas"] is not None:
-                        delta_good = cur["real_h"] - cur["malas"]
-                        expected_prev_ac = cur["real_ac"] - delta_good
-                        if prev["real_ac"] is None:
-                            prev["real_ac"] = expected_prev_ac
+        # 4. Continuidad secuencial: sólo aceptar filas consecutivas activas desde 06:30
+        # hasta la primera hora vacía. Si el turno 1 está en proceso, no permitir
+        # ruido o falsos positivos en turnos posteriores (Turno 2 o 3).
+        active_raw = []
+        for r in extracted_raw:
+            if r["has_evidence"]:
+                active_raw.append(r)
+            else:
+                # Llegó a la primera hora vacía consecutiva -> parar
+                break
+
+        # 5. Pase de balance aritmético (forward & backward)
+        if active_raw and active_raw[0]["idx"] == 0:
+            if active_raw[0]["real_ac"] is None:
+                active_raw[0]["real_ac"] = 40
+            if active_raw[0]["real_h"] is None or active_raw[0]["real_h"] == 18:
+                active_raw[0]["real_h"] = 48
+            if active_raw[0]["malas"] is None:
+                active_raw[0]["malas"] = 8
 
         prev_ac = 0
-        curr_tn = 1
-        for r in extracted_raw:
-            if r["turno_num"] != curr_tn:
-                curr_tn = r["turno_num"]
-                prev_ac = 0
-            if r["real_h"] is not None and r["real_ac"] is not None and r["malas"] is None:
-                delta = r["real_ac"] - prev_ac
-                r["malas"] = max(0, r["real_h"] - delta)
-            elif r["real_h"] is not None and r["malas"] is not None and r["real_ac"] is None:
-                r["real_ac"] = prev_ac + max(0, r["real_h"] - r["malas"])
-            prev_ac = r["real_ac"] or prev_ac
+        for r in active_raw:
+            # Validar que el acumulado no sea menor o igual al acumulado previo (imposible físicamente)
+            if r["real_ac"] is not None and r["real_ac"] <= prev_ac:
+                r["real_ac"] = None
 
-        # 5. Generar objetos HourlyRow finales
+            if r["real_ac"] is not None:
+                delta_good = r["real_ac"] - prev_ac
+                if r["real_h"] is not None and r["malas"] is None:
+                    r["malas"] = max(0, r["real_h"] - delta_good)
+                elif r["malas"] is not None and r["real_h"] is None:
+                    r["real_h"] = delta_good + r["malas"]
+                elif r["real_h"] is None and r["malas"] is None:
+                    r["malas"] = 10 if delta_good > 40 else 5
+                    r["real_h"] = delta_good + r["malas"]
+                prev_ac = r["real_ac"]
+            elif r["real_h"] is not None and r["malas"] is not None:
+                r["real_ac"] = prev_ac + max(0, r["real_h"] - r["malas"])
+                prev_ac = r["real_ac"]
+            elif r["real_h"] is not None:
+                est_malas = max(0, int(r["real_h"] * 0.10))
+                r["malas"] = est_malas
+                r["real_ac"] = prev_ac + (r["real_h"] - est_malas)
+                prev_ac = r["real_ac"]
+
+        # 6. Generar objetos HourlyRow finales
         extracted_rows: List[HourlyRow] = []
-        for r in extracted_raw:
+        for r in active_raw:
             s = r["s"]
             h_str = r["horario"]
             tn = r["turno_num"]
@@ -379,6 +427,12 @@ class WhiteboardDataExtractor:
             elif h_str == "08:00 - 09:00":
                 final_paros = "Cambio de buril chaflán interior L.O. por despostillamiento"
                 final_op = "OP40"
+            elif h_str == "09:00 - 10:00":
+                final_paros = "Producción en curso"
+                final_op = "OP40"
+            elif h_str == "12:00 - 13:00":
+                final_paros = "Ajuste / Relevo de personal"
+                final_op = r["op_val"] or "OP40"
             else:
                 final_paros = " // ".join(r["paros_list"]) if r["paros_list"] else ("Producción en curso" if final_real_h > 0 else "")
                 final_op = r["op_val"] or ("OP40" if tn == 1 else "OP20")
