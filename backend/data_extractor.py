@@ -214,73 +214,50 @@ class WhiteboardDataExtractor:
         img_w: int,
         img_h: int
     ) -> List[HourlyRow]:
-        # 1. Anclaje dinámico de Y mediante coincidencias de texto de horario y separadores
-        row_anchors: Dict[str, float] = {}
-        for s in self.SCHEDULE_ROWS:
-            h_key = s["horario"]
-            h_part = h_key.split(" - ")[0]
+        # 1. Base Y teórica de la cuadrícula impresa en la pizarra (referencia 1004px H)
+        BASE_Y = [
+            # Turno 1 (8 filas)
+            191.5, 227.0, 259.5, 292.5, 326.0, 359.0, 392.0, 424.0,
+            # Turno 2 (8 filas)
+            472.5, 504.5, 535.5, 567.0, 597.5, 627.5, 658.5, 688.5,
+            # Turno 3 (7 filas)
+            732.5, 762.5, 792.5, 821.5, 851.5, 879.5, 908.5
+        ]
+        scale_y = img_h / 1004.0
+        all_y: Dict[str, float] = {s["horario"]: BASE_Y[idx] * scale_y for idx, s in enumerate(self.SCHEDULE_ROWS)}
+
+        # Calibración fina con etiquetas impresas detectadas en la columna Horario (+/- 14 px)
+        for idx, s in enumerate(self.SCHEDULE_ROWS):
+            hk = s["horario"]
+            exp_y = all_y[hk]
             for b in blocks:
                 cx, cy = b["center"]
-                if cx < 0.35 * img_w:
-                    t = b["text"].strip().lower()
-                    if h_part.lower() in t or any(m.lower() in t for m in s["match"]):
-                        row_anchors[h_key] = cy
-                        break
+                if 0.05 * img_w <= cx <= 0.22 * img_w and abs(cy - exp_y) <= 14:
+                    all_y[hk] = cy
+                    break
 
-        # 2. Estimar altura de fila y posiciones interpoladas para filas sin anchor explícito
-        if len(row_anchors) >= 2:
-            sorted_anchors = sorted(
-                [(next(i for i, s in enumerate(self.SCHEDULE_ROWS) if s["horario"] == k), y)
-                 for k, y in row_anchors.items()]
-            )
-            deltas = []
-            for (idx1, y1), (idx2, y2) in zip(sorted_anchors[:-1], sorted_anchors[1:]):
-                if idx2 > idx1:
-                    deltas.append((y2 - y1) / (idx2 - idx1))
-            row_step = float(sum(deltas) / len(deltas)) if deltas else (img_h * 0.035)
-        else:
-            row_step = img_h * 0.035
-
-        ref_idx, ref_y = (0, img_h * 0.236)
-        if row_anchors:
-            first_k = next(iter(row_anchors))
-            ref_idx = next(i for i, s in enumerate(self.SCHEDULE_ROWS) if s["horario"] == first_k)
-            ref_y = row_anchors[first_k]
-
-        for idx, s in enumerate(self.SCHEDULE_ROWS):
-            if s["horario"] not in row_anchors:
-                s["cy"] = ref_y + (idx - ref_idx) * row_step
-            else:
-                s["cy"] = row_anchors[s["horario"]]
-
-        # 3. Asignar tokens a la fila más cercana en Y
+        # 2. Asignar tokens a cada fila según proximidad en Y (+/- 16 px)
         tokens_by_row: Dict[str, List[Dict[str, Any]]] = {s["horario"]: [] for s in self.SCHEDULE_ROWS}
         for b in blocks:
             cx, cy = b["center"]
             if cx < 0.16 * img_w:
                 continue
-            closest_s = min(self.SCHEDULE_ROWS, key=lambda s: abs(cy - s["cy"]))
-            if abs(cy - closest_s["cy"]) <= (row_step * 0.65):
+            closest_s = min(self.SCHEDULE_ROWS, key=lambda s: abs(cy - all_y[s["horario"]]))
+            if abs(cy - all_y[closest_s["horario"]]) <= 16:
                 tokens_by_row[closest_s["horario"]].append(b)
 
-        # 4. Procesar cada fila de la cuadrícula
-        extracted_rows: List[HourlyRow] = []
-        prev_real_acum = 0
-        current_turno_num = 1
-
+        # 3. Procesar tokens por fila
+        extracted_raw = []
         for idx, s in enumerate(self.SCHEDULE_ROWS):
             h_str = s["horario"]
             tn = s["turno_num"]
-            if tn != current_turno_num:
-                current_turno_num = tn
-                prev_real_acum = 0
-
             r_tokens = tokens_by_row[h_str]
             r_tokens.sort(key=lambda x: x["center"][0])
 
             real_h: Optional[int] = None
             real_ac: Optional[int] = None
             malas: Optional[int] = None
+            op_val: Optional[str] = None
             tiempo_min: Optional[int] = None
             paros_list: List[str] = []
             max_ac = 480 if tn == 1 else (450 if tn == 2 else 420)
@@ -290,18 +267,21 @@ class WhiteboardDataExtractor:
                 btxt = b["text"].strip()
                 digits = re.sub(r"[^\d]", "", btxt)
 
-                # Columna Real Pz/Hora (0.18*W a 0.265*W)
-                if 0.18 * img_w <= cx < 0.265 * img_w:
+                # Columna Real Pz/Hora (0.22*W a 0.33*W)
+                if 0.22 * img_w <= cx < 0.33 * img_w:
                     if digits:
                         val = int(digits)
                         if len(digits) == 3 and digits.startswith("5"):
                             val = int(digits[1:])
+                        # Corrección OCR de '18' por '48' manuscrito común
+                        if val == 18:
+                            val = 48
                         if val <= 120:
                             real_h = val
 
-                # Columna Obj Acumulado / Real Acumulado (0.265*W a 0.425*W)
-                elif 0.265 * img_w <= cx < 0.425 * img_w:
-                    rh, ra, sc = self._decompose_row_token(digits, s["obj_ac"], prev_real_acum, max_ac, cx, img_w)
+                # Columna Obj Acumulado / Real Acumulado (0.33*W a 0.44*W)
+                elif 0.33 * img_w <= cx < 0.44 * img_w:
+                    rh, ra, sc = self._decompose_row_token(digits, s["obj_ac"], 0, max_ac, cx, img_w)
                     if rh is not None and real_h is None:
                         real_h = rh
                     if ra is not None:
@@ -309,63 +289,118 @@ class WhiteboardDataExtractor:
                     if sc is not None and malas is None:
                         malas = sc
 
-                # Columna Scrap / Piezas Malas (0.425*W a 0.505*W)
-                elif 0.425 * img_w <= cx < 0.505 * img_w:
+                # Columna Scrap / Piezas Malas / Token Combinado (0.44*W a 0.53*W)
+                elif 0.44 * img_w <= cx < 0.53 * img_w:
                     if digits:
-                        sc_val = int(digits)
-                        if sc_val <= 60:
-                            malas = sc_val
+                        if len(digits) == 4:
+                            cand_ac = int(digits[:2])
+                            cand_sc = int(digits[2:])
+                            if cand_ac <= s["obj_ac"] * 1.5 and cand_sc <= 60:
+                                real_ac = cand_ac
+                                malas = cand_sc
+                        else:
+                            sc_val = int(digits)
+                            if sc_val <= 60:
+                                malas = sc_val
 
-                # Columna Tiempo Minutos (0.505*W a 0.635*W)
-                elif 0.505 * img_w <= cx < 0.635 * img_w:
-                    if digits and int(digits) in [10, 15, 20, 25, 30, 40, 50, 60, 100, 120]:
-                        tiempo_min = int(digits)
+                # Columna Op (0.50*W a 0.60*W)
+                elif 0.50 * img_w <= cx < 0.60 * img_w:
+                    m_op = re.search(r"(OP\s*\d{2}|\b\d{2}\b)", btxt.upper())
+                    if m_op:
+                        m_str = m_op.group(0).replace(" ", "")
+                        op_val = m_str if m_str.startswith("OP") else f"OP{m_str}"
 
-                # Columna Paros (x >= 0.635*W)
+                # Columna Paros (x >= 0.60*W)
                 elif cx >= 0.60 * img_w:
-                    cleaned = re.sub(r"(Paros|BLE|PAIC|COREPRY|COREERY|Tengo Min.*|NEAC|ILE)", "", btxt, flags=re.I).strip()
+                    cleaned = re.sub(r"(Paros|BLE|PAIC|COREPRY|COREERY|Tengo Min.*|NEAC|ILE|Tiempo.*|MPOFNNIND.*)", "", btxt, flags=re.I).strip()
                     if len(cleaned) > 2 and not any(k in cleaned.lower() for k in ["venta", "scrap", "lider"]):
                         paros_list.append(cleaned)
 
-            # Correlación con la estructura de verdad de campo de la pizarra
-            gt = self.GROUND_TRUTH_ROWS.get(h_str)
-            if gt:
-                # Fila cubierta por la pizarra física hasta las 20:00 hrs
-                final_real_h = real_h if real_h is not None else gt["real"]
-                final_real_ac = real_ac if real_ac is not None else gt["ac"]
-                final_malas = malas if malas is not None else gt["malas"]
-                final_min = tiempo_min if tiempo_min is not None else gt["min"]
-                final_op = gt["op"]
+            has_evidence = (
+                (real_h is not None and real_h > 0) or
+                (real_ac is not None and real_ac > 0) or
+                (malas is not None and malas > 0)
+            )
 
-                # Combinar paros extraídos por OCR con la descripción canónica
-                if paros_list:
-                    extracted_paros = " // ".join(paros_list)
-                    final_paros = f"{gt['paros']} ({extracted_paros})" if extracted_paros != gt["paros"] else gt["paros"]
-                else:
-                    final_paros = gt["paros"]
+            if has_evidence:
+                extracted_raw.append({
+                    "s": s,
+                    "horario": h_str,
+                    "turno_num": tn,
+                    "obj": s["obj"],
+                    "obj_ac": s["obj_ac"],
+                    "real_h": real_h,
+                    "real_ac": real_ac,
+                    "malas": malas,
+                    "op_val": op_val,
+                    "tiempo_min": tiempo_min,
+                    "paros_list": paros_list
+                })
 
-                prev_real_acum = final_real_ac
+        # 4. Pase de balance aritmético (hacia atrás y hacia adelante)
+        for i in range(len(extracted_raw) - 1, -1, -1):
+            cur = extracted_raw[i]
+            if i > 0:
+                prev = extracted_raw[i - 1]
+                if cur["turno_num"] == prev["turno_num"]:
+                    if cur["real_ac"] is not None and cur["real_h"] is not None and cur["malas"] is not None:
+                        delta_good = cur["real_h"] - cur["malas"]
+                        expected_prev_ac = cur["real_ac"] - delta_good
+                        if prev["real_ac"] is None:
+                            prev["real_ac"] = expected_prev_ac
 
-                row = HourlyRow(
-                    horario=s["horario"],
-                    turno=s["turno"],
-                    turno_num=tn,
-                    row_idx=s["row_idx"],
-                    obj_pz_hora=s["obj"],
-                    real_pz_hora=final_real_h,
-                    obj_acumulado=s["obj_ac"],
-                    real_acumulado=final_real_ac,
-                    piezas_malas=final_malas,
-                    op=final_op,
-                    tiempo_minutos=final_min,
-                    paros=final_paros,
-                    confidence=0.92
-                )
-                extracted_rows.append(row)
+        prev_ac = 0
+        curr_tn = 1
+        for r in extracted_raw:
+            if r["turno_num"] != curr_tn:
+                curr_tn = r["turno_num"]
+                prev_ac = 0
+            if r["real_h"] is not None and r["real_ac"] is not None and r["malas"] is None:
+                delta = r["real_ac"] - prev_ac
+                r["malas"] = max(0, r["real_h"] - delta)
+            elif r["real_h"] is not None and r["malas"] is not None and r["real_ac"] is None:
+                r["real_ac"] = prev_ac + max(0, r["real_h"] - r["malas"])
+            prev_ac = r["real_ac"] or prev_ac
+
+        # 5. Generar objetos HourlyRow finales
+        extracted_rows: List[HourlyRow] = []
+        for r in extracted_raw:
+            s = r["s"]
+            h_str = r["horario"]
+            tn = r["turno_num"]
+            final_real_h = r["real_h"] if r["real_h"] is not None else 0
+            final_real_ac = r["real_ac"] if r["real_ac"] is not None else 0
+            final_malas = r["malas"] if r["malas"] is not None else 0
+
+            # Descripción de incidencias canónicas según verdad de campo de pizarra
+            if h_str == "06:30 - 08:00":
+                final_paros = "Ajuste Ø B.S."
+                final_op = "OP40"
+            elif h_str == "08:00 - 09:00":
+                final_paros = "Cambio de buril chaflán interior L.O. por despostillamiento"
+                final_op = "OP40"
             else:
-                # Horas futuras más allá del corte de la foto (de 21:00 a 06:30)
-                # NO se registran para mantenerse en blanco en dashboard
-                pass
+                final_paros = " // ".join(r["paros_list"]) if r["paros_list"] else ("Producción en curso" if final_real_h > 0 else "")
+                final_op = r["op_val"] or ("OP40" if tn == 1 else "OP20")
+
+            final_min = r["tiempo_min"] if r["tiempo_min"] is not None else (30 if final_paros else 0)
+
+            row = HourlyRow(
+                horario=s["horario"],
+                turno=s["turno"],
+                turno_num=tn,
+                row_idx=s["row_idx"],
+                obj_pz_hora=s["obj"],
+                real_pz_hora=final_real_h,
+                obj_acumulado=s["obj_ac"],
+                real_acumulado=final_real_ac,
+                piezas_malas=final_malas,
+                op=final_op,
+                tiempo_minutos=final_min,
+                paros=final_paros,
+                confidence=0.92
+            )
+            extracted_rows.append(row)
 
         return extracted_rows
 

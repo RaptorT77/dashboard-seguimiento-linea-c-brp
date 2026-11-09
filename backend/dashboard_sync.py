@@ -519,6 +519,9 @@ if (typeof module !== 'undefined' && module.exports) {{
         # 12. Notificar Andon ESP32
         self.notify_esp32_andon(estado_linea)
 
+        # 13. Sincronización automática a GitHub Pages
+        self._git_push_background(commit_msg=f"chore(telemetry): auto-sync live whiteboard to github pages [{datetime.now().strftime('%Y-%m-%d %H:%M')}] [skip ci]")
+
         logger.info(f"[DASHBOARD_SYNC] Sincronización 24h completada: {total_prod_dia} uds acumuladas, estado: {estado_linea}")
         return True
 
@@ -659,7 +662,7 @@ if (typeof module !== 'undefined' && module.exports) {{
             return False
         return False
 
-    def _git_push_background(self):
+    def _git_push_background(self, commit_msg: str = "chore(telemetry): auto-sync production data [skip ci]"):
         """Actualiza el repositorio en segundo plano para reflejar el estado en GitHub Pages."""
         def _task():
             try:
@@ -671,13 +674,21 @@ if (typeof module !== 'undefined' && module.exports) {{
                     remote_url = f"https://x-access-token:{token}@github.com/RaptorT77/dashboard-seguimiento-linea-c-brp.git"
                     subprocess.run(["git", "remote", "set-url", "origin", remote_url], cwd=repo_dir, check=False)
                 subprocess.run(["git", "add", "data/", "assets/js/mockData.js"], cwd=repo_dir, check=False)
-                subprocess.run(["git", "commit", "-m", "chore(telemetry): reset dashboard telemetry to zero [skip ci]"], cwd=repo_dir, check=False)
-                subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, check=False, timeout=25)
+                res_diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_dir, check=False)
+                if res_diff.returncode != 0:
+                    subprocess.run(["git", "commit", "-m", commit_msg], cwd=repo_dir, check=False)
+                    res_push = subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, capture_output=True, text=True, timeout=35)
+                    if res_push.returncode == 0:
+                        logger.info(f"[GIT_SYNC] Sincronización exitosa con GitHub Pages: {commit_msg}")
+                    else:
+                        logger.warning(f"[GIT_SYNC] Error en git push hacia GitHub Pages: {res_push.stderr}")
+                else:
+                    logger.info("[GIT_SYNC] Sin cambios en mockData.js o JSON para git commit.")
             except Exception as e:
-                logger.warning(f"Error en sincronización git post-reset: {e}")
+                logger.warning(f"Error en sincronización git: {e}")
         threading.Thread(target=_task, daemon=True).start()
 
-    def reset_production_data(self) -> dict:
+    def reset_production_data(self, target_turno: int = 1) -> dict:
         """
         Restablece y vacía completamente los datos del dashboard a ceros:
         - Borra registros de producción horaria (todos en 0)
@@ -720,7 +731,7 @@ if (typeof module !== 'undefined' && module.exports) {{
                 "metaTurnoUnidades": 450,
                 "supervisorActual": "Líder Turno",
                 "productoActual": "WOLF V1 (Pistón BRP)",
-                "turnoActual": 1
+                "turnoActual": target_turno
             },
             "resumenKpis": {
                 "produccionDia": 0,
@@ -740,9 +751,9 @@ if (typeof module !== 'undefined' && module.exports) {{
                 "estadoLinea": "PRODUCCION_EN_ORDEN"
             },
             "turnos": [
-                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Líder Antonia", "meta": 480, "real": 0, "oee": 0.0, "activo": True},
-                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": False},
-                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": False}
+                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Líder Antonia", "meta": 480, "real": 0, "oee": 0.0, "activo": target_turno == 1},
+                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Líder Javier", "meta": 450, "real": 0, "oee": 0.0, "activo": target_turno == 2},
+                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": target_turno == 3}
             ],
             "modelos": [
                 {"id": "M01", "codigo": "PISTON-WOLF-V1", "nombre": "Pistón WOLF V1 (Línea C)", "cilindros": 1, "hp": 0, "plataforma": "BRP Rotax Engine Program", "activo": True}
