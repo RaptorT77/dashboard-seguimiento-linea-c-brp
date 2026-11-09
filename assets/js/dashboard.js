@@ -257,14 +257,13 @@
       barOee.className = k.eficienciaOee >= 85 ? 'kpi-progress-fill fill-green' : 'kpi-progress-fill fill-red';
     }
 
-    // Identificar la última hora registrada con datos
-    const activeHours = (state.data.produccionHoraria || []).filter(h =>
-      h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
-      (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
+    // Identificar la última hora registrada con datos en la pizarra
+    const recordedHours = (state.data.produccionHoraria || []).filter(h =>
+      h.isRecorded || (h.real !== null && h.real !== undefined && h.real > 0)
     );
-    const lastActive = activeHours.length > 0 ? activeHours[activeHours.length - 1] : null;
+    const lastActive = recordedHours.length > 0 ? recordedHours[recordedHours.length - 1] : null;
     const metaALaHora = lastActive ? lastActive.acumMeta : k.metaDiaria;
-    const horaCorte = lastActive ? (lastActive.hora.split(' - ')[1] || lastActive.hora) : '14:00';
+    const horaCorte = lastActive ? (lastActive.hora.split(' - ')[1] || lastActive.hora) : '15:00';
     const esperadoPct = k.metaDiaria > 0 ? ((metaALaHora / k.metaDiaria) * 100).toFixed(1) : '0.0';
 
     // Subtextos dinámicos en tarjetas de KPIs
@@ -467,25 +466,34 @@
   }
 
   /**
-   * Inicialización de Gráficas Chart.js
+   * Helper para obtener las horas según el filtro de turno seleccionado.
+   * En vista general ('all'), retorna los 23 bloques que cubren las 24 horas del día industrial (Turnos 1, 2 y 3).
+   */
+  function getHoursForCharts(dataObj) {
+    let hours = (dataObj || state.data).produccionHoraria || [];
+    if (state.filterShift !== 'all') {
+      const tId = parseInt(state.filterShift, 10);
+      hours = hours.filter(h => h.turnoNum === tId);
+    }
+    return hours;
+  }
+
+  /**
+   * Inicialización de Gráficas Chart.js — 24 Horas con proyección completa y horas futuras en blanco
    */
   function initCharts() {
     Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, sans-serif';
     Chart.defaults.color = '#475569';
 
-    // Filtrar estrictamente las horas que tienen registros reales de la pizarra (descartando horas futuras sin registrar)
-    const activeHourly = (state.data.produccionHoraria || []).filter(h =>
-      h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
-      (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
-    );
-    const hoursToPlot = activeHourly.length > 0 ? activeHourly : (state.data.produccionHoraria || []);
+    const hours = getHoursForCharts();
 
     // 1. Gráfica Producción por Hora (Real vs Meta)
     const ctxHourly = document.getElementById('chartHourlyCanvas');
     if (ctxHourly) {
-      const labels = hoursToPlot.map(h => h.hora.split(' - ')[0]);
-      const dataMeta = hoursToPlot.map(h => h.meta);
-      const dataReal = hoursToPlot.map(h => h.real);
+      const labels = hours.map(h => h.hora.split(' - ')[0]);
+      const dataMeta = hours.map(h => h.meta);
+      // Las horas futuras sin registro van como null para que aparezcan estrictamente en blanco
+      const dataReal = hours.map(h => (h.isRecorded && h.real !== null && h.real !== undefined) ? h.real : null);
 
       chartHourly = new Chart(ctxHourly, {
         type: 'bar',
@@ -500,7 +508,7 @@
               order: 2
             },
             {
-              label: 'Meta Horaria (68 uds)',
+              label: 'Meta Horaria (uds)',
               data: dataMeta,
               type: 'line',
               borderColor: '#F59E0B',
@@ -522,25 +530,28 @@
               callbacks: {
                 afterBody: (ctx) => {
                   const idx = ctx[0].dataIndex;
-                  return `Paros: ${hoursToPlot[idx].parosMin} min\n${hoursToPlot[idx].comentario}`;
+                  const h = hours[idx];
+                  if (!h || !h.isRecorded) return 'Hora programada / Por fabricar';
+                  return `Paros: ${h.parosMin || 0} min\n${h.comentario || ''}`;
                 }
               }
             }
           },
           scales: {
-            y: { beginAtZero: true, suggestedMax: 85, grid: { color: '#F1F5F9' } },
+            y: { beginAtZero: true, suggestedMax: 95, grid: { color: '#F1F5F9' } },
             x: { grid: { display: false } }
           }
         }
       });
     }
 
-    // 2. Gráfica Curva de Avance Acumulado (Curva S)
+    // 2. Gráfica Curva de Avance Acumulado (Curva S 24 Horas)
     const ctxCumulative = document.getElementById('chartCumulativeCanvas');
     if (ctxCumulative) {
-      const labels = hoursToPlot.map(h => h.hora.split(' - ')[0]);
-      const acumMeta = hoursToPlot.map(h => h.acumMeta);
-      const acumReal = hoursToPlot.map(h => h.acumReal);
+      const labels = hours.map(h => h.hora.split(' - ')[0]);
+      const acumMeta = hours.map(h => h.acumMeta);
+      // Acumulado real se corta en la última hora registrada; horas futuras quedan en blanco (null con spanGaps: false)
+      const acumReal = hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
 
       chartCumulative = new Chart(ctxCumulative, {
         type: 'line',
@@ -555,11 +566,12 @@
               borderWidth: 3,
               fill: true,
               tension: 0.3,
-              pointRadius: 4,
+              spanGaps: false,
+              pointRadius: (ctx) => (ctx.raw !== null && ctx.raw !== undefined ? 4 : 0),
               pointBackgroundColor: '#173D60'
             },
             {
-              label: 'Meta Acumulada Proyectada',
+              label: 'Meta Acumulada Proyectada (1350 uds)',
               data: acumMeta,
               borderColor: '#F59E0B',
               borderWidth: 2,
@@ -578,7 +590,11 @@
             legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10, weight: '700' } } }
           },
           scales: {
-            y: { beginAtZero: true, suggestedMax: 560, grid: { color: '#F1F5F9' } },
+            y: {
+              beginAtZero: true,
+              suggestedMax: state.filterShift !== 'all' ? 520 : 1400,
+              grid: { color: '#F1F5F9' }
+            },
             x: { grid: { display: false } }
           }
         }
@@ -711,28 +727,21 @@
       });
     }
 
-    // Actualizar gráficas según filtro de turno
+    // Actualizar gráficas según filtro de turno (mostrando la jornada de 24 horas y horas futuras en blanco)
     function updateChartsForFilter() {
-      let hours = state.data.produccionHoraria || [];
-      if (state.filterShift !== 'all') {
-        const tId = parseInt(state.filterShift, 10);
-        hours = hours.filter(h => h.turnoNum === tId);
-      }
-      const active = hours.filter(h =>
-        h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
-        (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
-      );
-      const plot = active.length > 0 ? active : hours;
+      const hours = getHoursForCharts();
       if (chartHourly) {
-        chartHourly.data.labels = plot.map(h => h.hora.split(' - ')[0]);
-        chartHourly.data.datasets[0].data = plot.map(h => h.real);
-        chartHourly.data.datasets[1].data = plot.map(h => h.meta);
+        chartHourly.data.labels = hours.map(h => h.hora.split(' - ')[0]);
+        chartHourly.data.datasets[0].data = hours.map(h => (h.isRecorded && h.real !== null && h.real !== undefined) ? h.real : null);
+        chartHourly.data.datasets[1].data = hours.map(h => h.meta);
+        chartHourly.options.scales.y.suggestedMax = 95;
         chartHourly.update();
       }
       if (chartCumulative) {
-        chartCumulative.data.labels = plot.map(h => h.hora.split(' - ')[0]);
-        chartCumulative.data.datasets[0].data = plot.map(h => h.acumReal);
-        chartCumulative.data.datasets[1].data = plot.map(h => h.acumMeta);
+        chartCumulative.data.labels = hours.map(h => h.hora.split(' - ')[0]);
+        chartCumulative.data.datasets[0].data = hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
+        chartCumulative.data.datasets[1].data = hours.map(h => h.acumMeta);
+        chartCumulative.options.scales.y.suggestedMax = state.filterShift !== 'all' ? 520 : 1400;
         chartCumulative.update();
       }
     }
@@ -1294,11 +1303,13 @@
         op60.ultimaLiberacion = now.toTimeString().split(' ')[0];
       }
 
-      // Actualizar última hora en gráfica
-      const lastHour = state.data.produccionHoraria[state.data.produccionHoraria.length - 1];
-      if (lastHour) {
-        lastHour.real += 1;
-        lastHour.acumReal += 1;
+      // Actualizar última hora registrada en gráfica
+      const recordedHours = (state.data.produccionHoraria || []).filter(h => h.isRecorded);
+      const targetHour = recordedHours.length > 0 ? recordedHours[recordedHours.length - 1] : state.data.produccionHoraria[0];
+      if (targetHour) {
+        targetHour.real = (targetHour.real || 0) + 1;
+        targetHour.acumReal = (targetHour.acumReal || 0) + 1;
+        targetHour.isRecorded = true;
       }
 
       // Re-renderizar vistas
@@ -1306,16 +1317,7 @@
       renderHeroWidgets();
       renderStationsFlow();
       renderTable();
-
-      // Actualizar gráficas en vivo
-      if (chartHourly) {
-        chartHourly.data.datasets[0].data = state.data.produccionHoraria.map(h => h.real);
-        chartHourly.update('none');
-      }
-      if (chartCumulative) {
-        chartCumulative.data.datasets[0].data = state.data.produccionHoraria.map(h => h.acumReal);
-        chartCumulative.update('none');
-      }
+      updateChartsForFilter();
 
       showToast(`⚡ Pieza liberada en OP60 (#${k.unidadesCompletadas} / ${k.metaDiaria}) — ${state.data.planta.productoActual}`);
     } else {
@@ -1455,28 +1457,7 @@
           renderStationsFlow();
           renderTable();
           renderAlerts();
-          if (chartHourly && freshData.produccionHoraria) {
-            const activeFresh = freshData.produccionHoraria.filter(h =>
-              h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
-              (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
-            );
-            const plotFresh = activeFresh.length > 0 ? activeFresh : freshData.produccionHoraria;
-            chartHourly.data.labels = plotFresh.map(h => h.hora.split(' - ')[0]);
-            chartHourly.data.datasets[0].data = plotFresh.map(h => h.real);
-            chartHourly.data.datasets[1].data = plotFresh.map(h => h.meta);
-            chartHourly.update();
-          }
-          if (chartCumulative && freshData.produccionHoraria) {
-            const activeFresh = freshData.produccionHoraria.filter(h =>
-              h.real > 0 || h.malas > 0 || h.parosMin > 0 ||
-              (h.comentario && !h.comentario.toLowerCase().includes('programado') && !h.comentario.toLowerCase().includes('en espera') && !h.comentario.toLowerCase().includes('por fabricar'))
-            );
-            const plotFresh = activeFresh.length > 0 ? activeFresh : freshData.produccionHoraria;
-            chartCumulative.data.labels = plotFresh.map(h => h.hora.split(' - ')[0]);
-            chartCumulative.data.datasets[0].data = plotFresh.map(h => h.acumReal);
-            chartCumulative.data.datasets[1].data = plotFresh.map(h => h.acumMeta);
-            chartCumulative.update();
-          }
+          updateChartsForFilter();
           if (chartDowntime && freshData.parosIncidencias) {
             const palette = ['#EF4444', '#F59E0B', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B', '#F97316', '#06B6D4'];
             const labels = freshData.parosIncidencias.length ? freshData.parosIncidencias.map(p => p.causa.length > 25 ? p.causa.substring(0, 25) + '...' : p.causa) : ['Sin paros'];

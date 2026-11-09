@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Sincronización Automática 24H — Acumulado Continuo 0:00 a 24:00 hrs
- * Última Actualización: 2026-11-09 02:57:27 UTC
+ * Última Actualización: 2026-11-09 03:37:17 UTC
  * =============================================================================
  */
 
@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v3.0.0-24H-LIVE",
-    "updatedAt": "2026-11-09T02:57:27Z",
+    "updatedAt": "2026-11-09T03:37:17Z",
     "fechaProduccion": "2026-11-08",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 450,
@@ -21,20 +21,20 @@ const BRP_DATA = {
     "turnoActual": 2
   },
   "resumenKpis": {
-    "produccionDia": 166,
+    "produccionDia": 304,
     "metaDiaria": 1350,
-    "porcentajeAvance": 12.3,
-    "unidadesCompletadas": 166,
-    "unidadesPendientes": 1184,
-    "eficienciaOee": 39.5,
+    "porcentajeAvance": 22.5,
+    "unidadesCompletadas": 304,
+    "unidadesPendientes": 1046,
+    "eficienciaOee": 41.0,
     "disponibilidad": 100.0,
-    "rendimiento": 39.5,
-    "calidadFpy": 100.0,
+    "rendimiento": 46.1,
+    "calidadFpy": 88.9,
     "parosAcumuladosMin": 0,
     "eventosParo": 0,
     "taktTimeSeg": 58.2,
-    "scrapPiezas": 0,
-    "scrapPorcentaje": 0.0,
+    "scrapPiezas": 38,
+    "scrapPorcentaje": 11.1,
     "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
@@ -44,8 +44,8 @@ const BRP_DATA = {
       "horario": "06:30 - 15:00",
       "supervisor": "Líder Antonia",
       "meta": 480,
-      "real": 166,
-      "oee": 34.6,
+      "real": 208,
+      "oee": 43.3,
       "activo": false
     },
     {
@@ -54,8 +54,8 @@ const BRP_DATA = {
       "horario": "15:00 - 23:00",
       "supervisor": "Ing. Roberto Garza",
       "meta": 450,
-      "real": 0,
-      "oee": 0.0,
+      "real": 96,
+      "oee": 21.3,
       "activo": true
     },
     {
@@ -92,20 +92,22 @@ const BRP_DATA = {
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Paro"
+      "comentario": "Sin incidencias reportadas",
+      "isRecorded": true
     },
     {
       "hora": "08:00 - 09:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 56,
+      "real": 66,
       "acumMeta": 150,
-      "acumReal": 56,
-      "oeeHora": 93.3,
+      "acumReal": 42,
+      "oeeHora": 100.0,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Producción en curso"
+      "malas": 24,
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "09:00 - 10:00",
@@ -114,63 +116,68 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 210,
-      "acumReal": 56,
+      "acumReal": 13,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Sin incidencias reportadas",
+      "isRecorded": true
     },
     {
       "hora": "10:00 - 11:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 0,
+      "real": 77,
       "acumMeta": 270,
-      "acumReal": 56,
-      "oeeHora": 0.0,
+      "acumReal": 90,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "11:00 - 12:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 30,
-      "real": 36,
+      "real": 7,
       "acumMeta": 300,
-      "acumReal": 92,
-      "oeeHora": 100.0,
+      "acumReal": 83,
+      "oeeHora": 23.3,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "n：296 // 2965592-11"
+      "malas": 14,
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "12:00 - 13:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 0,
+      "real": 125,
       "acumMeta": 360,
-      "acumReal": 92,
-      "oeeHora": 0.0,
+      "acumReal": 208,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "13:00 - 14:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 92,
+      "real": 0,
       "acumMeta": 420,
-      "acumReal": 166,
-      "oeeHora": 100.0,
+      "acumReal": 208,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Producción en curso"
+      "comentario": "Sin incidencias reportadas",
+      "isRecorded": true
     },
     {
       "hora": "14:00 - 15:00",
@@ -179,206 +186,222 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 480,
-      "acumReal": 166,
+      "acumReal": 208,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Sin incidencias reportadas",
+      "isRecorded": true
     },
     {
       "hora": "15:00 - 16:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": 25,
       "acumMeta": 540,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": 224,
+      "oeeHora": 41.7,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "3525588：11",
+      "isRecorded": true
     },
     {
       "hora": "16:00 - 17:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": 36,
       "acumMeta": 600,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": 256,
+      "oeeHora": 60.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "17:00 - 18:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": 56,
       "acumMeta": 660,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": 304,
+      "oeeHora": 93.3,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Producción en curso",
+      "isRecorded": true
     },
     {
       "hora": "18:00 - 19:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 720,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "19:00 - 20:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 30,
-      "real": 0,
+      "real": null,
       "acumMeta": 750,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "20:00 - 21:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 810,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "21:00 - 22:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 870,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "22:00 - 23:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 930,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "23:00 - 24:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 990,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "24:00 - 01:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 1050,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "01:00 - 02:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 1110,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "02:00 - 03:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 1170,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "03:00 - 04:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 30,
-      "real": 0,
+      "real": null,
       "acumMeta": 1200,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "04:00 - 05:00",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 60,
-      "real": 0,
+      "real": null,
       "acumMeta": 1260,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     },
     {
       "hora": "05:00 - 06:30",
       "turno": "Turno 3 - Nocturno",
       "turnoNum": 3,
       "meta": 90,
-      "real": 0,
+      "real": null,
       "acumMeta": 1350,
-      "acumReal": 166,
-      "oeeHora": 0.0,
+      "acumReal": null,
+      "oeeHora": null,
       "parosMin": 0,
-      "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "malas": null,
+      "comentario": "Hora programada / Por fabricar",
+      "isRecorded": false
     }
   ],
   "parosIncidencias": [],
@@ -389,13 +412,13 @@ const BRP_DATA = {
       "equipo": "Torno / Centro CNC OP10",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 166,
+      "buenasPzas": 304,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 54.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 56.0,
+      "ultimaLiberacion": "18:00"
     },
     {
       "id": "OP20",
@@ -403,13 +426,13 @@ const BRP_DATA = {
       "equipo": "Ranuradora de Precisión OP20",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 166,
+      "buenasPzas": 304,
       "scrapPzas": 0,
       "cicloSeg": 48.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 49.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 51.0,
+      "ultimaLiberacion": "18:00"
     },
     {
       "id": "OP30",
@@ -417,13 +440,13 @@ const BRP_DATA = {
       "equipo": "Ranuradora / Lavadora OP30",
       "operador": "Téc. OP30",
       "metaPzas": 1350,
-      "buenasPzas": 166,
-      "scrapPzas": 0,
+      "buenasPzas": 304,
+      "scrapPzas": 38,
       "cicloSeg": 120.0,
       "estado": "PARO",
       "buffer": "Atención de paros reportados",
-      "eficiencia": 29.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 31.0,
+      "ultimaLiberacion": "18:00"
     },
     {
       "id": "OP40",
@@ -431,13 +454,13 @@ const BRP_DATA = {
       "equipo": "Cabina de Grafito / Moly OP40",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 166,
+      "buenasPzas": 304,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Espera material",
-      "eficiencia": 39.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 41.0,
+      "ultimaLiberacion": "18:00"
     },
     {
       "id": "OP50",
@@ -445,13 +468,13 @@ const BRP_DATA = {
       "equipo": "Gage de Aire Multidiametral OP50",
       "operador": "Téc. Calidad",
       "metaPzas": 1350,
-      "buenasPzas": 166,
+      "buenasPzas": 304,
       "scrapPzas": 0,
       "cicloSeg": 46.0,
       "estado": "OK",
       "buffer": "Gage OK",
-      "eficiencia": 39.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 41.0,
+      "ultimaLiberacion": "18:00"
     },
     {
       "id": "OP60",
@@ -459,24 +482,34 @@ const BRP_DATA = {
       "equipo": "Estación de Visión y Embalaje OP60",
       "operador": "Antonio",
       "metaPzas": 1350,
-      "buenasPzas": 166,
+      "buenasPzas": 304,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Caja empaque",
-      "eficiencia": 39.5,
-      "ultimaLiberacion": "14:00"
+      "eficiencia": 41.0,
+      "ultimaLiberacion": "18:00"
     }
   ],
   "alertas": [
     {
       "id": "ALT-DEFICIT-DIA",
       "tipo": "CRITICA",
-      "titulo": "Déficit Acumulado (-254 Uds vs Plan a las 14:00)",
-      "descripcion": "La línea acumula 166 unidades de 420 programadas al corte (39.5% de cumplimiento). Paros acumulados: 0 min en la jornada.",
+      "titulo": "Déficit Acumulado (-356 Uds vs Plan a las 18:00)",
+      "descripcion": "La línea acumula 304 unidades de 660 programadas al corte (46.1% de cumplimiento). Paros acumulados: 0 min en la jornada.",
       "estacion": "LÍNEA C / GENERAL",
-      "hora": "14:00",
+      "hora": "18:00",
       "tiempoTranscurrido": "Jornada 24h en curso",
+      "resuelta": false
+    },
+    {
+      "id": "ALT-SCRAP-DIA",
+      "tipo": "CALIDAD",
+      "titulo": "Piezas Scrap Acumuladas: 38 pzas (11.1%)",
+      "descripcion": "Se han registrado 38 unidades defectuosas (NOK) acumuladas en los turnos reportados.",
+      "estacion": "LÍNEA C / CALIDAD",
+      "hora": "18:00",
+      "tiempoTranscurrido": "Acumulado día",
       "resuelta": false
     }
   ]

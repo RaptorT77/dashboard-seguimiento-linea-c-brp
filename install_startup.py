@@ -17,3 +17,4 @@ with open(startup_file, "w", encoding="utf-8") as f:
 
 print(f"Instalado exitosamente en: {startup_file}")
 print("El servicio iniciará minimizado en segundo plano cada vez que inicie Windows.")
+

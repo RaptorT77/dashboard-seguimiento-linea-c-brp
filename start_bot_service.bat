@@ -6,3 +6,4 @@ echo Iniciando Servicio de Telemetria BRP Linea C
 echo =======================================================
 python run_backend.py --mode all
 pause
+

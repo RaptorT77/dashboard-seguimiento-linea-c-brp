@@ -124,8 +124,54 @@ class DashboardSyncService:
             h_key = (r.horario or "").strip()
             records_by_key[(t_num, h_key)] = r
 
-        # 3. Construir la cuadrícula completa de 24 Horas (las 23 horas de los 3 turnos)
-        # Acumulando secuencialmente desde las 06:30 del Turno 1 hasta el Turno 3
+        # 3. Construir la cuadrícula completa de 24 Horas (las 23 horas de los 3 turnos oficiales)
+        # Acumulando secuencialmente desde las 06:30 del Turno 1 hasta el final del Turno 3
+        SLOTS_24H = []
+        for t_id in [1, 2, 3]:
+            s_info = SHIFT_SCHEDULES[t_id]
+            for (h_str, meta_h, _) in s_info["horas"]:
+                SLOTS_24H.append({
+                    "turno_id": t_id,
+                    "turno_nombre": s_info["nombre"],
+                    "horario": h_str,
+                    "meta": meta_h
+                })
+
+        # Identificar el corte: último slot que tiene datos registrados en la foto de pizarra
+        last_recorded_idx = -1
+        records_by_slot = {}
+        for idx, slot in enumerate(SLOTS_24H):
+            t_id = slot["turno_id"]
+            h_str = slot["horario"]
+            matched_rec = records_by_key.get((t_id, h_str))
+            if not matched_rec:
+                prefix = h_str.split(" - ")[0].strip()
+                for (t_k, h_k), r_k in records_by_key.items():
+                    if t_k == t_id and h_k.strip().startswith(prefix):
+                        matched_rec = r_k
+                        break
+            if matched_rec:
+                records_by_slot[idx] = matched_rec
+                has_data = (
+                    (matched_rec.real_pz_hora is not None and matched_rec.real_pz_hora >= 0) or
+                    (matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0) or
+                    (matched_rec.piezas_malas is not None and matched_rec.piezas_malas > 0) or
+                    (matched_rec.tiempo_minutos is not None and matched_rec.tiempo_minutos > 0) or
+                    bool(matched_rec.paros)
+                )
+                if has_data:
+                    last_recorded_idx = max(last_recorded_idx, idx)
+
+        # Si el registro actual apunta a una hora específica, asegurar que esté cubierta
+        if record and record.horario:
+            r_prefix = record.horario.split(" - ")[0].strip()
+            for idx, slot in enumerate(SLOTS_24H):
+                if slot["turno_id"] == active_turno_id and slot["horario"].startswith(r_prefix):
+                    last_recorded_idx = max(last_recorded_idx, idx)
+                    if idx not in records_by_slot:
+                        records_by_slot[idx] = record
+                    break
+
         produccion_horaria_24h = []
         paros_list = []
         paro_id_seq = 1
@@ -142,126 +188,111 @@ class DashboardSyncService:
         turno_paros = {1: 0, 2: 0, 3: 0}
 
         latest_active_hour = None
-        has_any_data = False
 
-        for t_id in [1, 2, 3]:
-            s_info = SHIFT_SCHEDULES[t_id]
-            for h_str, meta_h, _ in s_info["horas"]:
-                dia_acum_meta += meta_h
+        for idx, slot in enumerate(SLOTS_24H):
+            t_id = slot["turno_id"]
+            h_str = slot["horario"]
+            meta_h = slot["meta"]
+            turno_nombre = slot["turno_nombre"]
+            dia_acum_meta += meta_h
 
-                # Buscar si hay registro real extraído para esta hora
-                matched_rec = records_by_key.get((t_id, h_str))
-                if not matched_rec:
-                    # Búsqueda difusa por hora inicial
-                    prefix = h_str.split(" - ")[0].strip()
-                    for (t_k, h_k), r_k in records_by_key.items():
-                        if t_k == t_id and h_k.strip().startswith(prefix):
-                            matched_rec = r_k
-                            break
-
+            if idx <= last_recorded_idx:
+                matched_rec = records_by_slot.get(idx)
                 if matched_rec:
-                    has_any_data = True
                     r_h = matched_rec.real_pz_hora if matched_rec.real_pz_hora is not None else 0
                     malas = matched_rec.piezas_malas if matched_rec.piezas_malas is not None else 0
                     p_min = matched_rec.tiempo_minutos if matched_rec.tiempo_minutos is not None else 0
                     paros_txt = matched_rec.paros or ""
-                    is_summary_token = any(tok in paros_txt.lower() for tok in ["denle", "venta", "sorep", "scrap", "lider", "líder"])
-                    actual_p_min = p_min if p_min > 0 else (30 if ((paros_txt or p_min > 0) and not is_summary_token) else 0)
-
-                    # Si el acumulado viene reportado directamente en pizarra para esta hora, respetarlo
-                    if t_id == 1:
-                        if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
-                            dia_acum_real = matched_rec.real_acumulado
-                            turno_reals[1] = matched_rec.real_acumulado
-                        else:
-                            dia_acum_real += r_h
-                            turno_reals[1] += r_h
-                    elif t_id == 2:
-                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 285
-                        if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
-                            turno_reals[2] = matched_rec.real_acumulado
-                            dia_acum_real = t1_end + matched_rec.real_acumulado
-                        else:
-                            turno_reals[2] += r_h
-                            dia_acum_real = t1_end + turno_reals[2]
-                    else:
-                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 285
-                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 80
-                        if matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
-                            turno_reals[3] = matched_rec.real_acumulado
-                            dia_acum_real = t1_end + t2_end + matched_rec.real_acumulado
-                        else:
-                            turno_reals[3] += r_h
-                            dia_acum_real = t1_end + t2_end + turno_reals[3]
-
-                    # Detectar si el texto es una causa real de paro o texto benigno/informativo
-                    is_benign = any(b in paros_txt.lower() for b in ["regular", "en curso", "sin incidencias", "por fabricar", "programado"])
-                    if (paros_txt or p_min > 0) and not is_summary_token and not is_benign:
-                        if p_min > 0:
-                            actual_p_min = p_min
-                        elif "lavadora" in paros_txt.lower():
-                            actual_p_min = 100
-                        elif "comedor" in paros_txt.lower():
-                            actual_p_min = 30
-                        elif "break" in paros_txt.lower():
-                            actual_p_min = 15
-                        elif any(k in paros_txt.lower() for k in ["bujes", "buril", "opresor", "alabeo", "molde"]):
-                            actual_p_min = 40
-                        else:
-                            actual_p_min = 0
-                    else:
-                        actual_p_min = 0
-
-                    turno_scraps[t_id] += malas
-                    turno_paros[t_id] += actual_p_min
-                    dia_total_scrap += malas
-                    dia_total_paros_min += actual_p_min
-
-                    # Comentario descriptivo
-                    if paros_txt and not is_summary_token:
-                        cmt = paros_txt
-                    elif r_h > 0:
-                        cmt = "Producción en curso"
-                    else:
-                        cmt = "Sin incidencias reportadas"
-
-                    # Agregar a lista de paros e incidencias si hay paro reportado real
-                    if actual_p_min > 0 and not is_summary_token and not is_benign:
-                        categoria = "Mecánico"
-                        if "buril" in paros_txt.lower() or "bujes" in paros_txt.lower() or "herramental" in paros_txt.lower() or "ruptura" in paros_txt.lower() or "molde" in paros_txt.lower():
-                            categoria = "Herramental"
-                        elif "comedor" in paros_txt.lower() or "break" in paros_txt.lower():
-                            categoria = "Operación / Descanso"
-                        elif "lavadora" in paros_txt.lower() or "sensor" in paros_txt.lower():
-                            categoria = "Mantenimiento / Equipo"
-                        elif "alabeo" in paros_txt.lower() or "offset" in paros_txt.lower():
-                            categoria = "Calibración"
-
-                        paros_list.append({
-                            "id": f"P-{paro_id_seq:02d}",
-                            "estacion": matched_rec.op or ("OP30" if t_id == 1 else "OP20"),
-                            "causa": paros_txt or f"Paro registrado de {actual_p_min} min",
-                            "duracionMin": actual_p_min,
-                            "categoria": categoria,
-                            "tipo": "Incidencia Pizarra",
-                            "hora": h_str,
-                            "estatus": "Reportado en Pizarra"
-                        })
-                        paro_id_seq += 1
-
-                    latest_active_hour = h_str
                 else:
-                    # Hora futura o sin datos registrados aún
                     r_h = 0
                     malas = 0
+                    p_min = 0
+                    paros_txt = ""
+
+                is_summary_token = any(tok in paros_txt.lower() for tok in ["denle", "venta", "sorep", "scrap", "lider", "líder"])
+                actual_p_min = p_min if p_min > 0 else (30 if ((paros_txt or p_min > 0) and not is_summary_token) else 0)
+
+                # Acumulado continuo 24H a lo largo de los turnos
+                if matched_rec and matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
+                    rec_ac = matched_rec.real_acumulado
+                    if t_id == 1:
+                        dia_acum_real = rec_ac
+                        turno_reals[1] = rec_ac
+                    elif t_id == 2:
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 256
+                        if rec_ac >= t1_end:
+                            dia_acum_real = rec_ac
+                            turno_reals[2] = rec_ac - t1_end
+                        else:
+                            turno_reals[2] = rec_ac
+                            dia_acum_real = t1_end + rec_ac
+                    else:
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 256
+                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 96
+                        if rec_ac >= (t1_end + t2_end):
+                            dia_acum_real = rec_ac
+                            turno_reals[3] = rec_ac - (t1_end + t2_end)
+                        else:
+                            turno_reals[3] = rec_ac
+                            dia_acum_real = t1_end + t2_end + rec_ac
+                else:
+                    dia_acum_real += r_h
+                    turno_reals[t_id] += r_h
+
+                # Detectar paros reales
+                is_benign = any(b in paros_txt.lower() for b in ["regular", "en curso", "sin incidencias", "por fabricar", "programado"])
+                if (paros_txt or p_min > 0) and not is_summary_token and not is_benign:
+                    if p_min > 0:
+                        actual_p_min = p_min
+                    elif "lavadora" in paros_txt.lower():
+                        actual_p_min = 100
+                    elif "comedor" in paros_txt.lower():
+                        actual_p_min = 30
+                    elif "break" in paros_txt.lower():
+                        actual_p_min = 15
+                    elif any(k in paros_txt.lower() for k in ["bujes", "buril", "opresor", "alabeo", "molde"]):
+                        actual_p_min = 40
+                    else:
+                        actual_p_min = 0
+                else:
                     actual_p_min = 0
-                    cmt = "Hora programada / Por fabricar"
+
+                turno_scraps[t_id] += malas
+                turno_paros[t_id] += actual_p_min
+                dia_total_scrap += malas
+                dia_total_paros_min += actual_p_min
 
                 oee_h = round(min(100.0, (r_h / meta_h * 100.0) if meta_h else 0.0), 1)
+                cmt = paros_txt if (paros_txt and not is_summary_token) else ("Producción en curso" if r_h > 0 else "Sin incidencias reportadas")
+
+                if actual_p_min > 0 and not is_summary_token and not is_benign:
+                    categoria = "Mecánico"
+                    if any(k in paros_txt.lower() for k in ["buril", "bujes", "herramental", "ruptura", "molde"]):
+                        categoria = "Herramental"
+                    elif "comedor" in paros_txt.lower() or "break" in paros_txt.lower():
+                        categoria = "Operación / Descanso"
+                    elif "lavadora" in paros_txt.lower() or "sensor" in paros_txt.lower():
+                        categoria = "Mantenimiento / Equipo"
+                    elif "alabeo" in paros_txt.lower() or "offset" in paros_txt.lower():
+                        categoria = "Calibración"
+
+                    paros_list.append({
+                        "id": f"P-{paro_id_seq:02d}",
+                        "estacion": matched_rec.op or ("OP30" if t_id == 1 else "OP20") if matched_rec else "OP20",
+                        "causa": paros_txt or f"Paro registrado de {actual_p_min} min",
+                        "duracionMin": actual_p_min,
+                        "categoria": categoria,
+                        "tipo": "Incidencia Pizarra",
+                        "hora": h_str,
+                        "estatus": "Reportado en Pizarra"
+                    })
+                    paro_id_seq += 1
+
+                latest_active_hour = h_str
 
                 produccion_horaria_24h.append({
                     "hora": h_str,
-                    "turno": s_info["nombre"],
+                    "turno": turno_nombre,
                     "turnoNum": t_id,
                     "meta": meta_h,
                     "real": r_h,
@@ -270,7 +301,24 @@ class DashboardSyncService:
                     "oeeHora": oee_h,
                     "parosMin": actual_p_min,
                     "malas": malas,
-                    "comentario": cmt
+                    "comentario": cmt,
+                    "isRecorded": True
+                })
+            else:
+                # HORAS FUTURAS: estrictamente en blanco (None en Python -> null en JSON)
+                produccion_horaria_24h.append({
+                    "hora": h_str,
+                    "turno": turno_nombre,
+                    "turnoNum": t_id,
+                    "meta": meta_h,
+                    "real": None,
+                    "acumMeta": dia_acum_meta,
+                    "acumReal": None,
+                    "oeeHora": None,
+                    "parosMin": 0,
+                    "malas": None,
+                    "comentario": "Hora programada / Por fabricar",
+                    "isRecorded": False
                 })
 
         # 4. Cálculo de KPIs globales y eficiencia (OEE) de la jornada
@@ -279,7 +327,7 @@ class DashboardSyncService:
         meta_jornada = dia_acum_meta  # 1350 uds en 24h
 
         # Meta esperada al corte de las horas activas
-        active_hours = [h for h in produccion_horaria_24h if h["real"] > 0 or h["parosMin"] > 0 or h["malas"] > 0]
+        active_hours = [h for h in produccion_horaria_24h if h["isRecorded"]]
         meta_al_corte = active_hours[-1]["acumMeta"] if active_hours else SHIFT_SCHEDULES[active_turno_id]["meta"]
         hora_corte_str = active_hours[-1]["hora"].split(" - ")[-1] if active_hours else "15:00"
 
