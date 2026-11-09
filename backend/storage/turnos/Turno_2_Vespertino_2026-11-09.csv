@@ -2,18 +2,18 @@
 # BRP ROTAX MÉXICO — PLANTA KOLBEN SCHMIDT CELAYA
 # REPORTE OFICIAL DE CIERRE DE TURNO: TURNO 2 - VESPERTINO
 # Fecha: 2026-11-09 | Turno: Segundo: 15:00 a 23:00 hrs
-# Supervisor / Líder: Líder Antonio | Producto: WOLF V1 (Pistón BRP)
-# Producción Real: 660 uds | Meta: 1350 uds | Cumplimiento: 48.9%
-# Piezas Scrap (NOK): 10 uds (1.5%) | Paros Acumulados: 40 min (1 eventos)
-# Eficiencia Operativa OEE: 81.8% | Estado de Línea Final: PRODUCCION_EN_ORDEN
-# Timestamp de Archivo: 2026-11-09 17:03:02 UTC
+# Supervisor / Líder: Líder Javier | Producto: WOLF V1 (Pistón BRP)
+# Producción Real: 90 uds | Meta: 1350 uds | Cumplimiento: 6.7%
+# Piezas Scrap (NOK): 24 uds (21.1%) | Paros Acumulados: 60 min (2 eventos)
+# Eficiencia Operativa OEE: 23.7% | Estado de Línea Final: PRODUCCION_DEFICIENTE
+# Timestamp de Archivo: 2026-11-09 17:49:53 UTC
 # =============================================================================
 Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro_Incidencia,Estado_Linea,Timestamp_Registro
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","15:00 - 16:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,60,540,480,0,0,"Producción en curso","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","16:00 - 17:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,60,600,480,0,0,"Producción en curso","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","17:00 - 18:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,60,660,540,0,0,"Producción en curso","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","18:00 - 19:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,60,720,600,0,0,"Producción en curso","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","19:00 - 20:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",30,60,750,660,0,0,"Producción en curso","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","20:00 - 21:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,0,810,660,0,0,"Hora programada / Por fabricar","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","21:00 - 22:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,0,870,660,0,0,"Hora programada / Por fabricar","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
-2026-11-09,"Segundo: 15:00 a 23:00 hrs","22:00 - 23:00","C","WOLF V1 (Pistón BRP)","Líder Antonio",60,0,930,660,0,0,"Hora programada / Por fabricar","PRODUCCION_EN_ORDEN","2026-11-09 17:03:02"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","15:00 - 16:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,540,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","16:00 - 17:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,600,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","17:00 - 18:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,660,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","18:00 - 19:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,720,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","19:00 - 20:00","C","WOLF V1 (Pistón BRP)","Líder Javier",30,None,750,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","20:00 - 21:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,810,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","21:00 - 22:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,870,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
+2026-11-09,"Segundo: 15:00 a 23:00 hrs","22:00 - 23:00","C","WOLF V1 (Pistón BRP)","Líder Javier",60,None,930,None,None,0,"Hora programada / Por fabricar","PRODUCCION_DEFICIENTE","2026-11-09 17:49:53"
