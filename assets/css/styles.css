@@ -130,6 +130,14 @@ body {
   display: block;
 }
 
+.logo-right-img {
+  height: 42px;
+  width: auto;
+  max-width: 175px;
+  object-fit: contain;
+  display: block;
+}
+
 .header-center {
   flex: 1;
   display: flex;
