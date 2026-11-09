@@ -127,7 +127,8 @@ const BRP_DATA = {
       "op": "OP40",
       "comentario": "Producción en curso",
       "paros": "Producción en curso",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "10:00 - 11:00",
