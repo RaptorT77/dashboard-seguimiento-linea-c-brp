@@ -115,13 +115,6 @@
         ${state.data.modelos.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')}
       `;
     }
-
-    if (selectStation) {
-      selectStation.innerHTML = `
-        <option value="all">Todas las Estaciones (6)</option>
-        ${state.data.estaciones.map(e => `<option value="${e.id}">${e.id} — ${e.nombre}</option>`).join('')}
-      `;
-    }
   }
 
   /**
@@ -1001,17 +994,6 @@
       });
     }
 
-    // Filtro de Estación
-    const selectStation = document.getElementById('filterStation');
-    if (selectStation) {
-      selectStation.addEventListener('change', (e) => {
-        state.filterStation = e.target.value;
-        const optText = e.target.options[e.target.selectedIndex].text;
-        showToast(`Filtro estación: ${optText}`);
-        renderTable();
-      });
-    }
-
     // Filtro de Modelo
     const selectModel = document.getElementById('filterModel');
     if (selectModel) {
@@ -1165,7 +1147,6 @@
         state.filterStatus = 'all';
         state.searchQuery = '';
         if (selectShift) selectShift.value = 'all';
-        if (selectStation) selectStation.value = 'all';
         if (selectModel) selectModel.value = 'all';
         if (selectStatus) selectStatus.value = 'all';
         if (inputDate) inputDate.value = new Date().toISOString().split('T')[0];
