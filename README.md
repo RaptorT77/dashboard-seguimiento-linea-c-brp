@@ -142,4 +142,4 @@ python -m unittest backend/tests/test_pipeline.py
 ---
 
 **BRP Rotax México & Kolbenschmidt Pierburg (KS Celaya)**  
-*Desarrollado y mantenido por JI&FIX SIGMA S.A. de C.V.*
+*En colaboración con [VCG CONTINENTAL](https://www.vcgcontinental.com/), [HC Advanced Automation](https://www.hcaa.com.mx/) y JI&FIX SIGMA S.A. de C.V.*
