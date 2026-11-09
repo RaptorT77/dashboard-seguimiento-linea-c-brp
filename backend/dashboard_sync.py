@@ -105,15 +105,19 @@ class DashboardSyncService:
 
         # 1. Determinar turno activo
         turno_str = record.turno or ""
-        if "Segundo" in turno_str or "15:00" in turno_str:
+        if "Primero" in turno_str or "Matutino" in turno_str or "06:30 a 15:00" in turno_str:
+            active_turno_id = 1
+        elif "Segundo" in turno_str or "Vespertino" in turno_str or "15:00 a 23:00" in turno_str:
             active_turno_id = 2
-        elif "Tercero" in turno_str or "23:00" in turno_str:
+        elif "Tercero" in turno_str or "Nocturno" in turno_str or "23:00 a 06:30" in turno_str:
             active_turno_id = 3
         else:
             active_turno_id = 1
 
         supervisor = record.lider or SHIFT_SCHEDULES[active_turno_id]["supervisor"]
-        if "Líder" not in supervisor and "Ing." not in supervisor:
+        if active_turno_id == 1 and ("Javier" in supervisor or not supervisor):
+            supervisor = "Líder Antonia"
+        elif "Líder" not in supervisor and "Ing." not in supervisor:
             supervisor = f"Líder {supervisor}"
 
         # 2. Indexar registros existentes por (turno_num, horario) para mapeo rápido

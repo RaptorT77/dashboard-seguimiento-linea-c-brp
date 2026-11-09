@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Sincronización Automática 24H — Acumulado Continuo 0:00 a 24:00 hrs
- * Última Actualización: 2026-11-09 20:12:44 UTC
+ * Última Actualización: 2026-11-09 20:17:09 UTC
  * =============================================================================
  */
 
@@ -12,13 +12,13 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v3.0.0-24H-LIVE",
-    "updatedAt": "2026-11-09T20:12:44Z",
+    "updatedAt": "2026-11-09T20:17:09Z",
     "fechaProduccion": "2026-11-09",
     "tiempoCicloTargetSeg": 45.0,
-    "metaTurnoUnidades": 450,
-    "supervisorActual": "Líder Javier",
+    "metaTurnoUnidades": 480,
+    "supervisorActual": "Líder Antonia",
     "productoActual": "WOLF V1 (Pistón BRP)",
-    "turnoActual": 2
+    "turnoActual": 1
   },
   "resumenKpis": {
     "produccionDia": 265,
@@ -46,7 +46,7 @@ const BRP_DATA = {
       "meta": 480,
       "real": 265,
       "oee": 55.2,
-      "activo": false
+      "activo": true
     },
     {
       "id": 2,
@@ -56,7 +56,7 @@ const BRP_DATA = {
       "meta": 450,
       "real": 0,
       "oee": 0.0,
-      "activo": true
+      "activo": false
     },
     {
       "id": 3,
