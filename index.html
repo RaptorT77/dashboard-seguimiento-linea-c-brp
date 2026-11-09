@@ -407,7 +407,52 @@
       </div>
     </section>
 
-    <!-- 3.5. SECCIÓN DE ALERTAS Y NOTIFICACIONES OPERATIVAS -->
+    <!-- 3.5. TABLA OFICIAL DE SEGUIMIENTO DE PRODUCCIÓN (ESTRUCTURA DE PIZARRA INDUSTRIAL BRP) -->
+    <section class="table-section" id="tableSection" style="margin-top: 18px; margin-bottom: 18px;">
+      <div class="table-toolbar">
+        <div class="section-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3h18v18H3z"></path>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+            <path d="M9 3v18"></path>
+          </svg>
+          <span>Registro Histórico de Pizarra — Línea C (Pistón WOLF V1)</span>
+        </div>
+
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="tableSearchInput" class="search-input" placeholder="Buscar por horario, falla o paro...">
+        </div>
+      </div>
+
+      <div class="table-responsive-container">
+        <table class="industrial-table" id="tableWhiteboard">
+          <thead>
+            <tr>
+              <th style="min-width: 110px;">Horario</th>
+              <th style="text-align: center;">Obj. Pz/Hora</th>
+              <th style="text-align: center;">Real Pz/Hora</th>
+              <th style="text-align: center;">Obj. Acumulado</th>
+              <th style="text-align: center;">Real Acumulado</th>
+              <th style="text-align: center;">Piezas Malas (Scrap)</th>
+              <th style="text-align: center;">Op</th>
+              <th style="text-align: center;">Tiempo (Min)</th>
+              <th style="min-width: 250px;">Paros y Descripción de Fallas</th>
+              <th style="text-align: center;">Estatus</th>
+            </tr>
+          </thead>
+          <tbody id="tableWhiteboardBody">
+            <!-- Filas inyectadas dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3.6. SECCIÓN DE ALERTAS Y NOTIFICACIONES OPERATIVAS -->
     <section class="alerts-section">
       <div class="section-header">
         <div class="section-title">

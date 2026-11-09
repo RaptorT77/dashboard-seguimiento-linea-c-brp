@@ -301,7 +301,9 @@ class DashboardSyncService:
                     "oeeHora": oee_h,
                     "parosMin": actual_p_min,
                     "malas": malas,
+                    "op": (matched_rec.op if matched_rec and matched_rec.op else ("OP30" if t_id == 1 else "OP20")),
                     "comentario": cmt,
+                    "paros": paros_txt or cmt,
                     "isRecorded": True
                 })
             else:
@@ -317,7 +319,9 @@ class DashboardSyncService:
                     "oeeHora": None,
                     "parosMin": 0,
                     "malas": None,
+                    "op": "--",
                     "comentario": "Hora programada / Por fabricar",
+                    "paros": "",
                     "isRecorded": False
                 })
 

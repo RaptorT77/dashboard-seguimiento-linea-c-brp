@@ -342,66 +342,174 @@
   }
 
   /**
-   * Renderizar Tabla Detallada con Búsqueda y Filtros
+   * Renderizar Tabla Oficial de Pizarra de Producción (Estructura PDF BRP Línea C)
+   * Incluye las 24 horas continuas (Turnos 1, 2 y 3), filas de totalizador y descripción de fallas/paros.
    */
   function renderTable() {
-    const tbody = document.getElementById('tableStationsBody');
+    const tbody = document.getElementById('tableWhiteboardBody') || document.getElementById('tableStationsBody');
     if (!tbody) return;
 
-    let items = state.data.estaciones;
+    let allHours = state.data.produccionHoraria || [];
+    const query = (state.searchQuery || '').trim().toLowerCase();
+    const shiftFilter = state.filterShift;
+    const statusFilter = state.filterStatus;
 
-    // Filtro por Estación
-    if (state.filterStation !== 'all') {
-      items = items.filter(e => e.id === state.filterStation);
+    // Calcular totales por turno y acumulados
+    const tTotals = {
+      1: { meta: 480, real: 0, malas: 0, paros: 0, lider: 'Antonia', nota: 'Moldeo: 786 | Scrap: 115 | Venta: 352' },
+      2: { meta: 450, real: 0, malas: 0, paros: 0, lider: 'Santiago V. / Roberto Garza', nota: '' },
+      3: { meta: 420, real: 0, malas: 0, paros: 0, lider: 'Diana Soto', nota: '' }
+    };
+
+    allHours.forEach(h => {
+      const t = h.turnoNum || 1;
+      if (h.isRecorded) {
+        if (h.real !== null && h.real !== undefined) tTotals[t].real += h.real;
+        if (h.malas !== null && h.malas !== undefined) tTotals[t].malas += h.malas;
+        if (h.parosMin) tTotals[t].paros += h.parosMin;
+      }
+    });
+
+    const grandTotal = {
+      meta: 1350,
+      real: tTotals[1].real + tTotals[2].real + tTotals[3].real,
+      malas: tTotals[1].malas + tTotals[2].malas + tTotals[3].malas,
+      paros: tTotals[1].paros + tTotals[2].paros + tTotals[3].paros
+    };
+
+    // Función para verificar si una fila pasa los filtros
+    function rowMatchesFilters(h) {
+      // Filtro de Turno
+      if (shiftFilter !== 'all' && h.turnoNum !== parseInt(shiftFilter, 10)) {
+        return false;
+      }
+
+      // Filtro de Estado
+      if (statusFilter !== 'all') {
+        const hasParo = (h.parosMin || 0) > 0 || (h.comentario && h.comentario.toLowerCase().includes('paro'));
+        const hasScrap = (h.malas || 0) > 0;
+        const isRun = !h.isRecorded || (h.comentario && h.comentario.toLowerCase().includes('curso'));
+        const isOk = h.isRecorded && !hasParo && !hasScrap;
+
+        if (statusFilter === 'OK' && !isOk) return false;
+        if (statusFilter === 'RUN' && !isRun) return false;
+        if (statusFilter === 'PEND' && !(hasParo || hasScrap)) return false;
+      }
+
+      // Filtro de búsqueda
+      if (query !== '') {
+        const textToSearch = [
+          h.hora,
+          h.turno,
+          h.comentario || '',
+          h.paros || '',
+          h.op || '',
+          h.isRecorded ? 'registrado' : 'programado'
+        ].join(' ').toLowerCase();
+
+        if (!textToSearch.includes(query)) return false;
+      }
+
+      return true;
     }
 
-    // Filtro por Estado
-    if (state.filterStatus !== 'all') {
-      items = items.filter(e => e.estado === state.filterStatus);
+    let rowsHtml = '';
+    const turnosToShow = shiftFilter === 'all' ? [1, 2, 3] : [parseInt(shiftFilter, 10)];
+
+    turnosToShow.forEach(tNum => {
+      const shiftHours = allHours.filter(h => h.turnoNum === tNum);
+      const filteredShiftHours = shiftHours.filter(rowMatchesFilters);
+
+      filteredShiftHours.forEach(h => {
+        let badgeHtml = '';
+        let rowStyle = '';
+
+        if (!h.isRecorded) {
+          badgeHtml = '<span class="cell-badge" style="background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">PROGRAMADO</span>';
+          rowStyle = 'color: #94A3B8;';
+        } else if (h.parosMin > 0) {
+          badgeHtml = '<span class="cell-badge" style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5;">PARO</span>';
+        } else if (h.malas > 0) {
+          badgeHtml = '<span class="cell-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FCD34D;">SCRAP</span>';
+        } else {
+          badgeHtml = '<span class="cell-badge" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC;">OK</span>';
+        }
+
+        const realH = h.isRecorded ? (h.real !== null ? h.real : 0) : '--';
+        const realAc = h.isRecorded ? (h.acumReal !== null ? h.acumReal : '--') : '--';
+        const malas = h.isRecorded ? (h.malas !== null ? h.malas : 0) : '--';
+        const opVal = h.isRecorded ? (h.op || (tNum === 1 ? 'OP30' : 'OP20')) : '--';
+        const tiempoVal = h.isRecorded ? (h.parosMin > 0 ? `${h.parosMin}` : '0') : '--';
+        const cmtText = h.isRecorded ? (h.comentario || 'Producción en curso') : '<span style="color:#94A3B8; font-style:italic;">Hora programada / Por fabricar</span>';
+
+        rowsHtml += `
+          <tr style="${rowStyle}">
+            <td><strong style="color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${h.hora}</strong></td>
+            <td style="text-align: center;">${h.meta}</td>
+            <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#1F4E79' : '#94A3B8'};">${realH}</td>
+            <td style="text-align: center; color:#475569;">${h.acumMeta}</td>
+            <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${realAc}</td>
+            <td style="text-align: center; font-weight:${malas > 0 ? '700' : 'normal'}; color:${malas > 0 ? '#DC2626' : '#64748B'};">${malas}</td>
+            <td style="text-align: center; font-family:var(--font-mono); font-size:10px;">${opVal}</td>
+            <td style="text-align: center; font-weight:${tiempoVal > 0 ? '700' : 'normal'}; color:${tiempoVal > 0 ? '#DC2626' : '#64748B'};">${tiempoVal}</td>
+            <td style="font-size:11px; color:${h.isRecorded && h.parosMin > 0 ? '#991B1B' : '#334155'}; font-weight:${h.isRecorded && h.parosMin > 0 ? '600' : 'normal'};">${cmtText}</td>
+            <td style="text-align: center;">${badgeHtml}</td>
+          </tr>
+        `;
+      });
+
+      // Fila Separador / Totalizador de Turno
+      const tInfo = tTotals[tNum];
+      if (filteredShiftHours.length > 0 && query === '') {
+        rowsHtml += `
+          <tr style="background-color: #E2E8F0; font-weight: 700; border-top: 2px solid #CBD5E1; border-bottom: 2px solid #94A3B8;">
+            <td style="color: #0F172A; text-transform: uppercase;">Total ${tNum}er turno:</td>
+            <td style="text-align: center; color: #0F172A;">${tInfo.meta}</td>
+            <td style="text-align: center; color: #1F4E79; font-size: 12px;">${tInfo.real}</td>
+            <td style="text-align: center; color: #0F172A;">${tInfo.meta}</td>
+            <td style="text-align: center; color: #173D60; font-size: 12px;">${tInfo.real}</td>
+            <td style="text-align: center; color: ${tInfo.malas > 0 ? '#DC2626' : '#0F172A'};">${tInfo.malas}</td>
+            <td style="text-align: center;">--</td>
+            <td style="text-align: center; color: ${tInfo.paros > 0 ? '#DC2626' : '#0F172A'};">${tInfo.paros} min</td>
+            <td colspan="2" style="font-size: 10.5px; color: #1E293B;">
+              <strong>Líder:</strong> ${tInfo.lider} ${tInfo.nota ? `&nbsp;|&nbsp; <em>${tInfo.nota}</em>` : ''}
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    // Fila Total del Día (si se muestran todos los turnos y no hay búsqueda activa)
+    if (shiftFilter === 'all' && query === '' && statusFilter === 'all') {
+      rowsHtml += `
+        <tr style="background-color: #CBD5E1; font-weight: 800; border-top: 2px solid #64748B;">
+          <td style="color: #0F172A; font-size: 12px;">TOTAL DEL DÍA (24H):</td>
+          <td style="text-align: center; font-size: 12px; color: #0F172A;">${grandTotal.meta}</td>
+          <td style="text-align: center; font-size: 13px; color: #166534;">${grandTotal.real}</td>
+          <td style="text-align: center; font-size: 12px; color: #0F172A;">${grandTotal.meta}</td>
+          <td style="text-align: center; font-size: 13px; color: #166534;">${grandTotal.real}</td>
+          <td style="text-align: center; font-size: 12px; color: #DC2626;">${grandTotal.malas}</td>
+          <td style="text-align: center;">--</td>
+          <td style="text-align: center; font-size: 12px; color: #DC2626;">${grandTotal.paros} min</td>
+          <td colspan="2" style="font-size: 11px; color: #0F172A;">
+            Jornada Completa 24 Horas — BRP Línea C (Kolben Schmidt Celaya)
+          </td>
+        </tr>
+      `;
     }
 
-    // Filtro por Búsqueda de texto
-    if (state.searchQuery.trim() !== '') {
-      const q = state.searchQuery.toLowerCase();
-      items = items.filter(e =>
-        e.id.toLowerCase().includes(q) ||
-        e.nombre.toLowerCase().includes(q) ||
-        e.equipo.toLowerCase().includes(q) ||
-        e.operador.toLowerCase().includes(q)
-      );
-    }
-
-    if (items.length === 0) {
+    if (!rowsHtml) {
       tbody.innerHTML = `
         <tr>
           <td colspan="10" style="text-align: center; padding: 24px; color: #64748B;">
-            No se encontraron estaciones coincidentes con los criterios de filtro seleccionados.
+            No se encontraron registros de producción que coincidan con los filtros seleccionados.
           </td>
         </tr>
       `;
       return;
     }
 
-    tbody.innerHTML = items.map(e => {
-      let badgeHtml = '<span class="cell-badge" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC;">OK</span>';
-      if (e.estado === 'RUN') badgeHtml = '<span class="cell-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FCD34D;">RUN</span>';
-      if (e.estado === 'PEND' || e.estado === 'PARO') badgeHtml = '<span class="cell-badge" style="background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5;">PARO</span>';
-
-      return `
-        <tr>
-          <td><strong style="color:#173D60;">${e.id}</strong></td>
-          <td>${e.nombre}</td>
-          <td><span style="font-family:var(--font-mono); font-size:10px; color:#475569;">${e.equipo}</span></td>
-          <td>${e.operador}</td>
-          <td><strong>${e.metaPzas}</strong></td>
-          <td style="color:#16A34A; font-weight:700;">${e.buenasPzas}</td>
-          <td style="color:${e.scrapPzas > 0 ? '#DC2626' : '#64748B'}; font-weight:${e.scrapPzas > 0 ? '700' : 'normal'};">${e.scrapPzas}</td>
-          <td>${e.cicloSeg} s</td>
-          <td>${badgeHtml}</td>
-          <td style="font-family:var(--font-mono); font-size:10px;">${e.ultimaLiberacion}</td>
-        </tr>
-      `;
-    }).join('');
+    tbody.innerHTML = rowsHtml;
   }
 
   /**
@@ -651,6 +759,28 @@
     if (selectStation) {
       selectStation.addEventListener('change', (e) => {
         state.filterStation = e.target.value;
+        const optText = e.target.options[e.target.selectedIndex].text;
+        showToast(`Filtro estación: ${optText}`);
+        renderTable();
+      });
+    }
+
+    // Filtro de Modelo
+    const selectModel = document.getElementById('filterModel');
+    if (selectModel) {
+      selectModel.addEventListener('change', (e) => {
+        state.filterModel = e.target.value;
+        const optText = e.target.options[e.target.selectedIndex].text;
+        showToast(`Filtro modelo: ${optText}`);
+        renderTable();
+      });
+    }
+
+    // Filtro de Fecha
+    const inputDate = document.getElementById('filterDate');
+    if (inputDate) {
+      inputDate.addEventListener('change', (e) => {
+        showToast(`Fecha de producción: ${e.target.value}`);
         renderTable();
       });
     }
@@ -660,6 +790,8 @@
     if (selectStatus) {
       selectStatus.addEventListener('change', (e) => {
         state.filterStatus = e.target.value;
+        const optText = e.target.options[e.target.selectedIndex].text;
+        showToast(`Filtro estado: ${optText}`);
         renderTable();
       });
     }
@@ -715,11 +847,14 @@
       btnResetFilters.addEventListener('click', () => {
         state.filterShift = 'all';
         state.filterStation = 'all';
+        state.filterModel = 'all';
         state.filterStatus = 'all';
         state.searchQuery = '';
         if (selectShift) selectShift.value = 'all';
         if (selectStation) selectStation.value = 'all';
+        if (selectModel) selectModel.value = 'all';
         if (selectStatus) selectStatus.value = 'all';
+        if (inputDate) inputDate.value = new Date().toISOString().split('T')[0];
         if (searchInput) searchInput.value = '';
         renderTable();
         updateChartsForFilter();
