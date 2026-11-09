@@ -89,7 +89,8 @@ const BRP_DATA = {
       "op": "OP40",
       "comentario": "Ajuste Ø B.S.",
       "paros": "Ajuste Ø B.S.",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "08:00 - 09:00",
