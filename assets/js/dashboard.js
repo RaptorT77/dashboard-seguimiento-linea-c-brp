@@ -29,13 +29,22 @@
    * Inicialización al cargar el DOM
    */
   document.addEventListener('DOMContentLoaded', () => {
-    // Si hay un estado de reset guardado en localStorage, cargarlo
+    // Si hay un estado de reset guardado en localStorage, cargarlo siempre que no haya foto nueva
     try {
+      const isResetActive = localStorage.getItem('BRP_DASHBOARD_RESET_ACTIVE') === 'true';
       const savedReset = localStorage.getItem('BRP_DASHBOARD_RESET_DATA');
       const resetTime = parseInt(localStorage.getItem('BRP_DASHBOARD_RESET_TIME') || '0', 10);
-      const dataTime = state.data.updatedAt ? new Date(state.data.updatedAt).getTime() : 0;
-      if (savedReset && resetTime > dataTime) {
-        state.data = JSON.parse(savedReset);
+      const dataTimeStr = state.data?.planta?.updatedAt || state.data?.updatedAt;
+      const dataTime = dataTimeStr ? new Date(dataTimeStr).getTime() : 0;
+
+      if (isResetActive && savedReset) {
+        if (resetTime >= dataTime || dataTime === 0) {
+          state.data = JSON.parse(savedReset);
+        } else {
+          localStorage.removeItem('BRP_DASHBOARD_RESET_ACTIVE');
+          localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');
+          localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
+        }
       }
     } catch (e) {
       console.warn('Error leyendo reset de localStorage:', e);
@@ -1078,6 +1087,7 @@
     // 4. Aplicar al estado reactivo y guardar
     state.data = JSON.parse(JSON.stringify(cleanData));
     try {
+      localStorage.setItem('BRP_DASHBOARD_RESET_ACTIVE', 'true');
       localStorage.setItem('BRP_DASHBOARD_RESET_DATA', JSON.stringify(cleanData));
       localStorage.setItem('BRP_DASHBOARD_RESET_TIME', Date.now().toString());
     } catch (e) {}
@@ -1124,7 +1134,8 @@
     const confirmed = window.confirm(
       '¿Desea restablecer todos los datos del dashboard a cero para iniciar una nueva captura de turno?\n\n' +
       'AVISO DE PERSISTENCIA:\n' +
-      'Los datos acumulados de producción se preservarán intactos en el archivo CSV para su exportación histórica.'
+      'Los datos acumulados de producción se preservarán intactos en el archivo CSV para su exportación histórica.\n' +
+      'El dashboard permanecerá en ceros hasta que se reciba y procese una NUEVA fotografía en Telegram.'
     );
 
     if (!confirmed) return;
@@ -1133,24 +1144,29 @@
     persistCurrentRecordsToCsv(state.data);
 
     // 2. Estructura limpia de inicio de turno (todos los contadores del dashboard a cero)
+    const resetNow = Date.now();
+    const resetIso = new Date().toISOString();
+
     const cleanData = {
       planta: {
         nombre: 'BRP ROTAX MÉXICO S.A. de C.V.',
         plantaId: 'PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C',
         linea: 'Línea C — Ensamble y Mecanizado de Pistón WOLF V1',
-        versionSistema: 'v2.7.0-OCR-LIVE',
+        versionSistema: 'v3.0.0-24H-LIVE',
+        updatedAt: resetIso,
+        fechaProduccion: resetIso.split('T')[0],
         tiempoCicloTargetSeg: 45.0,
-        metaTurnoUnidades: 480,
+        metaTurnoUnidades: 450,
         supervisorActual: 'Líder Turno',
         productoActual: 'WOLF V1 (Pistón BRP)',
         turnoActual: 1
       },
       resumenKpis: {
         produccionDia: 0,
-        metaDiaria: 480,
+        metaDiaria: 1350,
         porcentajeAvance: 0.0,
         unidadesCompletadas: 0,
-        unidadesPendientes: 480,
+        unidadesPendientes: 1350,
         eficienciaOee: 0.0,
         disponibilidad: 100.0,
         rendimiento: 0.0,
@@ -1163,7 +1179,7 @@
         estadoLinea: 'PRODUCCION_EN_ORDEN'
       },
       turnos: [
-        { id: 1, nombre: 'Turno 1 - Matutino', horario: '06:30 - 15:00', supervisor: 'Por Asignar', meta: 480, real: 0, oee: 0.0, activo: true },
+        { id: 1, nombre: 'Turno 1 - Matutino', horario: '06:30 - 15:00', supervisor: 'Líder Antonia', meta: 480, real: 0, oee: 0.0, activo: true },
         { id: 2, nombre: 'Turno 2 - Vespertino', horario: '15:00 - 23:00', supervisor: 'Ing. Roberto Garza', meta: 450, real: 0, oee: 0.0, activo: false },
         { id: 3, nombre: 'Turno 3 - Nocturno', horario: '23:00 - 06:30', supervisor: 'Ing. Diana Soto', meta: 420, real: 0, oee: 0.0, activo: false }
       ],
@@ -1171,23 +1187,41 @@
         { id: 'M01', codigo: 'PISTON-WOLF-V1', nombre: 'Pistón WOLF V1 (Línea C)', cilindros: 1, hp: 0, plataforma: 'BRP Rotax Engine Program', activo: true }
       ],
       produccionHoraria: [
-        { hora: '06:30 - 08:00', meta: 90, real: 0, acumMeta: 90, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de primer reporte Telegram' },
-        { hora: '08:00 - 09:00', meta: 60, real: 0, acumMeta: 150, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '09:00 - 10:00', meta: 60, real: 0, acumMeta: 210, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '10:00 - 11:00', meta: 60, real: 0, acumMeta: 270, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '11:00 - 12:00', meta: 30, real: 0, acumMeta: 300, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '12:00 - 13:00', meta: 60, real: 0, acumMeta: 360, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '13:00 - 14:00', meta: 60, real: 0, acumMeta: 420, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' },
-        { hora: '14:00 - 15:00', meta: 60, real: 0, acumMeta: 480, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte' }
+        // Turno 1 - Matutino
+        { hora: '06:30 - 08:00', meta: 90, real: 0, acumMeta: 90, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '08:00 - 09:00', meta: 60, real: 0, acumMeta: 150, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '09:00 - 10:00', meta: 60, real: 0, acumMeta: 210, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '10:00 - 11:00', meta: 60, real: 0, acumMeta: 270, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '11:00 - 12:00', meta: 30, real: 0, acumMeta: 300, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '12:00 - 13:00', meta: 60, real: 0, acumMeta: 360, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '13:00 - 14:00', meta: 60, real: 0, acumMeta: 420, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        { hora: '14:00 - 15:00', meta: 60, real: 0, acumMeta: 480, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 1 },
+        // Turno 2 - Vespertino
+        { hora: '15:00 - 16:00', meta: 60, real: 0, acumMeta: 540, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '16:00 - 17:00', meta: 60, real: 0, acumMeta: 600, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '17:00 - 18:00', meta: 60, real: 0, acumMeta: 660, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '18:00 - 19:00', meta: 60, real: 0, acumMeta: 720, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '19:00 - 20:00', meta: 30, real: 0, acumMeta: 750, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '20:00 - 21:00', meta: 60, real: 0, acumMeta: 810, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '21:00 - 22:00', meta: 60, real: 0, acumMeta: 870, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        { hora: '22:00 - 23:00', meta: 60, real: 0, acumMeta: 930, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 2 },
+        // Turno 3 - Nocturno
+        { hora: '23:00 - 24:00', meta: 60, real: 0, acumMeta: 990, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '24:00 - 01:00', meta: 60, real: 0, acumMeta: 1050, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '01:00 - 02:00', meta: 60, real: 0, acumMeta: 1110, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '02:00 - 03:00', meta: 60, real: 0, acumMeta: 1170, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '03:00 - 04:00', meta: 30, real: 0, acumMeta: 1200, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '04:00 - 05:00', meta: 60, real: 0, acumMeta: 1260, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 },
+        { hora: '05:00 - 06:30', meta: 90, real: 0, acumMeta: 1350, acumReal: 0, oeeHora: 0.0, parosMin: 0, malas: 0, comentario: 'En espera de reporte Telegram', turnoNum: 3 }
       ],
       parosIncidencias: [],
       estaciones: [
-        { id: 'OP10', nombre: 'Mecanizado de Falda y Corona WOLF V1', equipo: 'Torno / Centro CNC OP10', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
-        { id: 'OP20', nombre: 'Ranurado de Anillos y Barrenado de Perno', equipo: 'Ranuradora de Precisión OP20', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
-        { id: 'OP30', nombre: 'Lavado Térmico y Desengrase', equipo: 'Lavadora Ultrasónica OP30', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
-        { id: 'OP40', nombre: 'Acabado de Superficie / Recubrimiento', equipo: 'Cabina de Grafito / Moly OP40', operador: 'Téc. Línea C', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
-        { id: 'OP50', nombre: 'Inspección Dimensional Neumática', equipo: 'Gage de Aire Multidiametral OP50', operador: 'Téc. Calidad', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
-        { id: 'OP60', nombre: 'Inspección Final EOL & Marcado Láser', equipo: 'Estación de Visión y Embalaje OP60', operador: 'Téc. Calidad', metaPzas: 480, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' }
+        { id: 'OP10', nombre: 'Mecanizado de Falda y Corona WOLF V1', equipo: 'Torno / Centro CNC OP10', operador: 'Téc. Línea C', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP20', nombre: 'Ranurado de Anillos y Barrenado de Perno', equipo: 'Ranuradora de Precisión OP20', operador: 'Téc. Línea C', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP30', nombre: 'Lavado Térmico y Desengrase', equipo: 'Lavadora Ultrasónica OP30', operador: 'Téc. Línea C', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP40', nombre: 'Acabado de Superficie / Recubrimiento', equipo: 'Cabina de Grafito / Moly OP40', operador: 'Téc. Línea C', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP50', nombre: 'Inspección Dimensional Neumática', equipo: 'Gage de Aire Multidiametral OP50', operador: 'Téc. Calidad', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' },
+        { id: 'OP60', nombre: 'Inspección Final EOL & Marcado Láser', equipo: 'Estación de Visión y Embalaje OP60', operador: 'Téc. Calidad', metaPzas: 1350, buenasPzas: 0, scrapPzas: 0, cicloSeg: 45.0, estado: 'OK', buffer: 'Línea lista', eficiencia: 100.0, ultimaLiberacion: '--:--' }
       ],
       alertas: []
     };
@@ -1195,8 +1229,9 @@
     // 3. Aplicar al estado reactivo del dashboard y guardar para visualización
     state.data = JSON.parse(JSON.stringify(cleanData));
     try {
+      localStorage.setItem('BRP_DASHBOARD_RESET_ACTIVE', 'true');
       localStorage.setItem('BRP_DASHBOARD_RESET_DATA', JSON.stringify(cleanData));
-      localStorage.setItem('BRP_DASHBOARD_RESET_TIME', Date.now().toString());
+      localStorage.setItem('BRP_DASHBOARD_RESET_TIME', resetNow.toString());
     } catch (e) {}
 
     // 4. Re-renderizar módulos visuales en ceros
@@ -1208,11 +1243,15 @@
 
     // 5. Actualizar gráficas en ceros
     if (chartHourly) {
+      chartHourly.data.labels = cleanData.produccionHoraria.map(h => h.hora.split(' - ')[0]);
       chartHourly.data.datasets[0].data = cleanData.produccionHoraria.map(() => 0);
+      chartHourly.data.datasets[1].data = cleanData.produccionHoraria.map(h => h.meta);
       chartHourly.update();
     }
     if (chartCumulative) {
+      chartCumulative.data.labels = cleanData.produccionHoraria.map(h => h.hora.split(' - ')[0]);
       chartCumulative.data.datasets[0].data = cleanData.produccionHoraria.map(() => 0);
+      chartCumulative.data.datasets[1].data = cleanData.produccionHoraria.map(h => h.acumMeta);
       chartCumulative.update();
     }
     if (chartDowntime) {
@@ -1230,9 +1269,10 @@
     // 7. Notificar al backend FastAPI si está levantado
     try {
       fetch('/api/reset', { method: 'POST' }).catch(() => {});
+      fetch('http://localhost:8000/api/reset', { method: 'POST' }).catch(() => {});
     } catch (e) {}
 
-    showToast('🔄 Dashboard restablecido a ceros. Los datos acumulados permanecen persistentes en el archivo CSV.');
+    showToast('🔄 Dashboard restablecido a ceros. Esperando nueva fotografía en Telegram.');
   }
 
   /**
@@ -1384,8 +1424,29 @@
         const curShift = state.data.planta?.turnoActual;
         const freshShift = freshData.planta?.turnoActual;
 
+        // Comprobación de estado RESET activo por el usuario
+        const isResetActive = localStorage.getItem('BRP_DASHBOARD_RESET_ACTIVE') === 'true';
+        const resetTime = parseInt(localStorage.getItem('BRP_DASHBOARD_RESET_TIME') || '0', 10);
+        const freshTimeStr = freshData.planta?.updatedAt || freshData.updatedAt;
+        const freshTime = freshTimeStr ? new Date(freshTimeStr).getTime() : 0;
+
+        if (isResetActive) {
+          // Si el archivo en el servidor no es estrictamente posterior al momento del Reset,
+          // IGNORAR la sincronización y mantenerse en ceros.
+          if (freshTime <= resetTime) {
+            return;
+          } else {
+            // Llegó una NUEVA fotografía procesada en Telegram con fecha posterior al Reset
+            console.log('[AUTO-SYNC] Nueva fotografía detectada tras el Reset. Saliendo de modo reset...');
+            localStorage.removeItem('BRP_DASHBOARD_RESET_ACTIVE');
+            localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');
+            localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
+          }
+        }
+
         if (curProd !== freshProd || curStatus !== freshStatus || curHours !== freshHours || curShift !== freshShift) {
           console.log('[AUTO-SYNC] Nueva información horaria detectada, actualizando interfaz...');
+          localStorage.removeItem('BRP_DASHBOARD_RESET_ACTIVE');
           localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
           localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');
           state.data = freshData;

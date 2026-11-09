@@ -7,6 +7,9 @@ Presenta y acumula la producción continua a lo largo de las 24 horas del día (
 import csv
 import json
 import logging
+import os
+import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -593,3 +596,128 @@ if (typeof module !== 'undefined' && module.exports) {{
             logger.debug(f"ESP32 no alcanzable en {url}: {e}")
             return False
         return False
+
+    def _git_push_background(self):
+        """Actualiza el repositorio en segundo plano para reflejar el estado en GitHub Pages."""
+        def _task():
+            try:
+                repo_dir = str(PROJECT_ROOT)
+                token = os.getenv("GITHUB_TOKEN")
+                if token:
+                    subprocess.run(["git", "config", "user.name", "BRP Telemetry Bot"], cwd=repo_dir, check=False)
+                    subprocess.run(["git", "config", "user.email", "bot@brp-telemetry.local"], cwd=repo_dir, check=False)
+                    remote_url = f"https://x-access-token:{token}@github.com/RaptorT77/dashboard-seguimiento-linea-c-brp.git"
+                    subprocess.run(["git", "remote", "set-url", "origin", remote_url], cwd=repo_dir, check=False)
+                subprocess.run(["git", "add", "data/", "assets/js/mockData.js"], cwd=repo_dir, check=False)
+                subprocess.run(["git", "commit", "-m", "chore(telemetry): reset dashboard telemetry to zero [skip ci]"], cwd=repo_dir, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=repo_dir, check=False, timeout=25)
+            except Exception as e:
+                logger.warning(f"Error en sincronización git post-reset: {e}")
+        threading.Thread(target=_task, daemon=True).start()
+
+    def reset_production_data(self) -> dict:
+        """
+        Restablece y vacía completamente los datos del dashboard a ceros:
+        - Borra registros de producción horaria (todos en 0)
+        - Resetea KPIs a 0 (producción: 0, unidades pendientes: meta diaria, scrap: 0, paros: 0, OEE: 0)
+        - Actualiza data/production_data.json y assets/js/mockData.js con ceros
+        - Actualiza updatedAt con la marca de tiempo actual
+        - Dispara sincronización Git en segundo plano
+        - Notifica al semáforo ESP32 Andon
+        """
+        now_utc = datetime.utcnow()
+        updated_at = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        fecha_actual = now_utc.strftime("%Y-%m-%d")
+
+        horas_list = []
+        for t_id in [1, 2, 3]:
+            s_info = SHIFT_SCHEDULES[t_id]
+            for (h_str, meta_h, acum_meta) in s_info["horas"]:
+                horas_list.append({
+                    "hora": h_str,
+                    "meta": meta_h,
+                    "real": 0,
+                    "acumMeta": acum_meta,
+                    "acumReal": 0,
+                    "oeeHora": 0.0,
+                    "parosMin": 0,
+                    "malas": 0,
+                    "comentario": "En espera de reporte Telegram",
+                    "turnoNum": t_id
+                })
+
+        clean_data = {
+            "planta": {
+                "nombre": "BRP ROTAX MÉXICO S.A. de C.V.",
+                "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
+                "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
+                "versionSistema": "v3.0.0-24H-LIVE",
+                "updatedAt": updated_at,
+                "fechaProduccion": fecha_actual,
+                "tiempoCicloTargetSeg": 45.0,
+                "metaTurnoUnidades": 450,
+                "supervisorActual": "Líder Turno",
+                "productoActual": "WOLF V1 (Pistón BRP)",
+                "turnoActual": 1
+            },
+            "resumenKpis": {
+                "produccionDia": 0,
+                "metaDiaria": 1350,
+                "porcentajeAvance": 0.0,
+                "unidadesCompletadas": 0,
+                "unidadesPendientes": 1350,
+                "eficienciaOee": 0.0,
+                "disponibilidad": 100.0,
+                "rendimiento": 0.0,
+                "calidadFpy": 100.0,
+                "parosAcumuladosMin": 0,
+                "eventosParo": 0,
+                "taktTimeSeg": 45.0,
+                "scrapPiezas": 0,
+                "scrapPorcentaje": 0.0,
+                "estadoLinea": "PRODUCCION_EN_ORDEN"
+            },
+            "turnos": [
+                {"id": 1, "nombre": "Turno 1 - Matutino", "horario": "06:30 - 15:00", "supervisor": "Líder Antonia", "meta": 480, "real": 0, "oee": 0.0, "activo": True},
+                {"id": 2, "nombre": "Turno 2 - Vespertino", "horario": "15:00 - 23:00", "supervisor": "Ing. Roberto Garza", "meta": 450, "real": 0, "oee": 0.0, "activo": False},
+                {"id": 3, "nombre": "Turno 3 - Nocturno", "horario": "23:00 - 06:30", "supervisor": "Ing. Diana Soto", "meta": 420, "real": 0, "oee": 0.0, "activo": False}
+            ],
+            "modelos": [
+                {"id": "M01", "codigo": "PISTON-WOLF-V1", "nombre": "Pistón WOLF V1 (Línea C)", "cilindros": 1, "hp": 0, "plataforma": "BRP Rotax Engine Program", "activo": True}
+            ],
+            "produccionHoraria": horas_list,
+            "parosIncidencias": [],
+            "estaciones": [
+                {"id": "OP10", "nombre": "Mecanizado de Falda y Corona WOLF V1", "equipo": "Torno / Centro CNC OP10", "operador": "Téc. Línea C", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP20", "nombre": "Ranurado de Anillos y Barrenado de Perno", "equipo": "Ranuradora de Precisión OP20", "operador": "Téc. Línea C", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP30", "nombre": "Lavado Térmico y Desengrase", "equipo": "Lavadora Ultrasónica OP30", "operador": "Téc. Línea C", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP40", "nombre": "Acabado de Superficie / Recubrimiento", "equipo": "Cabina de Grafito / Moly OP40", "operador": "Téc. Línea C", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP50", "nombre": "Inspección Dimensional Neumática", "equipo": "Gage de Aire Multidiametral OP50", "operador": "Téc. Calidad", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"},
+                {"id": "OP60", "nombre": "Inspección Final EOL & Marcado Láser", "equipo": "Estación de Visión y Embalaje OP60", "operador": "Téc. Calidad", "metaPzas": 1350, "buenasPzas": 0, "scrapPzas": 0, "cicloSeg": 45.0, "estado": "OK", "buffer": "Línea lista", "eficiencia": 100.0, "ultimaLiberacion": "--:--"}
+            ],
+            "alertas": []
+        }
+
+        with open(self.json_data_path, "w", encoding="utf-8") as f:
+            json.dump(clean_data, f, indent=2, ensure_ascii=False)
+
+        js_content = f"""/**
+ * =============================================================================
+ * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
+ * Reset de Turno — Sistema en Ceros
+ * Última Actualización: {now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}
+ * =============================================================================
+ */
+
+const BRP_DATA = {json.dumps(clean_data, indent=2, ensure_ascii=False)};
+
+if (typeof module !== 'undefined' && module.exports) {{
+  module.exports = BRP_DATA;
+}}
+"""
+        with open(self.mock_data_path, "w", encoding="utf-8") as f:
+            f.write(js_content)
+
+        self.notify_esp32_andon("PRODUCCION_EN_ORDEN")
+        self._git_push_background()
+        return clean_data
