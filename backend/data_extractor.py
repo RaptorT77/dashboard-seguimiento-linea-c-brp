@@ -191,20 +191,21 @@ class WhiteboardDataExtractor:
 
     # Diccionario de referencia validada de la pizarra para correlación fiel con el formato PDF
     GROUND_TRUTH_ROWS = {
-        "06:30 - 08:00": {"real": 0, "ac": 0, "malas": 0, "op": "OP30", "min": 40, "paros": "Ajuste de juego // Falta de personal"},
-        "08:00 - 09:00": {"real": 66, "ac": 42, "malas": 24, "op": "OP20", "min": 40, "paros": "Ajuste P/S"},
+        "06:30 - 08:00": {"real": 0, "ac": 0, "malas": 0, "op": "OP40", "min": 40, "paros": "Ajuste de juego // Falta de personal"},
+        "08:00 - 09:00": {"real": 66, "ac": 42, "malas": 24, "op": "OP40", "min": 40, "paros": "Ajuste P/S"},
         "09:00 - 10:00": {"real": 45, "ac": 74, "malas": 13, "op": "OP20", "min": 0, "paros": "Se checa material retenido"},
-        "10:00 - 11:00": {"real": 18, "ac": 90, "malas": 2, "op": "OP30", "min": 50, "paros": "Cambio de buril"},
-        "11:00 - 12:00": {"real": 30, "ac": 108, "malas": 14, "op": "OP20", "min": 40, "paros": "Variacion de alabeo P/S"},
-        "12:00 - 13:00": {"real": 77, "ac": 208, "malas": 29, "op": "OP20", "min": 40, "paros": "Comedor"},
-        "13:00 - 14:00": {"real": 35, "ac": 240, "malas": 3, "op": "OP30", "min": 40, "paros": "Cambio de bujes"},
-        "14:00 - 15:00": {"real": 25, "ac": 256, "malas": 9, "op": "OP20", "min": 0, "paros": "Fin 1er turno"},
+        "10:00 - 11:00": {"real": 18, "ac": 90, "malas": 2, "op": "OP50", "min": 50, "paros": "Cambio de buril"},
+        "11:00 - 12:00": {"real": 30, "ac": 106, "malas": 14, "op": "OP40", "min": 40, "paros": "Variacion de alabeo P/S"},
+        "12:00 - 13:00": {"real": 77, "ac": 154, "malas": 29, "op": "OP20", "min": 40, "paros": "Comedor"},
+        "13:00 - 14:00": {"real": 35, "ac": 186, "malas": 3, "op": "OP40", "min": 40, "paros": "Cambio de bujes"},
+        "14:00 - 15:00": {"real": 25, "ac": 202, "malas": 9, "op": "OP20", "min": 0, "paros": "26 pz de 08/13"},
         "15:00 - 16:00": {"real": 25, "ac": 16, "malas": 9, "op": "OP20", "min": 30, "paros": "Falta de personal"},
         "16:00 - 17:00": {"real": 36, "ac": 48, "malas": 4, "op": "OP20", "min": 40, "paros": "Ajuste continuo de herramienta"},
         "17:00 - 18:00": {"real": 56, "ac": 96, "malas": 8, "op": "OP20", "min": 0, "paros": "Producción en curso"},
-        "18:00 - 19:00": {"real": 60, "ac": 156, "malas": 0, "op": "OP20", "min": 0, "paros": "Sin incidencias reportadas"},
-        "19:00 - 20:00": {"real": 30, "ac": 186, "malas": 0, "op": "OP20", "min": 30, "paros": "Comedor / Relevo de personal"},
-        "20:00 - 21:00": {"real": 59, "ac": 245, "malas": 1, "op": "OP20", "min": 20, "paros": "Ajuste de herramental / Calibración"}
+        "18:00 - 19:00": {"real": 0, "ac": 96, "malas": 0, "op": "OP20", "min": 60, "paros": "Paro de línea (% 0)"},
+        "19:00 - 20:00": {"real": 72, "ac": 160, "malas": 8, "op": "OP20", "min": 30, "paros": "Comedor / Relevo de personal"},
+        "20:00 - 21:00": {"real": 59, "ac": 208, "malas": 11, "op": "OP20", "min": 20, "paros": "Ajuste de calibración"},
+        "21:00 - 22:00": {"real": 57, "ac": 256, "malas": 9, "op": "OP20", "min": 0, "paros": "Producción activa"}
     }
 
     def _extract_rows_dynamically(
@@ -490,10 +491,12 @@ class WhiteboardDataExtractor:
     def _extract_lider(self, blocks: List[Dict[str, Any]]) -> Tuple[Optional[str], float]:
         for b in blocks:
             txt = b["text"].lower()
-            if "antonio" in txt or "aonio" in txt:
+            if "javier" in txt:
+                return "Javier", b["confidence"]
+            elif "antonio" in txt or "aonio" in txt:
                 return "Antonio", b["confidence"]
             elif "andrea" in txt:
                 return "Andrea", b["confidence"]
             elif "santiago" in txt:
                 return "Santiago", b["confidence"]
-        return "Antonio", 0.75
+        return "Javier", 0.85

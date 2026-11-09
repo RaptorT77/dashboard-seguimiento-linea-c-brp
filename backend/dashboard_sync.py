@@ -129,12 +129,13 @@ class DashboardSyncService:
         SLOTS_24H = []
         for t_id in [1, 2, 3]:
             s_info = SHIFT_SCHEDULES[t_id]
-            for (h_str, meta_h, _) in s_info["horas"]:
+            for (h_str, meta_h, meta_ac) in s_info["horas"]:
                 SLOTS_24H.append({
                     "turno_id": t_id,
                     "turno_nombre": s_info["nombre"],
                     "horario": h_str,
-                    "meta": meta_h
+                    "meta": meta_h,
+                    "shift_meta_ac": meta_ac
                 })
 
         # Identificar el corte: último slot que tiene datos registrados en la foto de pizarra
@@ -212,32 +213,37 @@ class DashboardSyncService:
                 is_summary_token = any(tok in paros_txt.lower() for tok in ["denle", "venta", "sorep", "scrap", "lider", "líder"])
                 actual_p_min = p_min if p_min > 0 else (30 if ((paros_txt or p_min > 0) and not is_summary_token) else 0)
 
-                # Acumulado continuo 24H a lo largo de los turnos
+                # Acumulado continuo 24H y acumulado por turno
+                shift_acum_meta = slot["shift_meta_ac"]
                 if matched_rec and matched_rec.real_acumulado is not None and matched_rec.real_acumulado > 0:
                     rec_ac = matched_rec.real_acumulado
                     if t_id == 1:
-                        dia_acum_real = rec_ac
                         turno_reals[1] = rec_ac
+                        shift_acum_real = rec_ac
+                        dia_acum_real = rec_ac
                     elif t_id == 2:
-                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 256
-                        if rec_ac >= t1_end:
-                            dia_acum_real = rec_ac
-                            turno_reals[2] = rec_ac - t1_end
-                        else:
-                            turno_reals[2] = rec_ac
-                            dia_acum_real = t1_end + rec_ac
+                        turno_reals[2] = rec_ac
+                        shift_acum_real = rec_ac
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 202
+                        dia_acum_real = t1_end + rec_ac
                     else:
-                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 256
-                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 96
-                        if rec_ac >= (t1_end + t2_end):
-                            dia_acum_real = rec_ac
-                            turno_reals[3] = rec_ac - (t1_end + t2_end)
-                        else:
-                            turno_reals[3] = rec_ac
-                            dia_acum_real = t1_end + t2_end + rec_ac
+                        turno_reals[3] = rec_ac
+                        shift_acum_real = rec_ac
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 202
+                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 256
+                        dia_acum_real = t1_end + t2_end + rec_ac
                 else:
-                    dia_acum_real += r_h
                     turno_reals[t_id] += r_h
+                    shift_acum_real = turno_reals[t_id]
+                    if t_id == 1:
+                        dia_acum_real = turno_reals[1]
+                    elif t_id == 2:
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 202
+                        dia_acum_real = t1_end + turno_reals[2]
+                    else:
+                        t1_end = turno_reals[1] if turno_reals[1] > 0 else 202
+                        t2_end = turno_reals[2] if turno_reals[2] > 0 else 256
+                        dia_acum_real = t1_end + t2_end + turno_reals[3]
 
                 # Detectar paros reales
                 is_benign = any(b in paros_txt.lower() for b in ["regular", "en curso", "sin incidencias", "por fabricar", "programado"])
@@ -298,6 +304,8 @@ class DashboardSyncService:
                     "real": r_h,
                     "acumMeta": dia_acum_meta,
                     "acumReal": dia_acum_real,
+                    "shiftAcumMeta": shift_acum_meta,
+                    "shiftAcumReal": shift_acum_real,
                     "oeeHora": oee_h,
                     "parosMin": actual_p_min,
                     "malas": malas,
@@ -316,6 +324,8 @@ class DashboardSyncService:
                     "real": None,
                     "acumMeta": dia_acum_meta,
                     "acumReal": None,
+                    "shiftAcumMeta": slot["shift_meta_ac"],
+                    "shiftAcumReal": None,
                     "oeeHora": None,
                     "parosMin": 0,
                     "malas": None,
@@ -411,7 +421,7 @@ class DashboardSyncService:
                 "id": 2,
                 "nombre": "Turno 2 - Vespertino",
                 "horario": "15:00 - 23:00",
-                "supervisor": "Ing. Roberto Garza",
+                "supervisor": "Líder Javier",
                 "meta": 450,
                 "real": turno_reals[2],
                 "oee": round((turno_reals[2] / 450.0 * 100.0), 1) if turno_reals[2] > 0 else 0.0,

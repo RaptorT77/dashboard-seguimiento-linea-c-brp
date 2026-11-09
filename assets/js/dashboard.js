@@ -296,15 +296,15 @@
       pillOee.style.color = k.eficienciaOee >= 85 ? '#1E3A8A' : '#DC2626';
     }
     if (pillPend) pillPend.textContent = `${k.unidadesPendientes} UDS`;
-    if (pillParos) pillParos.textContent = `${k.parosAcumuladosMin} MIN (${k.eventosParo || activeHours.length} EV)`;
+    if (pillParos) pillParos.textContent = `${k.parosAcumuladosMin} MIN (${k.eventosParo || recordedHours.length} EV)`;
     if (pillScrap) pillScrap.textContent = `${(k.scrapPorcentaje || 0).toFixed(1)}% (${k.scrapPiezas || 0} PZ)`;
 
     const elParosEventos = document.getElementById('kpiParosEventos');
-    if (elParosEventos) elParosEventos.textContent = `${k.eventosParo || activeHours.length} eventos`;
+    if (elParosEventos) elParosEventos.textContent = `${k.eventosParo || recordedHours.length} eventos`;
 
     const elParosMttr = document.getElementById('kpiParosMttr');
     if (elParosMttr) {
-      const evCount = k.eventosParo || activeHours.length || 1;
+      const evCount = k.eventosParo || recordedHours.length || 1;
       const mttr = (k.parosAcumuladosMin / evCount).toFixed(1);
       elParosMttr.textContent = `MTTR: ${mttr} min / evento`;
     }
@@ -356,9 +356,9 @@
 
     // Calcular totales por turno y acumulados
     const tTotals = {
-      1: { meta: 480, real: 0, malas: 0, paros: 0, lider: 'Antonia', nota: 'Moldeo: 786 | Scrap: 115 | Venta: 352' },
-      2: { meta: 450, real: 0, malas: 0, paros: 0, lider: 'Santiago V. / Roberto Garza', nota: '' },
-      3: { meta: 420, real: 0, malas: 0, paros: 0, lider: 'Diana Soto', nota: '' }
+      1: { meta: 480, real: 0, malas: 0, paros: 0, lider: (state.data.turnos?.[0]?.supervisor || 'Líder Antonia'), nota: 'Venta: 298 | Scrap: 115' },
+      2: { meta: 450, real: 0, malas: 0, paros: 0, lider: (state.data.turnos?.[1]?.supervisor || 'Líder Javier'), nota: 'Venta: 256 | Scrap: 49' },
+      3: { meta: 420, real: 0, malas: 0, paros: 0, lider: (state.data.turnos?.[2]?.supervisor || 'Ing. Diana Soto'), nota: 'En espera de inicio' }
     };
 
     allHours.forEach(h => {
@@ -382,6 +382,13 @@
       // Filtro de Turno
       if (shiftFilter !== 'all' && h.turnoNum !== parseInt(shiftFilter, 10)) {
         return false;
+      }
+
+      // Filtro de Estación
+      if (state.filterStation && state.filterStation !== 'all') {
+        const opStr = (h.op || '').toUpperCase();
+        const targetOp = state.filterStation.toUpperCase();
+        if (!opStr.includes(targetOp)) return false;
       }
 
       // Filtro de Estado
@@ -436,7 +443,8 @@
         }
 
         const realH = h.isRecorded ? (h.real !== null ? h.real : 0) : '--';
-        const realAc = h.isRecorded ? (h.acumReal !== null ? h.acumReal : '--') : '--';
+        const metaAc = h.shiftAcumMeta !== undefined ? h.shiftAcumMeta : h.acumMeta;
+        const realAc = h.isRecorded ? (h.shiftAcumReal !== undefined && h.shiftAcumReal !== null ? h.shiftAcumReal : (h.acumReal !== null ? h.acumReal : '--')) : '--';
         const malas = h.isRecorded ? (h.malas !== null ? h.malas : 0) : '--';
         const opVal = h.isRecorded ? (h.op || (tNum === 1 ? 'OP30' : 'OP20')) : '--';
         const tiempoVal = h.isRecorded ? (h.parosMin > 0 ? `${h.parosMin}` : '0') : '--';
@@ -447,7 +455,7 @@
             <td><strong style="color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${h.hora}</strong></td>
             <td style="text-align: center;">${h.meta}</td>
             <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#1F4E79' : '#94A3B8'};">${realH}</td>
-            <td style="text-align: center; color:#475569;">${h.acumMeta}</td>
+            <td style="text-align: center; color:#475569;">${metaAc}</td>
             <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${realAc}</td>
             <td style="text-align: center; font-weight:${malas > 0 ? '700' : 'normal'}; color:${malas > 0 ? '#DC2626' : '#64748B'};">${malas}</td>
             <td style="text-align: center; font-family:var(--font-mono); font-size:10px;">${opVal}</td>
@@ -657,9 +665,14 @@
     const ctxCumulative = document.getElementById('chartCumulativeCanvas');
     if (ctxCumulative) {
       const labels = hours.map(h => h.hora.split(' - ')[0]);
-      const acumMeta = hours.map(h => h.acumMeta);
+      const isShiftFiltered = state.filterShift !== 'all';
+      const acumMeta = isShiftFiltered
+        ? hours.map(h => (h.shiftAcumMeta !== undefined ? h.shiftAcumMeta : h.acumMeta))
+        : hours.map(h => h.acumMeta);
       // Acumulado real se corta en la última hora registrada; horas futuras quedan en blanco (null con spanGaps: false)
-      const acumReal = hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
+      const acumReal = isShiftFiltered
+        ? hours.map(h => (h.isRecorded && h.shiftAcumReal !== null && h.shiftAcumReal !== undefined) ? h.shiftAcumReal : ((h.isRecorded && h.acumReal !== null) ? h.acumReal : null))
+        : hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
 
       chartCumulative = new Chart(ctxCumulative, {
         type: 'line',
@@ -873,10 +886,15 @@
         chartHourly.update();
       }
       if (chartCumulative) {
+        const isShiftFiltered = state.filterShift !== 'all';
         chartCumulative.data.labels = hours.map(h => h.hora.split(' - ')[0]);
-        chartCumulative.data.datasets[0].data = hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
-        chartCumulative.data.datasets[1].data = hours.map(h => h.acumMeta);
-        chartCumulative.options.scales.y.suggestedMax = state.filterShift !== 'all' ? 520 : 1400;
+        chartCumulative.data.datasets[0].data = isShiftFiltered
+          ? hours.map(h => (h.isRecorded && h.shiftAcumReal !== null && h.shiftAcumReal !== undefined) ? h.shiftAcumReal : ((h.isRecorded && h.acumReal !== null) ? h.acumReal : null))
+          : hours.map(h => (h.isRecorded && h.acumReal !== null && h.acumReal !== undefined) ? h.acumReal : null);
+        chartCumulative.data.datasets[1].data = isShiftFiltered
+          ? hours.map(h => (h.shiftAcumMeta !== undefined ? h.shiftAcumMeta : h.acumMeta))
+          : hours.map(h => h.acumMeta);
+        chartCumulative.options.scales.y.suggestedMax = isShiftFiltered ? 520 : 1400;
         chartCumulative.update();
       }
     }
