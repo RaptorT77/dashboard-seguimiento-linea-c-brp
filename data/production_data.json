@@ -165,7 +165,8 @@
       "op": "OP10",
       "comentario": "Producción en curso",
       "paros": "Producción en curso",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "12:00 - 13:00",
