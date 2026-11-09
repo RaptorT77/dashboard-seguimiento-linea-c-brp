@@ -142,4 +142,4 @@ python -m unittest backend/tests/test_pipeline.py
 ---
 
 **BRP Rotax México & Kolbenschmidt Pierburg (KS Celaya)**  
-*En colaboración con [VCG CONTINENTAL](https://www.vcgcontinental.com/), [HC Advanced Automation](https://www.hcaa.com.mx/) y JI&FIX SIGMA S.A. de C.V.*
+*En colaboración con [VCG CONTINENTAL](https://www.vcgcontinental.com/) & JI&FIX SIGMA S.A. de C.V. **[HC Advanced Automation https://www.hcaa.com.mx/](https://www.hcaa.com.mx/)***
