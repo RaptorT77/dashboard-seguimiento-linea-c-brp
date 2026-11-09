@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -242,6 +243,120 @@ def perform_shift_change(target_shift: Optional[int] = None, db: Session = Depen
         "next_shift": next_shift,
         "data": new_data
     }
+
+
+class UpdateRowRequest(BaseModel):
+    hora: str
+    real: Optional[int] = None
+    realAc: Optional[int] = None
+    malas: Optional[int] = None
+    op: Optional[str] = None
+    parosMin: Optional[int] = None
+    comentario: Optional[str] = None
+    verificado: Optional[bool] = False
+
+
+@app.post("/api/production/update-row")
+def update_production_row(req: UpdateRowRequest, db: Session = Depends(get_db)):
+    """
+    Actualiza manualmente los valores de una fila horaria y/o marca su estado de verificación.
+    Si verificado=True, esta fila queda protegida contra sobreescritura por nuevas fotos de Telegram.
+    """
+    from .dashboard_sync import DashboardSyncService
+    sync_svc = DashboardSyncService()
+
+    # 1. Actualizar en production_data.json y mockData.js
+    if sync_svc.json_data_path.exists():
+        try:
+            with open(sync_svc.json_data_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            found = False
+            for h in data.get("produccionHoraria", []):
+                if h.get("hora") == req.hora:
+                    found = True
+                    if req.real is not None:
+                        h["real"] = req.real
+                        h["isRecorded"] = True
+                    if req.realAc is not None:
+                        h["shiftAcumReal"] = req.realAc
+                        h["acumReal"] = req.realAc
+                    if req.malas is not None:
+                        h["malas"] = req.malas
+                    if req.op is not None:
+                        h["op"] = req.op
+                    if req.parosMin is not None:
+                        h["parosMin"] = req.parosMin
+                    if req.comentario is not None:
+                        h["comentario"] = req.comentario
+                        h["paros"] = req.comentario
+                    if req.verificado is not None:
+                        h["verificado"] = req.verificado
+                    break
+
+            if found:
+                # Recalcular métricas
+                grand_good = 0
+                grand_scrap = 0
+                grand_paros = 0
+                dia_acum = 0
+                shift_acum = 0
+                cur_t = 1
+                for h in data.get("produccionHoraria", []):
+                    t = h.get("turnoNum", 1)
+                    if t != cur_t:
+                        cur_t = t
+                        shift_acum = 0
+                    if h.get("isRecorded") and h.get("real") is not None:
+                        r_v = h.get("real", 0)
+                        m_v = h.get("malas", 0)
+                        p_v = h.get("parosMin", 0)
+                        good = max(0, r_v - m_v)
+                        shift_acum += good
+                        dia_acum += good
+                        h["shiftAcumReal"] = shift_acum
+                        h["acumReal"] = dia_acum
+                        grand_good = dia_acum
+                        grand_scrap += m_v
+                        grand_paros += p_v
+
+                kpis = data.get("resumenKpis", {})
+                kpis["produccionDia"] = grand_good
+                kpis["unidadesCompletadas"] = grand_good
+                kpis["unidadesPendientes"] = max(0, kpis.get("metaDiaria", 1350) - grand_good)
+                kpis["scrapPiezas"] = grand_scrap
+                kpis["parosAcumuladosMin"] = grand_paros
+                tot_b = grand_good + grand_scrap
+                kpis["scrapPorcentaje"] = round((grand_scrap / tot_b * 100) if tot_b else 0, 1)
+                kpis["porcentajeAvance"] = round((grand_good / 1350 * 100), 1)
+
+                with open(sync_svc.json_data_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+
+                js_content = f"const BRP_DATA = {json.dumps(data, indent=2, ensure_ascii=False)};\nif (typeof module !== 'undefined' && module.exports) {{ module.exports = BRP_DATA; }}\n"
+                with open(sync_svc.mock_data_path, "w", encoding="utf-8") as f:
+                    f.write(js_content)
+
+                sync_svc._git_push_background(f"chore(manual): update row {req.hora} [verificado={req.verificado}] [skip ci]")
+        except Exception as e:
+            print(f"Error actualizando JSON: {e}")
+
+    # 2. Actualizar en base de datos SQLite si el registro existe
+    rec = db.query(HourlyProductionRecord).filter(
+        HourlyProductionRecord.horario == req.hora
+    ).order_by(HourlyProductionRecord.id.desc()).first()
+
+    if rec:
+        if req.real is not None: rec.real_pz_hora = req.real
+        if req.realAc is not None: rec.real_acumulado = req.realAc
+        if req.malas is not None: rec.piezas_malas = req.malas
+        if req.op is not None: rec.op = req.op
+        if req.parosMin is not None: rec.tiempo_minutos = req.parosMin
+        if req.comentario is not None: rec.paros = req.comentario
+        if req.verificado: rec.validation_status = "VERIFICADO_MANUAL"
+        db.commit()
+
+    return {"status": "success", "message": f"Fila {req.hora} actualizada correctamente", "verificado": req.verificado}
 
 
 @app.get("/api/shifts/archived")

@@ -120,6 +120,18 @@ class DashboardSyncService:
         elif "Líder" not in supervisor and "Ing." not in supervisor:
             supervisor = f"Líder {supervisor}"
 
+        # 1.1 Cargar horas verificadas previamente para preservarlas
+        existing_verificados = set()
+        if self.json_data_path.exists():
+            try:
+                with open(self.json_data_path, "r", encoding="utf-8") as f:
+                    curr_d = json.load(f)
+                    for h_obj in curr_d.get("produccionHoraria", []):
+                        if h_obj.get("verificado"):
+                            existing_verificados.add(h_obj["hora"])
+            except Exception:
+                pass
+
         # 2. Indexar registros existentes por (turno_num, horario) para mapeo rápido
         records_by_key: Dict[Tuple[int, str], HourlyProductionRecord] = {}
         for r in all_records:
@@ -316,7 +328,8 @@ class DashboardSyncService:
                     "op": (matched_rec.op if matched_rec and matched_rec.op else ("OP30" if t_id == 1 else "OP20")),
                     "comentario": cmt,
                     "paros": paros_txt or cmt,
-                    "isRecorded": True
+                    "isRecorded": True,
+                    "verificado": bool(h_str in existing_verificados or (matched_rec and getattr(matched_rec, 'validation_status', '') == "VERIFICADO_MANUAL"))
                 })
             else:
                 # HORAS FUTURAS: estrictamente en blanco (None en Python -> null en JSON)
@@ -336,7 +349,8 @@ class DashboardSyncService:
                     "op": "--",
                     "comentario": "Hora programada / Por fabricar",
                     "paros": "",
-                    "isRecorded": False
+                    "isRecorded": False,
+                    "verificado": bool(h_str in existing_verificados)
                 })
 
         # 4. Cálculo de KPIs globales y eficiencia (OEE) de la jornada

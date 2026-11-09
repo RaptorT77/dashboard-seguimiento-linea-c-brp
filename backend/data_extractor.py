@@ -31,6 +31,7 @@ class HourlyRow:
     tiempo_minutos: Optional[int] = None
     paros: Optional[str] = None
     confidence: float = 0.85
+    verificado: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -410,7 +411,22 @@ class WhiteboardDataExtractor:
                 r["real_ac"] = prev_ac + (r["real_h"] - est_malas)
                 prev_ac = r["real_ac"]
 
-        # 6. Generar objetos HourlyRow finales
+        # 6. Cargar filas previamente marcadas como VERIFICADAS en el dashboard
+        # para proteger sus valores contra sobreescritura automática por fotos nuevas de Telegram
+        verified_hours: Dict[str, Dict[str, Any]] = {}
+        try:
+            from .config import DASHBOARD_DATA_JSON
+            import json
+            if DASHBOARD_DATA_JSON.exists():
+                with open(DASHBOARD_DATA_JSON, "r", encoding="utf-8") as f:
+                    curr_d = json.load(f)
+                    for h_obj in curr_d.get("produccionHoraria", []):
+                        if h_obj.get("verificado"):
+                            verified_hours[h_obj["hora"]] = h_obj
+        except Exception:
+            pass
+
+        # 7. Generar objetos HourlyRow finales
         extracted_rows: List[HourlyRow] = []
         for r in active_raw:
             s = r["s"]
@@ -439,6 +455,26 @@ class WhiteboardDataExtractor:
 
             final_min = r["tiempo_min"] if r["tiempo_min"] is not None else (30 if final_paros else 0)
 
+            # Si la fila fue verificada previamente por el usuario, sus valores tienen prioridad máxima
+            is_verified = False
+            if h_str in verified_hours:
+                vh = verified_hours[h_str]
+                if vh.get("real") is not None:
+                    final_real_h = vh["real"]
+                if vh.get("shiftAcumReal") is not None:
+                    final_real_ac = vh["shiftAcumReal"]
+                elif vh.get("acumReal") is not None:
+                    final_real_ac = vh["acumReal"]
+                if vh.get("malas") is not None:
+                    final_malas = vh["malas"]
+                if vh.get("op") and vh["op"] != "--":
+                    final_op = vh["op"]
+                if vh.get("parosMin") is not None:
+                    final_min = vh["parosMin"]
+                if vh.get("comentario") or vh.get("paros"):
+                    final_paros = vh.get("comentario") or vh.get("paros")
+                is_verified = True
+
             row = HourlyRow(
                 horario=s["horario"],
                 turno=s["turno"],
@@ -452,7 +488,8 @@ class WhiteboardDataExtractor:
                 op=final_op,
                 tiempo_minutos=final_min,
                 paros=final_paros,
-                confidence=0.92
+                confidence=0.95 if is_verified else 0.92,
+                verificado=is_verified
             )
             extracted_rows.append(row)
 

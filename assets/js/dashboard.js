@@ -50,6 +50,7 @@
       console.warn('Error leyendo reset de localStorage:', e);
     }
 
+    applyStoredOverrides();
     initClock();
     initFilters();
     renderKpis();
@@ -341,9 +342,223 @@
     // Apartado retirado
   }
 
+  const OVERRIDES_STORAGE_KEY = 'BRP_TABLE_OVERRIDES_2026';
+
+  /**
+   * Cargar anulaciones manuales y estados de verificación guardados en localStorage
+   */
+  function applyStoredOverrides() {
+    try {
+      const stored = localStorage.getItem(OVERRIDES_STORAGE_KEY);
+      if (stored) {
+        const overrides = JSON.parse(stored);
+        const hours = state.data.produccionHoraria || [];
+        hours.forEach(h => {
+          if (overrides[h.hora]) {
+            const ov = overrides[h.hora];
+            if (ov.real !== undefined && ov.real !== null) h.real = ov.real;
+            if (ov.shiftAcumReal !== undefined && ov.shiftAcumReal !== null) h.shiftAcumReal = ov.shiftAcumReal;
+            if (ov.acumReal !== undefined && ov.acumReal !== null) h.acumReal = ov.acumReal;
+            if (ov.malas !== undefined && ov.malas !== null) h.malas = ov.malas;
+            if (ov.op !== undefined && ov.op !== null) h.op = ov.op;
+            if (ov.parosMin !== undefined && ov.parosMin !== null) h.parosMin = ov.parosMin;
+            if (ov.comentario !== undefined && ov.comentario !== null) h.comentario = ov.comentario;
+            if (ov.paros !== undefined && ov.paros !== null) h.paros = ov.paros;
+            if (ov.isRecorded !== undefined) h.isRecorded = ov.isRecorded;
+            if (ov.verificado !== undefined) h.verificado = !!ov.verificado;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Error leyendo anulaciones de localStorage:', e);
+    }
+  }
+
+  /**
+   * Recalcular todas las métricas, acumulados y KPIs a partir de los datos editados en la tabla
+   */
+  function recalculateAllMetrics(skipTableReRender = false) {
+    const hours = state.data.produccionHoraria || [];
+    let grandGood = 0;
+    let grandScrap = 0;
+    let grandParos = 0;
+
+    const tTotals = {
+      1: { real: 0, malas: 0, paros: 0, meta: 480 },
+      2: { real: 0, malas: 0, paros: 0, meta: 450 },
+      3: { real: 0, malas: 0, paros: 0, meta: 420 }
+    };
+
+    let diaAcumReal = 0;
+    let shiftAcumReal = 0;
+    let currentShiftNum = 1;
+
+    hours.forEach(h => {
+      const t = h.turnoNum || 1;
+      if (t !== currentShiftNum) {
+        currentShiftNum = t;
+        shiftAcumReal = 0;
+      }
+
+      if (h.isRecorded && h.real !== null && h.real !== undefined) {
+        const rVal = parseInt(h.real, 10) || 0;
+        const mVal = parseInt(h.malas, 10) || 0;
+        const pVal = parseInt(h.parosMin, 10) || 0;
+        const buenasHora = Math.max(0, rVal - mVal);
+
+        shiftAcumReal += buenasHora;
+        diaAcumReal += buenasHora;
+
+        h.shiftAcumReal = shiftAcumReal;
+        h.acumReal = diaAcumReal;
+
+        tTotals[t].real = shiftAcumReal;
+        tTotals[t].malas += mVal;
+        tTotals[t].paros += pVal;
+
+        grandGood = diaAcumReal;
+        grandScrap += mVal;
+        grandParos += pVal;
+
+        h.oeeHora = Math.round(Math.min(100, (rVal / (h.meta || 60)) * 100));
+      }
+    });
+
+    const metaDiaria = state.data.resumenKpis?.metaDiaria || 1350;
+    const avancePct = metaDiaria > 0 ? (grandGood / metaDiaria) * 100 : 0;
+    const totalPzasBrutas = grandGood + grandScrap;
+    const scrapPct = totalPzasBrutas > 0 ? (grandScrap / totalPzasBrutas) * 100 : 0;
+
+    const disp = Math.max(0, Math.min(100, ((1440 - grandParos) / 1440) * 100));
+    const rend = Math.min(100, avancePct);
+    const cal = totalPzasBrutas > 0 ? (grandGood / totalPzasBrutas) * 100 : 100;
+    const oee = Math.round(((disp * rend * cal) / 10000) * 10) / 10;
+
+    let estado = 'PRODUCCION_EN_ORDEN';
+    if (grandParos > 60) estado = 'PARO_DE_LINEA';
+    else if (oee < 75 || scrapPct > 10) estado = 'PRODUCCION_DEFICIENTE';
+
+    state.data.resumenKpis = Object.assign(state.data.resumenKpis || {}, {
+      produccionDia: grandGood,
+      unidadesCompletadas: grandGood,
+      unidadesPendientes: Math.max(0, metaDiaria - grandGood),
+      porcentajeAvance: avancePct,
+      scrapPiezas: grandScrap,
+      scrapPorcentaje: scrapPct,
+      parosAcumuladosMin: grandParos,
+      eficienciaOee: oee,
+      disponibilidad: Math.round(disp * 10) / 10,
+      rendimiento: Math.round(rend * 10) / 10,
+      calidadFpy: Math.round(cal * 10) / 10,
+      estadoLinea: estado
+    });
+
+    if (state.data.turnos) {
+      if (state.data.turnos[0]) state.data.turnos[0].real = tTotals[1].real;
+      if (state.data.turnos[1]) state.data.turnos[1].real = tTotals[2].real;
+      if (state.data.turnos[2]) state.data.turnos[2].real = tTotals[3].real;
+    }
+
+    renderKpis();
+    updateChartsForFilter();
+
+    if (!skipTableReRender) {
+      renderTable();
+    } else {
+      updateTotalizerRows(tTotals, { meta: metaDiaria, real: grandGood, malas: grandScrap, paros: grandParos });
+    }
+
+    saveOverridesToStorage();
+  }
+
+  function updateTotalizerRows(tTotals, grandTotal) {
+    [1, 2, 3].forEach(tNum => {
+      const elReal = document.querySelector(`.tot-real-t${tNum}`);
+      const elAcum = document.querySelector(`.tot-acum-t${tNum}`);
+      const elMalas = document.querySelector(`.tot-malas-t${tNum}`);
+      const elParos = document.querySelector(`.tot-paros-t${tNum}`);
+      if (elReal) elReal.textContent = tTotals[tNum].real;
+      if (elAcum) elAcum.textContent = tTotals[tNum].real;
+      if (elMalas) {
+        elMalas.textContent = tTotals[tNum].malas;
+        elMalas.style.color = tTotals[tNum].malas > 0 ? '#DC2626' : '#0F172A';
+      }
+      if (elParos) {
+        elParos.textContent = `${tTotals[tNum].paros} min`;
+        elParos.style.color = tTotals[tNum].paros > 0 ? '#DC2626' : '#0F172A';
+      }
+    });
+
+    const elGReal = document.querySelector('.tot-grand-real');
+    const elGAcum = document.querySelector('.tot-grand-acum');
+    const elGMalas = document.querySelector('.tot-grand-malas');
+    const elGParos = document.querySelector('.tot-grand-paros');
+    if (elGReal) elGReal.textContent = grandTotal.real;
+    if (elGAcum) elGAcum.textContent = grandTotal.real;
+    if (elGMalas) elGMalas.textContent = grandTotal.malas;
+    if (elGParos) elGParos.textContent = `${grandTotal.paros} min`;
+  }
+
+  function saveOverridesToStorage() {
+    try {
+      const overrides = {};
+      (state.data.produccionHoraria || []).forEach(h => {
+        overrides[h.hora] = {
+          real: h.real,
+          shiftAcumReal: h.shiftAcumReal,
+          acumReal: h.acumReal,
+          malas: h.malas,
+          op: h.op,
+          parosMin: h.parosMin,
+          comentario: h.comentario,
+          paros: h.paros,
+          isRecorded: h.isRecorded,
+          verificado: !!h.verificado
+        };
+      });
+      localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+    } catch (e) {
+      console.warn('Error guardando en localStorage:', e);
+    }
+  }
+
+  let syncTimeout = null;
+  function debouncedSyncBackend(h) {
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+      syncRowToBackend(h);
+    }, 600);
+  }
+
+  function syncRowToBackend(h) {
+    const payload = {
+      hora: h.hora,
+      real: h.real,
+      realAc: h.shiftAcumReal !== undefined && h.shiftAcumReal !== null ? h.shiftAcumReal : h.acumReal,
+      malas: h.malas,
+      op: h.op,
+      parosMin: h.parosMin,
+      comentario: h.comentario || h.paros,
+      verificado: !!h.verificado
+    };
+
+    const endpoints = [
+      '/api/production/update-row',
+      'http://localhost:8000/api/production/update-row'
+    ];
+
+    endpoints.forEach(url => {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    });
+  }
+
   /**
    * Renderizar Tabla Oficial de Pizarra de Producción (Estructura PDF BRP Línea C)
-   * Incluye las 24 horas continuas (Turnos 1, 2 y 3), filas de totalizador y descripción de fallas/paros.
+   * Incluye las 24 horas continuas (Turnos 1, 2 y 3), checkbox de Verificado y celdas editables.
    */
   function renderTable() {
     const tbody = document.getElementById('tableWhiteboardBody') || document.getElementById('tableStationsBody');
@@ -379,19 +594,16 @@
 
     // Función para verificar si una fila pasa los filtros
     function rowMatchesFilters(h) {
-      // Filtro de Turno
       if (shiftFilter !== 'all' && h.turnoNum !== parseInt(shiftFilter, 10)) {
         return false;
       }
 
-      // Filtro de Estación
       if (state.filterStation && state.filterStation !== 'all') {
         const opStr = (h.op || '').toUpperCase();
         const targetOp = state.filterStation.toUpperCase();
         if (!opStr.includes(targetOp)) return false;
       }
 
-      // Filtro de Estado
       if (statusFilter !== 'all') {
         const hasParo = (h.parosMin || 0) > 0 || (h.comentario && h.comentario.toLowerCase().includes('paro'));
         const hasScrap = (h.malas || 0) > 0;
@@ -403,7 +615,6 @@
         if (statusFilter === 'PEND' && !(hasParo || hasScrap)) return false;
       }
 
-      // Filtro de búsqueda
       if (query !== '') {
         const textToSearch = [
           h.hora,
@@ -411,6 +622,7 @@
           h.comentario || '',
           h.paros || '',
           h.op || '',
+          h.verificado ? 'verificado' : '',
           h.isRecorded ? 'registrado' : 'programado'
         ].join(' ').toLowerCase();
 
@@ -430,6 +642,7 @@
       filteredShiftHours.forEach(h => {
         let badgeHtml = '';
         let rowStyle = '';
+        const isVerif = !!h.verificado;
 
         if (!h.isRecorded) {
           badgeHtml = '<span class="cell-badge" style="background:#F1F5F9; color:#64748B; border:1px solid #CBD5E1;">PROGRAMADO</span>';
@@ -442,26 +655,45 @@
           badgeHtml = '<span class="cell-badge" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC;">OK</span>';
         }
 
-        const realH = h.isRecorded ? (h.real !== null ? h.real : 0) : '--';
+        const realHVal = h.isRecorded && h.real !== null && h.real !== undefined ? h.real : '';
         const metaAc = h.shiftAcumMeta !== undefined ? h.shiftAcumMeta : h.acumMeta;
-        const realAc = h.isRecorded ? (h.shiftAcumReal !== undefined && h.shiftAcumReal !== null ? h.shiftAcumReal : (h.acumReal !== null ? h.acumReal : '--')) : '--';
-        const malas = h.isRecorded ? (h.malas !== null ? h.malas : 0) : '--';
-        const opVal = h.isRecorded ? (h.op || (tNum === 1 ? 'OP30' : 'OP20')) : '--';
-        const tiempoVal = h.isRecorded ? (h.parosMin > 0 ? `${h.parosMin}` : '0') : '--';
-        const cmtText = h.isRecorded ? (h.comentario || 'Producción en curso') : '<span style="color:#94A3B8; font-style:italic;">Hora programada / Por fabricar</span>';
+        const realAcVal = h.isRecorded && h.shiftAcumReal !== null && h.shiftAcumReal !== undefined ? h.shiftAcumReal : (h.acumReal !== null && h.acumReal !== undefined ? h.acumReal : '');
+        const malasVal = h.isRecorded && h.malas !== null && h.malas !== undefined ? h.malas : (h.isRecorded ? 0 : '');
+        const opVal = h.isRecorded ? (h.op || (tNum === 1 ? 'OP30' : 'OP20')) : '';
+        const tiempoVal = h.isRecorded && h.parosMin !== null && h.parosMin !== undefined ? h.parosMin : (h.isRecorded ? 0 : '');
+        const cmtText = h.isRecorded ? (h.comentario || h.paros || 'Producción en curso') : '';
+
+        const verifiedBadge = isVerif ? '<div class="badge-verified-tag">✓ VERIFICADO</div>' : '';
+        const rowClass = isVerif ? 'row-verified' : '';
 
         rowsHtml += `
-          <tr style="${rowStyle}">
+          <tr class="${rowClass}" style="${rowStyle}" data-hora="${h.hora}">
+            <td style="text-align: center; vertical-align: middle;">
+              <input type="checkbox" class="verify-checkbox" data-hora="${h.hora}" ${isVerif ? 'checked' : ''} title="${isVerif ? 'Fila verificada (protegida contra sobreescritura automática por fotos)' : 'Marcar como verificado para proteger'}">
+              ${verifiedBadge}
+            </td>
             <td><strong style="color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${h.hora}</strong></td>
             <td style="text-align: center;">${h.meta}</td>
-            <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#1F4E79' : '#94A3B8'};">${realH}</td>
+            <td style="text-align: center;">
+              <input type="number" class="table-cell-input input-real" data-hora="${h.hora}" data-field="real" value="${realHVal}" placeholder="--" min="0" max="200" title="Editar Real Pz/Hora">
+            </td>
             <td style="text-align: center; color:#475569;">${metaAc}</td>
-            <td style="text-align: center; font-weight:700; color:${h.isRecorded ? '#173D60' : '#94A3B8'};">${realAc}</td>
-            <td style="text-align: center; font-weight:${malas > 0 ? '700' : 'normal'}; color:${malas > 0 ? '#DC2626' : '#64748B'};">${malas}</td>
-            <td style="text-align: center; font-family:var(--font-mono); font-size:10px;">${opVal}</td>
-            <td style="text-align: center; font-weight:${tiempoVal > 0 ? '700' : 'normal'}; color:${tiempoVal > 0 ? '#DC2626' : '#64748B'};">${tiempoVal}</td>
-            <td style="font-size:11px; color:${h.isRecorded && h.parosMin > 0 ? '#991B1B' : '#334155'}; font-weight:${h.isRecorded && h.parosMin > 0 ? '600' : 'normal'};">${cmtText}</td>
-            <td style="text-align: center;">${badgeHtml}</td>
+            <td style="text-align: center;">
+              <input type="number" class="table-cell-input input-real-ac" data-hora="${h.hora}" data-field="realAc" value="${realAcVal}" placeholder="--" min="0" max="1500" title="Editar Real Acumulado">
+            </td>
+            <td style="text-align: center;">
+              <input type="number" class="table-cell-input input-malas ${malasVal > 0 ? 'text-red' : ''}" data-hora="${h.hora}" data-field="malas" value="${malasVal}" placeholder="0" min="0" max="100" title="Editar Piezas Malas (Scrap)">
+            </td>
+            <td style="text-align: center;">
+              <input type="text" class="table-cell-input input-op" style="width:50px; font-family:var(--font-mono); font-size:10px;" data-hora="${h.hora}" data-field="op" value="${opVal}" placeholder="OP--" title="Editar Estación OP">
+            </td>
+            <td style="text-align: center;">
+              <input type="number" class="table-cell-input input-tiempo" style="width:48px;" data-hora="${h.hora}" data-field="parosMin" value="${tiempoVal}" placeholder="0" min="0" max="120" title="Editar Tiempo de Paro (minutos)">
+            </td>
+            <td>
+              <input type="text" class="table-cell-input text-start input-comentario" data-hora="${h.hora}" data-field="comentario" value="${cmtText}" placeholder="${h.isRecorded ? 'Descripción de falla o paro...' : 'Hora programada / Por fabricar'}" title="Editar Paros y Descripción de Fallas">
+            </td>
+            <td style="text-align: center;" class="cell-status-container">${badgeHtml}</td>
           </tr>
         `;
       });
@@ -471,14 +703,15 @@
       if (filteredShiftHours.length > 0 && query === '') {
         rowsHtml += `
           <tr style="background-color: #E2E8F0; font-weight: 700; border-top: 2px solid #CBD5E1; border-bottom: 2px solid #94A3B8;">
+            <td style="text-align: center; color: #64748B;">--</td>
             <td style="color: #0F172A; text-transform: uppercase;">Total ${tNum}er turno:</td>
             <td style="text-align: center; color: #0F172A;">${tInfo.meta}</td>
-            <td style="text-align: center; color: #1F4E79; font-size: 12px;">${tInfo.real}</td>
+            <td style="text-align: center; color: #1F4E79; font-size: 12px;" class="tot-real-t${tNum}">${tInfo.real}</td>
             <td style="text-align: center; color: #0F172A;">${tInfo.meta}</td>
-            <td style="text-align: center; color: #173D60; font-size: 12px;">${tInfo.real}</td>
-            <td style="text-align: center; color: ${tInfo.malas > 0 ? '#DC2626' : '#0F172A'};">${tInfo.malas}</td>
+            <td style="text-align: center; color: #173D60; font-size: 12px;" class="tot-acum-t${tNum}">${tInfo.real}</td>
+            <td style="text-align: center; color: ${tInfo.malas > 0 ? '#DC2626' : '#0F172A'};" class="tot-malas-t${tNum}">${tInfo.malas}</td>
             <td style="text-align: center;">--</td>
-            <td style="text-align: center; color: ${tInfo.paros > 0 ? '#DC2626' : '#0F172A'};">${tInfo.paros} min</td>
+            <td style="text-align: center; color: ${tInfo.paros > 0 ? '#DC2626' : '#0F172A'};" class="tot-paros-t${tNum}">${tInfo.paros} min</td>
             <td colspan="2" style="font-size: 10.5px; color: #1E293B;">
               <strong>Líder:</strong> ${tInfo.lider} ${tInfo.nota ? `&nbsp;|&nbsp; <em>${tInfo.nota}</em>` : ''}
             </td>
@@ -491,14 +724,15 @@
     if (shiftFilter === 'all' && query === '' && statusFilter === 'all') {
       rowsHtml += `
         <tr style="background-color: #CBD5E1; font-weight: 800; border-top: 2px solid #64748B;">
+          <td style="text-align: center; color: #64748B;">--</td>
           <td style="color: #0F172A; font-size: 12px;">TOTAL DEL DÍA (24H):</td>
           <td style="text-align: center; font-size: 12px; color: #0F172A;">${grandTotal.meta}</td>
-          <td style="text-align: center; font-size: 13px; color: #166534;">${grandTotal.real}</td>
+          <td style="text-align: center; font-size: 13px; color: #166534;" class="tot-grand-real">${grandTotal.real}</td>
           <td style="text-align: center; font-size: 12px; color: #0F172A;">${grandTotal.meta}</td>
-          <td style="text-align: center; font-size: 13px; color: #166534;">${grandTotal.real}</td>
-          <td style="text-align: center; font-size: 12px; color: #DC2626;">${grandTotal.malas}</td>
+          <td style="text-align: center; font-size: 13px; color: #166534;" class="tot-grand-acum">${grandTotal.real}</td>
+          <td style="text-align: center; font-size: 12px; color: #DC2626;" class="tot-grand-malas">${grandTotal.malas}</td>
           <td style="text-align: center;">--</td>
-          <td style="text-align: center; font-size: 12px; color: #DC2626;">${grandTotal.paros} min</td>
+          <td style="text-align: center; font-size: 12px; color: #DC2626;" class="tot-grand-paros">${grandTotal.paros} min</td>
           <td colspan="2" style="font-size: 11px; color: #0F172A;">
             Jornada Completa 24 Horas — BRP Línea C (Kolben Schmidt Celaya)
           </td>
@@ -509,7 +743,7 @@
     if (!rowsHtml) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="10" style="text-align: center; padding: 24px; color: #64748B;">
+          <td colspan="11" style="text-align: center; padding: 24px; color: #64748B;">
             No se encontraron registros de producción que coincidan con los filtros seleccionados.
           </td>
         </tr>
@@ -815,6 +1049,73 @@
       searchInput.addEventListener('input', (e) => {
         state.searchQuery = e.target.value;
         renderTable();
+      });
+    }
+
+    // Delegación de eventos para edición manual en la tabla de producción y verificación de filas
+    const tableBody = document.getElementById('tableWhiteboardBody') || document.getElementById('tableStationsBody');
+    if (tableBody) {
+      // Edición de valores en celdas (input en tiempo real)
+      tableBody.addEventListener('input', (e) => {
+        const input = e.target;
+        if (!input.classList.contains('table-cell-input')) return;
+
+        const hora = input.dataset.hora;
+        const field = input.dataset.field;
+        const h = (state.data.produccionHoraria || []).find(row => row.hora === hora);
+        if (!h) return;
+
+        const val = input.value.trim();
+        if (field === 'real') {
+          h.real = val === '' ? null : Math.max(0, parseInt(val, 10));
+          if (val !== '') h.isRecorded = true;
+        } else if (field === 'realAc') {
+          h.shiftAcumReal = val === '' ? null : Math.max(0, parseInt(val, 10));
+          h.shiftAcumRealManual = true;
+          h.acumReal = h.shiftAcumReal;
+        } else if (field === 'malas') {
+          h.malas = val === '' ? 0 : Math.max(0, parseInt(val, 10));
+          input.classList.toggle('text-red', (h.malas || 0) > 0);
+        } else if (field === 'op') {
+          h.op = val;
+        } else if (field === 'parosMin') {
+          h.parosMin = val === '' ? 0 : Math.max(0, parseInt(val, 10));
+        } else if (field === 'comentario') {
+          h.comentario = val;
+          h.paros = val;
+        }
+
+        // Recalcular métricas, acumulados y gráficas en vivo (conservando foco en el input activo)
+        recalculateAllMetrics(true);
+        debouncedSyncBackend(h);
+      });
+
+      // Cambio en el checkbox de Verificación
+      tableBody.addEventListener('change', (e) => {
+        const target = e.target;
+        if (!target.classList.contains('verify-checkbox')) return;
+
+        const hora = target.dataset.hora;
+        const h = (state.data.produccionHoraria || []).find(row => row.hora === hora);
+        if (!h) return;
+
+        h.verificado = target.checked;
+        const rowEl = target.closest('tr');
+        if (rowEl) {
+          rowEl.classList.toggle('row-verified', h.verificado);
+        }
+
+        saveOverridesToStorage();
+        syncRowToBackend(h);
+
+        // Re-renderizar para actualizar badges y recalcular
+        recalculateAllMetrics(false);
+
+        if (h.verificado) {
+          showToast(`🔒 Fila ${hora} VERIFICADA: protegida contra sobreescritura por fotos`);
+        } else {
+          showToast(`🔓 Fila ${hora} desmarcada`);
+        }
       });
     }
 
@@ -1605,6 +1906,7 @@
           localStorage.removeItem('BRP_DASHBOARD_RESET_DATA');
           localStorage.removeItem('BRP_DASHBOARD_RESET_TIME');
           state.data = freshData;
+          applyStoredOverrides();
           renderKpis();
           renderHeroWidgets();
           renderStationsFlow();

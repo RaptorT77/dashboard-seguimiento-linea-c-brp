@@ -1,11 +1,3 @@
-/**
- * =============================================================================
- * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
- * Sincronización Automática 24H — Acumulado Continuo 0:00 a 24:00 hrs
- * Última Actualización: 2026-11-09 20:17:09 UTC
- * =============================================================================
- */
-
 const BRP_DATA = {
   "planta": {
     "nombre": "BRP ROTAX MÉXICO S.A. de C.V.",
@@ -115,7 +107,8 @@ const BRP_DATA = {
       "op": "OP40",
       "comentario": "Cambio de buril chaflán interior L.O. por despostillamiento",
       "paros": "Cambio de buril chaflán interior L.O. por despostillamiento",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "09:00 - 10:00",
@@ -667,7 +660,4 @@ const BRP_DATA = {
     }
   ]
 };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = BRP_DATA;
-}
+if (typeof module !== 'undefined' && module.exports) { module.exports = BRP_DATA; }

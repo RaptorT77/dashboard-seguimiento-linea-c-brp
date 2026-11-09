@@ -107,7 +107,8 @@
       "op": "OP40",
       "comentario": "Cambio de buril chaflán interior L.O. por despostillamiento",
       "paros": "Cambio de buril chaflán interior L.O. por despostillamiento",
-      "isRecorded": true
+      "isRecorded": true,
+      "verificado": true
     },
     {
       "hora": "09:00 - 10:00",
