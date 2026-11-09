@@ -2,7 +2,7 @@
  * =============================================================================
  * DASHBOARD DE SEGUIMIENTO LÍNEA C BRP — PLANTA KOLBEN SCHMIDT CELAYA
  * Sincronización Automática 24H — Acumulado Continuo 0:00 a 24:00 hrs
- * Última Actualización: 2026-11-09 02:52:13 UTC
+ * Última Actualización: 2026-11-09 02:57:27 UTC
  * =============================================================================
  */
 
@@ -12,7 +12,7 @@ const BRP_DATA = {
     "plantaId": "PLANTA KOLBEN SCHMIDT CELAYA - LÍNEA C",
     "linea": "Línea C — Ensamble y Mecanizado de Pistón WOLF V1",
     "versionSistema": "v3.0.0-24H-LIVE",
-    "updatedAt": "2026-11-09T02:52:13Z",
+    "updatedAt": "2026-11-09T02:57:27Z",
     "fechaProduccion": "2026-11-08",
     "tiempoCicloTargetSeg": 45.0,
     "metaTurnoUnidades": 450,
@@ -21,20 +21,20 @@ const BRP_DATA = {
     "turnoActual": 2
   },
   "resumenKpis": {
-    "produccionDia": 304,
+    "produccionDia": 166,
     "metaDiaria": 1350,
-    "porcentajeAvance": 22.5,
-    "unidadesCompletadas": 304,
-    "unidadesPendientes": 1046,
-    "eficienciaOee": 41.0,
+    "porcentajeAvance": 12.3,
+    "unidadesCompletadas": 166,
+    "unidadesPendientes": 1184,
+    "eficienciaOee": 39.5,
     "disponibilidad": 100.0,
-    "rendimiento": 46.1,
-    "calidadFpy": 88.9,
+    "rendimiento": 39.5,
+    "calidadFpy": 100.0,
     "parosAcumuladosMin": 0,
     "eventosParo": 0,
     "taktTimeSeg": 58.2,
-    "scrapPiezas": 38,
-    "scrapPorcentaje": 11.1,
+    "scrapPiezas": 0,
+    "scrapPorcentaje": 0.0,
     "estadoLinea": "PRODUCCION_DEFICIENTE"
   },
   "turnos": [
@@ -44,8 +44,8 @@ const BRP_DATA = {
       "horario": "06:30 - 15:00",
       "supervisor": "Líder Antonia",
       "meta": 480,
-      "real": 208,
-      "oee": 43.3,
+      "real": 166,
+      "oee": 34.6,
       "activo": false
     },
     {
@@ -54,8 +54,8 @@ const BRP_DATA = {
       "horario": "15:00 - 23:00",
       "supervisor": "Ing. Roberto Garza",
       "meta": 450,
-      "real": 96,
-      "oee": 21.3,
+      "real": 0,
+      "oee": 0.0,
       "activo": true
     },
     {
@@ -92,19 +92,19 @@ const BRP_DATA = {
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Sin incidencias reportadas"
+      "comentario": "Paro"
     },
     {
       "hora": "08:00 - 09:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 66,
+      "real": 56,
       "acumMeta": 150,
-      "acumReal": 42,
-      "oeeHora": 100.0,
+      "acumReal": 56,
+      "oeeHora": 93.3,
       "parosMin": 0,
-      "malas": 24,
+      "malas": 0,
       "comentario": "Producción en curso"
     },
     {
@@ -114,63 +114,63 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 210,
-      "acumReal": 13,
+      "acumReal": 56,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Sin incidencias reportadas"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "10:00 - 11:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 77,
+      "real": 0,
       "acumMeta": 270,
-      "acumReal": 90,
-      "oeeHora": 100.0,
+      "acumReal": 56,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Producción en curso"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "11:00 - 12:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 30,
-      "real": 7,
+      "real": 36,
       "acumMeta": 300,
-      "acumReal": 83,
-      "oeeHora": 23.3,
+      "acumReal": 92,
+      "oeeHora": 100.0,
       "parosMin": 0,
-      "malas": 14,
-      "comentario": "Producción en curso"
+      "malas": 0,
+      "comentario": "n：296 // 2965592-11"
     },
     {
       "hora": "12:00 - 13:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 125,
+      "real": 0,
       "acumMeta": 360,
-      "acumReal": 208,
-      "oeeHora": 100.0,
+      "acumReal": 92,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Producción en curso"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "13:00 - 14:00",
       "turno": "Turno 1 - Matutino",
       "turnoNum": 1,
       "meta": 60,
-      "real": 0,
+      "real": 92,
       "acumMeta": 420,
-      "acumReal": 208,
-      "oeeHora": 0.0,
+      "acumReal": 166,
+      "oeeHora": 100.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Hora programada / Por fabricar"
+      "comentario": "Producción en curso"
     },
     {
       "hora": "14:00 - 15:00",
@@ -179,7 +179,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 480,
-      "acumReal": 208,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -190,39 +190,39 @@ const BRP_DATA = {
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 25,
+      "real": 0,
       "acumMeta": 540,
-      "acumReal": 224,
-      "oeeHora": 41.7,
+      "acumReal": 166,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "3525588：11"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "16:00 - 17:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 36,
+      "real": 0,
       "acumMeta": 600,
-      "acumReal": 256,
-      "oeeHora": 60.0,
+      "acumReal": 166,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Producción en curso"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "17:00 - 18:00",
       "turno": "Turno 2 - Vespertino",
       "turnoNum": 2,
       "meta": 60,
-      "real": 56,
+      "real": 0,
       "acumMeta": 660,
-      "acumReal": 304,
-      "oeeHora": 93.3,
+      "acumReal": 166,
+      "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
-      "comentario": "Producción en curso"
+      "comentario": "Hora programada / Por fabricar"
     },
     {
       "hora": "18:00 - 19:00",
@@ -231,7 +231,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 720,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -244,7 +244,7 @@ const BRP_DATA = {
       "meta": 30,
       "real": 0,
       "acumMeta": 750,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -257,7 +257,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 810,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -270,7 +270,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 870,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -283,7 +283,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 930,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -296,7 +296,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 990,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -309,7 +309,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1050,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -322,7 +322,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1110,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -335,7 +335,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1170,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -348,7 +348,7 @@ const BRP_DATA = {
       "meta": 30,
       "real": 0,
       "acumMeta": 1200,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -361,7 +361,7 @@ const BRP_DATA = {
       "meta": 60,
       "real": 0,
       "acumMeta": 1260,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -374,7 +374,7 @@ const BRP_DATA = {
       "meta": 90,
       "real": 0,
       "acumMeta": 1350,
-      "acumReal": 304,
+      "acumReal": 166,
       "oeeHora": 0.0,
       "parosMin": 0,
       "malas": 0,
@@ -389,13 +389,13 @@ const BRP_DATA = {
       "equipo": "Torno / Centro CNC OP10",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 304,
+      "buenasPzas": 166,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 56.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 54.5,
+      "ultimaLiberacion": "14:00"
     },
     {
       "id": "OP20",
@@ -403,13 +403,13 @@ const BRP_DATA = {
       "equipo": "Ranuradora de Precisión OP20",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 304,
+      "buenasPzas": 166,
       "scrapPzas": 0,
       "cicloSeg": 48.0,
       "estado": "OK",
       "buffer": "Buffer OK",
-      "eficiencia": 51.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 49.5,
+      "ultimaLiberacion": "14:00"
     },
     {
       "id": "OP30",
@@ -417,13 +417,13 @@ const BRP_DATA = {
       "equipo": "Ranuradora / Lavadora OP30",
       "operador": "Téc. OP30",
       "metaPzas": 1350,
-      "buenasPzas": 304,
-      "scrapPzas": 38,
+      "buenasPzas": 166,
+      "scrapPzas": 0,
       "cicloSeg": 120.0,
       "estado": "PARO",
       "buffer": "Atención de paros reportados",
-      "eficiencia": 31.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 29.5,
+      "ultimaLiberacion": "14:00"
     },
     {
       "id": "OP40",
@@ -431,13 +431,13 @@ const BRP_DATA = {
       "equipo": "Cabina de Grafito / Moly OP40",
       "operador": "Téc. Línea C",
       "metaPzas": 1350,
-      "buenasPzas": 304,
+      "buenasPzas": 166,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Espera material",
-      "eficiencia": 41.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 39.5,
+      "ultimaLiberacion": "14:00"
     },
     {
       "id": "OP50",
@@ -445,13 +445,13 @@ const BRP_DATA = {
       "equipo": "Gage de Aire Multidiametral OP50",
       "operador": "Téc. Calidad",
       "metaPzas": 1350,
-      "buenasPzas": 304,
+      "buenasPzas": 166,
       "scrapPzas": 0,
       "cicloSeg": 46.0,
       "estado": "OK",
       "buffer": "Gage OK",
-      "eficiencia": 41.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 39.5,
+      "ultimaLiberacion": "14:00"
     },
     {
       "id": "OP60",
@@ -459,34 +459,24 @@ const BRP_DATA = {
       "equipo": "Estación de Visión y Embalaje OP60",
       "operador": "Antonio",
       "metaPzas": 1350,
-      "buenasPzas": 304,
+      "buenasPzas": 166,
       "scrapPzas": 0,
       "cicloSeg": 45.0,
       "estado": "OK",
       "buffer": "Caja empaque",
-      "eficiencia": 41.0,
-      "ultimaLiberacion": "18:00"
+      "eficiencia": 39.5,
+      "ultimaLiberacion": "14:00"
     }
   ],
   "alertas": [
     {
       "id": "ALT-DEFICIT-DIA",
       "tipo": "CRITICA",
-      "titulo": "Déficit Acumulado (-356 Uds vs Plan a las 18:00)",
-      "descripcion": "La línea acumula 304 unidades de 660 programadas al corte (46.1% de cumplimiento). Paros acumulados: 0 min en la jornada.",
+      "titulo": "Déficit Acumulado (-254 Uds vs Plan a las 14:00)",
+      "descripcion": "La línea acumula 166 unidades de 420 programadas al corte (39.5% de cumplimiento). Paros acumulados: 0 min en la jornada.",
       "estacion": "LÍNEA C / GENERAL",
-      "hora": "18:00",
+      "hora": "14:00",
       "tiempoTranscurrido": "Jornada 24h en curso",
-      "resuelta": false
-    },
-    {
-      "id": "ALT-SCRAP-DIA",
-      "tipo": "CALIDAD",
-      "titulo": "Piezas Scrap Acumuladas: 38 pzas (11.1%)",
-      "descripcion": "Se han registrado 38 unidades defectuosas (NOK) acumuladas en los turnos reportados.",
-      "estacion": "LÍNEA C / CALIDAD",
-      "hora": "18:00",
-      "tiempoTranscurrido": "Acumulado día",
       "resuelta": false
     }
   ]

@@ -1,0 +1,19 @@
+﻿# =============================================================================
+# BRP ROTAX MÉXICO — PLANTA KOLBEN SCHMIDT CELAYA
+# REPORTE OFICIAL DE CIERRE DE TURNO: TURNO 1 - MATUTINO
+# Fecha: 2026-11-09 | Turno: Primero: 06:30 a 15:00 hrs
+# Supervisor / Líder: Líder Turno | Producto: WOLF V1 (Pistón BRP)
+# Producción Real: 0 uds | Meta: 1350 uds | Cumplimiento: 0.0%
+# Piezas Scrap (NOK): 0 uds (0.0%) | Paros Acumulados: 0 min (0 eventos)
+# Eficiencia Operativa OEE: 0.0% | Estado de Línea Final: PRODUCCION_EN_ORDEN
+# Timestamp de Archivo: 2026-11-09 02:50:39 UTC
+# =============================================================================
+Fecha,Turno,Horario,Linea,Producto,Lider,Obj_Pz_Hora,Real_Pz_Hora,Obj_Acumulado,Real_Acumulado,Piezas_Malas_Scrap,Tiempo_Minutos_Paro,Causa_Paro_Incidencia,Estado_Linea,Timestamp_Registro
+2026-11-09,"Primero: 06:30 a 15:00 hrs","06:30 - 08:00","C","WOLF V1 (Pistón BRP)","Líder Turno",90,0,90,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","08:00 - 09:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,150,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","09:00 - 10:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,210,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","10:00 - 11:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,270,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","11:00 - 12:00","C","WOLF V1 (Pistón BRP)","Líder Turno",30,0,300,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","12:00 - 13:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,360,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","13:00 - 14:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,420,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
+2026-11-09,"Primero: 06:30 a 15:00 hrs","14:00 - 15:00","C","WOLF V1 (Pistón BRP)","Líder Turno",60,0,480,0,0,0,"En espera de reporte Telegram","PRODUCCION_EN_ORDEN","2026-11-09 02:50:39"
