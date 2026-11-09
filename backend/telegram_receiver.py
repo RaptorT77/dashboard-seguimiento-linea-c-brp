@@ -321,7 +321,7 @@ class TelegramPhotoReceiver:
                     reply += f"⚠️ *Paro Reportado:* `{fields['paros']}`\n"
                 if status == "PARCIAL" and result.get("validation_notes"):
                     reply += f"\nℹ️ *Nota:* {result['validation_notes'][0]}\n"
-                reply += "\n🌐 *Dashboard web 24H actualizado en vivo.*"
+                reply += "\n🌐 *Dashboard web 24H actualizado en vivo:* [Abrir en GitHub Pages](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)"
             else:
                 notes = "\n".join([f"• {n}" for n in result["validation_notes"]])
                 reply = (
