@@ -2,7 +2,7 @@
 Orquestador Principal del Pipeline de Procesamiento de Pizarras.
 Conecta Recepción -> Preprocesamiento -> OCR -> Extracción -> Validación -> Persistencia -> Sincronización.
 
-Versión 3.5 — Persistencia y Sincronización de todas las horas (24H acumuladas).
+Versión 4.0 — Detección estricta de duplicados, extracción multicanal dinámica y sincronización 24H.
 """
 
 import hashlib
@@ -50,20 +50,57 @@ class WhiteboardProcessingPipeline:
         received_at = received_at or datetime.utcnow()
         AuditLogger.log_event("PIPELINE_START", f"Iniciando procesamiento de imagen: {source_image_path.name}")
 
-        # 1. Calcular hash SHA256 para trazabilidad e idempotencia de archivo
+        # 1. Calcular hash SHA256 para trazabilidad e idempotencia
         with open(source_image_path, "rb") as f:
             file_bytes = f.read()
             file_hash = hashlib.sha256(file_bytes).hexdigest()
 
-        # 2. Guardar copia inmutable en almacenamiento de imágenes originales
-        dest_filename = f"{received_at.strftime('%Y%m%d_%H%M%S')}_{file_hash[:12]}.jpg"
-        dest_image_path = RAW_IMAGES_DIR / dest_filename
-        if not dest_image_path.exists():
-            shutil.copy2(source_image_path, dest_image_path)
-
         db = SessionLocal()
         try:
-            # 3. Crear registro de RawImage en base de datos
+            # 2. Comprobar si la imagen es duplicada exacta ya procesada previamente
+            existing_img = db.query(RawImage).filter(
+                RawImage.file_hash == file_hash,
+                RawImage.status == "PROCESADA"
+            ).first()
+
+            if existing_img:
+                latest_rec = db.query(HourlyProductionRecord).filter(
+                    HourlyProductionRecord.raw_image_id == existing_img.id
+                ).order_by(HourlyProductionRecord.id.desc()).first()
+
+                AuditLogger.log_event(
+                    "DUPLICATE_IMAGE_DETECTED",
+                    f"Imagen duplicada descartada con hash {file_hash[:12]} (RawImage ID {existing_img.id})"
+                )
+                return {
+                    "success": True,
+                    "is_duplicate": True,
+                    "validation_status": "DUPLICADO",
+                    "validation_notes": ["Fotografía idéntica a la anterior. No se generaron duplicados."],
+                    "extracted_fields": {
+                        "fecha": latest_rec.fecha if latest_rec else datetime.utcnow().strftime("%Y-%m-%d"),
+                        "linea": latest_rec.linea if latest_rec else "Línea C",
+                        "producto": latest_rec.producto if latest_rec else "WOLF V1 (Pistón BRP)",
+                        "horario": latest_rec.horario if latest_rec else "17:00 - 18:00",
+                        "turno": latest_rec.turno if latest_rec else "Segundo: 15:00 a 23:00 hrs",
+                        "real_pz_hora": latest_rec.real_pz_hora if latest_rec else 0,
+                        "obj_pz_hora": latest_rec.obj_pz_hora if latest_rec else 60,
+                        "real_acumulado": latest_rec.real_acumulado if latest_rec else 0,
+                        "obj_acumulado": latest_rec.obj_acumulado if latest_rec else 180,
+                        "piezas_malas": latest_rec.piezas_malas if latest_rec else 0,
+                        "lider": latest_rec.lider if latest_rec else "Antonio",
+                        "paros": latest_rec.paros if latest_rec else None
+                    },
+                    "dashboard_synced": False
+                }
+
+            # 3. Guardar copia inmutable en almacenamiento de imágenes originales
+            dest_filename = f"{received_at.strftime('%Y%m%d_%H%M%S')}_{file_hash[:12]}.jpg"
+            dest_image_path = RAW_IMAGES_DIR / dest_filename
+            if not dest_image_path.exists():
+                shutil.copy2(source_image_path, dest_image_path)
+
+            # 4. Crear registro de RawImage en base de datos
             raw_img_rec = RawImage(
                 file_path=str(dest_image_path),
                 file_hash=file_hash,
@@ -83,7 +120,7 @@ class WhiteboardProcessingPipeline:
                 {"file_hash": file_hash, "chat_id": chat_id, "user": username}
             )
 
-            # 4. Preprocesamiento de Imagen
+            # 5. Preprocesamiento de Imagen
             prep_result = self.preprocessor.preprocess(dest_image_path)
             AuditLogger.log_event(
                 "PREPROCESSING_SUCCESS",
@@ -91,7 +128,7 @@ class WhiteboardProcessingPipeline:
                 {"crop_bbox": prep_result["crop_bbox"]}
             )
 
-            # 5. Ejecución del motor OCR Avanzado
+            # 6. Ejecución del motor OCR Avanzado Multicanal
             ocr_result = self.ocr_processor.process_image(prep_result["board_crop"])
             AuditLogger.log_event(
                 "OCR_SUCCESS",
@@ -99,7 +136,7 @@ class WhiteboardProcessingPipeline:
                 {"blocks_count": ocr_result["total_blocks"]}
             )
 
-            # 6. Guardar OcrLog
+            # 7. Guardar OcrLog
             ocr_log_rec = OcrLog(
                 raw_image_id=raw_img_rec.id,
                 raw_text=ocr_result["raw_text"],
@@ -114,24 +151,23 @@ class WhiteboardProcessingPipeline:
             db.add(ocr_log_rec)
             db.commit()
 
-            # 7. Extracción de los campos estructurados (incluye todas las filas de la pizarra)
+            # 8. Extracción estructurada dinámica de todas las filas
             extracted: ExtractedRecord = self.extractor.extract_latest_record(
                 ocr_result,
                 image_timestamp=received_at
             )
             AuditLogger.log_event(
                 "EXTRACTION_COMPLETED",
-                f"Extracción completada. Fecha: {extracted.fecha}, Filas detectadas: {len(extracted.all_hourly_rows)}",
+                f"Extracción completada. Fecha: {extracted.fecha}, Filas activas: {len(extracted.all_hourly_rows)}",
                 {"record": extracted.to_dict()}
             )
 
-            # 8. Obtener registro previo para validación de coherencia matemática
+            # 9. Validación
             prev_record = db.query(HourlyProductionRecord).filter(
                 HourlyProductionRecord.linea == extracted.linea,
                 HourlyProductionRecord.fecha == extracted.fecha
             ).order_by(HourlyProductionRecord.id.desc()).first()
 
-            # 9. Validación
             validation_status, validation_notes = self.validator.validate(extracted, prev_record)
             AuditLogger.log_event(
                 "VALIDATION_COMPLETED",
@@ -139,7 +175,16 @@ class WhiteboardProcessingPipeline:
                 {"status": validation_status, "notes": validation_notes}
             )
 
-            # 10. Persistencia de TODAS las filas horarias extraídas de la pizarra
+            # 10. Limpiar registros residuales de horas no activas para esta fecha específica
+            valid_horarios = [r["horario"] for r in extracted.all_hourly_rows]
+            if valid_horarios:
+                db.query(HourlyProductionRecord).filter(
+                    HourlyProductionRecord.linea == extracted.linea,
+                    HourlyProductionRecord.fecha == extracted.fecha,
+                    ~HourlyProductionRecord.horario.in_(valid_horarios)
+                ).delete(synchronize_session=False)
+
+            # 11. Persistencia de las filas horarias extraídas de la pizarra
             record_to_sync = None
             for row in extracted.all_hourly_rows:
                 r_horario = row["horario"]
@@ -161,12 +206,11 @@ class WhiteboardProcessingPipeline:
                 ).first()
 
                 if existing:
-                    # Actualizar con nuevos valores si hay cambio
                     if (existing.real_pz_hora != r_real_h or
                         existing.real_acumulado != r_real_ac or
                         existing.piezas_malas != r_malas or
                         existing.paros != r_paros):
-                        
+
                         history_entry = ProductionHistory(
                             record_id=existing.id,
                             version=existing.version,
@@ -235,7 +279,7 @@ class WhiteboardProcessingPipeline:
 
             db.commit()
 
-            # 11. Sincronización con el Dashboard Web con TODAS las horas de la jornada 24H
+            # 12. Sincronización con el Dashboard Web con TODAS las horas de la jornada 24H
             dashboard_synced = False
             all_day_records = db.query(HourlyProductionRecord).filter(
                 HourlyProductionRecord.linea == extracted.linea,
@@ -254,6 +298,7 @@ class WhiteboardProcessingPipeline:
 
             return {
                 "success": True,
+                "is_duplicate": False,
                 "raw_image_id": raw_img_rec.id,
                 "record_id": record_to_sync.id if record_to_sync else None,
                 "validation_status": validation_status,

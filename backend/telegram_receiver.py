@@ -332,7 +332,8 @@ class TelegramPhotoReceiver:
                 )
 
             self.send_message(chat_id, reply, reply_to_message_id=msg_id)
-            self._git_push_background()
+            if not is_dup and status in ["VALIDO", "PARCIAL"]:
+                self._git_push_background()
 
         except Exception as e:
             AuditLogger.log_event("PROCESSING_ERROR", f"Error procesando imagen: {e}", level="ERROR")
