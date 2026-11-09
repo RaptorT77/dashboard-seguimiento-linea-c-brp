@@ -1,250 +1,145 @@
-# Dashboard de Seguimiento Línea C BRP — Rotax México
+# Dashboard de Seguimiento Línea C BRP — Planta Kolben Schmidt Celaya
 
-> **Sistema Ejecutivo y Operativo de Control de Producción, OEE y Estaciones en Tiempo Real**  
-> Desarrollado con base en la identidad visual y estándares corporativos de **BRP Rotax México**, **Kolbenschmidt Pierburg** y **JI&FIX SIGMA S.A. de C.V.**
+> **Sistema Industrial de Telemetría, Captura OCR de Pizarra y Control de Producción 24 Horas**  
+> Desarrollado con base en la identidad visual y estándares corporativos de **BRP Rotax México**, **Kolbenschmidt Pierburg (KS)** y **JI&FIX SIGMA S.A. de C.V.**
 
----
-
-## 🌐 Enlaces Oficiales
-
-- **Sitio Web Público (GitHub Pages):**  
-  👉 **[https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)**
-
-- **Repositorio Oficial en GitHub:**  
-  👉 **[https://github.com/RaptorT77/dashboard-seguimiento-linea-c-brp](https://github.com/RaptorT77/dashboard-seguimiento-linea-c-brp)**
+[![Estado Sistema](https://img.shields.io/badge/Sistema-En%20Vivo%20(24%2F7)-emerald.svg)](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)
+[![Planta](https://img.shields.io/badge/Planta-Kolben%20Schmidt%20Celaya-173D60.svg)](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)
+[![Línea](https://img.shields.io/badge/L%C3%ADnea-L%C3%ADnea%20C%20(WOLF%20V1)-1F4E79.svg)](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)
+[![Telegram Bot](https://img.shields.io/badge/Telegram-@DASHBOARD__BRP__001__bot-229ED9.svg)](https://t.me/DASHBOARD_BRP_001_bot)
 
 ---
 
-## 📋 Descripción del Proyecto
+## 🌐 Enlaces Oficiales del Proyecto
 
-El **Dashboard de Seguimiento Línea C BRP** es una solución front-end moderna, responsiva y de grado industrial concebida para brindar supervisión operativa y ejecutiva instantánea sobre la **Línea C** de ensamble y mecanizado de motores **Rotax ACE (Advanced Combustion Efficiency)** en planta.
-
-El diseño sigue con rigurosa fidelidad los lineamientos visuales, colores corporativos (`#173D60`, `#1F4E79`, fondos `slate` y bordes estandarizados), tipografía industrial y experiencia de usuario del portal de referencia [KOLBEN-BRP](https://raptort77.github.io/KOLBEN-BRP/).
-
----
-
-## ✨ Características y Módulos Principales
-
-### 1. Encabezado Corporativo e Identidad Gráfica
-- **Logotipos Oficiales Integrados:** Kolbenschmidt (KS Pierburg) en el flanco izquierdo y JI&FIX SIGMA / BRP en el flanco derecho, enmarcados en tarjetas con bordes sutiles.
-- **Indicador "EN VIVO":** Pulsador dinámico de estado en verde esmeralda que indica telemetría conectada.
-- **Reloj Industrial en Tiempo Real:** Visualización continua de fecha y hora local (`DD/MM/AAAA • HH:mm:ss`).
-- **Acciones Rápidas:**
-  - ⚡ **Simular Pieza (+1):** Permite incrementar unidades en vivo, recalculando instantáneamente el avance, las barras de progreso, las gráficas y emitiendo notificaciones *toast*.
-  - 📥 **Exportar CSV:** Descarga directa de la matriz de datos de estaciones, piezas y ciclos.
-  - 🖨️ **Imprimir PDF:** Estilos de impresión `@media print` optimizados para emitir informes ejecutivos limpios sin elementos de navegación.
-  - ⛶ **Pantalla Completa:** Modo kiosco / pantalla Andon para monitores industriales de piso de producción.
-
-### 2. Barra de Métricas Rápidas y Filtros Interactivos
-- **Chips Rápidos de Estado:** Meta total (540 uds), Producción actual (432 uds - 80%), Pendientes (108 uds), OEE Global (89.4%), Paros acumulados (18 min) y Scrap (0.46%).
-- **Filtros Dinámicos Combinables:**
-  - Selector de Fecha (con calendario HTML5).
-  - Selector de Turno (Turno 1 Matutino, Turno 2 Vespertino, Turno 3 Nocturno).
-  - Selector de Estación (OP10 a OP60).
-  - Selector de Modelo de Motor (Rotax 900 ACE Turbo, 1630 ACE HO, 850 E-TEC, HD10).
-  - Selector de Estado Operativo (OK, RUN, PEND / PARO).
-  - Botón de restablecimiento general de filtros.
-
-### 3. Hero Operativo (Tarjetas de Mando)
-- **Estado de la Línea:** Estado en tiempo real (`🟢 OPERANDO A RITMO NORMAL`), Takt time actual vs. objetivo (44.8s vs. 45.0s) y cadencia horaria (80 uds/h).
-- **Turno & Supervisión:** Turno activo, horario laboral y supervisor a cargo (`Ing. Carlos Mendoza`).
-- **Producto en Fabricación:** Código de motor (`Rotax 900 ACE Turbo`), Orden de Trabajo (`OT-2026-BRP-09482`) y planta destino.
-- **Eficiencia OEE:** OEE Global (89.4%), Disponibilidad (94.1%), Rendimiento (95.5%) y Calidad / FPY (99.54%).
-
-### 4. Grilla de Indicadores Clave (KPIs)
-- **Producción Real del Día:** 432 unidades con indicador de ritmo positivo (+2 piezas vs. plan).
-- **Meta Diaria Programada:** 540 unidades.
-- **Porcentaje de Avance:** 80.0% con barra de progreso dinámica.
-- **Unidades Pendientes:** 108 unidades calculadas con tiempo restante estimado.
-- **Eficiencia Global (OEE):** 89.4% clasificada como rendimiento de clase mundial.
-- **Tiempo de Paros Acumulado:** 18 minutos distribuidos en 4 eventos de microparos con MTTR de 4.5 min.
-
-### 5. Visualizaciones de Datos Interactivas (Chart.js)
-1. **Producción por Hora (Real vs. Meta):** Gráfica combinada de barras en azul marino industrial con línea punteada de meta horaria en ámbar.
-2. **Curva de Avance Acumulado (Curva S):** Proyección acumulada teórica vs. curva real con degradado corporativo.
-3. **Desglose de Eficiencia (OEE):** Barras horizontales comparando Disponibilidad, Rendimiento, Calidad (FPY) y OEE.
-4. **Pareto de Paros e Incidencias:** Gráfica tipo dona (*doughnut*) analizando causas: Mecánico (8m), Logística (5m), Setup (3m) y Limpieza (2m).
-
-### 6. Flujo de Estaciones de Línea C (Process Flow Layout)
-- Visualización interactiva de las 6 operaciones clave:
-  - **OP10:** Mecanizado de Monoblock (Kanzaki OP10 / Gantry 3M)
-  - **OP20:** Lavado Térmico y Desengrase Ultrasónico (WashTech OP20)
-  - **OP30:** Subensamble de Pistones y Bielas (Robodrill OP30)
-  - **OP40:** Torque de Cabeza Robotizado (Atlas Copco STB40)
-  - **OP50:** Prueba Neumática y Fuga de Helio (Ateq F520)
-  - **OP60:** Inspección Final EOL & Liberación Óptica (Cognex EOL60)
-- *Interacción Drill-down:* Al hacer clic en cualquier tarjeta de estación, la tabla inferior se filtra automáticamente.
-
-### 7. Tabla Detallada con Búsqueda en Vivo
-- Tabla estilo matriz industrial con encabezados `#1F4E79` y bordes reforzados.
-- Buscador reactivo por estación, equipo o nombre de técnico.
-- Tiempos de ciclo en segundos, piezas buenas, scrap y fecha/hora exacta de última liberación.
-
-### 8. Centro de Alertas y Notificaciones Operativas
-- Registro categorizado con badges de severidad: **CRÍTICA**, **ADVERTENCIA**, **CALIDAD** e **INFO**.
-- Cálculo de tiempo transcurrido y estatus de resolución.
+| Recurso | Enlace Directo | Descripción |
+| :--- | :--- | :--- |
+| **Dashboard Web Público (Producción)** | 👉 **[raptort77.github.io/dashboard-seguimiento-linea-c-brp/](https://raptort77.github.io/dashboard-seguimiento-linea-c-brp/)** | **Única fuente de verdad oficial.** Dashboard interactivo en GitHub Pages. |
+| **Repositorio en GitHub** | 👉 **[github.com/RaptorT77/dashboard-seguimiento-linea-c-brp](https://github.com/RaptorT77/dashboard-seguimiento-linea-c-brp)** | Código fuente, pipeline backend, modelos y datos maestros. |
+| **Bot de Telegram** | 👉 **[@DASHBOARD_BRP_001_bot](https://t.me/DASHBOARD_BRP_001_bot)** | Receptor móvil de fotografías de pizarra enviadas por supervisores. |
+| **Servicio Cloud Backend** | 👉 **[dashboard-seguimiento-linea-c-brp.onrender.com](https://dashboard-seguimiento-linea-c-brp.onrender.com/)** | API REST FastAPI en Render con monitor keep-alive automático. |
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 📋 Descripción del Sistema
 
-- **HTML5 Semántico:** Estructura accesible y modular optimizada para SEO y lectores de pantalla.
-- **CSS3 Moderno:** Variables nativas CSS (`:root`), Flexbox, CSS Grid, media queries responsivas y diseño para impresión (`@media print`).
-- **JavaScript (Vanilla ES6+):** Código desacoplado, sin dependencias pesadas, estructurado en arquitectura de datos maestros (`BRP_DATA`).
-- **Chart.js v4:** Gráficas vectoriales interactivas vía CDN oficial de alto rendimiento.
-- **GitHub Pages:** Despliegue automatizado en la nube con certificado SSL/HTTPS.
+El sistema automatiza el levantamiento de información horaria de producción en la **Línea C** (mecanizado y ensamble del pistón **WOLF V1** para motores BRP Rotax). 
+
+En lugar de requerir captura manual en hojas de cálculo, los líderes de turno simplemente fotografían el pizarrón acrílico oficial de piso de planta y lo envían a un bot de **Telegram**. El motor de visión artificial (OpenCV + RapidOCR PP-OCRv4 ONNX) procesa la imagen, extrae las cantidades por hora, piezas malas, causas de paro y acumulados, y sincroniza de inmediato el dashboard web en tiempo real.
 
 ---
 
-## 💻 Instrucciones para Ejecución Local
+## ⚙️ Estructura de Turnos y Metas Oficiales (Jornada 24 Horas)
 
-No requiere compiladores ni gestores de paquetes. Se ejecuta directamente en cualquier navegador moderno:
+| Turno | Horario | Horas | Meta Turno | Supervisión / Líder | Horas Cubiertas |
+| :---: | :---: | :---: | :---: | :--- | :--- |
+| **Turno 1 (Matutino)** | `06:30 - 15:00` | 8 hrs | **480 uds** | Líder Antonia | 06:30 a 15:00 hrs |
+| **Turno 2 (Vespertino)** | `15:00 - 23:00` | 8 hrs | **450 uds** | Líder Javier / Santiago V. | 15:00 a 23:00 hrs |
+| **Turno 3 (Nocturno)** | `23:00 - 06:30` | 7 hrs | **420 uds** | Ing. Diana Soto | 23:00 a 06:30 hrs |
+| **TOTAL JORNADA 24H** | **24 Horas** | **23 hrs** | **1,350 uds** | Plantel Celaya | Jornada completa continua |
 
-### Opción 1: Apertura Directa
-1. Clona o descarga el repositorio:
-   ```bash
-   git clone https://github.com/RaptorT77/dashboard-seguimiento-linea-c-brp.git
-   ```
-2. Entra al directorio:
-   ```bash
-   cd dashboard-seguimiento-linea-c-brp
-   ```
-3. Haz doble clic en el archivo `index.html` o ábrelo con tu navegador preferido (Chrome, Edge, Firefox, Safari).
-
-### Opción 2: Con Servidor Local (Recomendado para simulación de red)
-Con Python:
-```bash
-python -m http.server 8000
-```
-Luego abre tu navegador en: `http://localhost:8000`
+> [!NOTE]
+> Las horas futuras que aún no transcurren en la jornada permanecen **estrictamente en blanco (`null`)**, tanto en la tabla como en las gráficas de producción y en la Curva S acumulada.
 
 ---
 
-## 🏭 Estructura del Proyecto
+## ✨ Características y Módulos del Dashboard
 
-```text
-dashboard-seguimiento-linea-c-brp/
-├── index.html                  # Página principal del dashboard
-├── README.md                   # Documentación oficial y enlaces
-├── assets/
-│   ├── css/
-│   │   └── styles.css          # Estilos industriales y paleta corporativa KOLBEN-BRP
-│   ├── js/
-│   │   ├── mockData.js         # Base de datos maestros, estaciones y telemetría
-│   │   └── dashboard.js        # Motor de interacción, gráficas y simulación
-│   └── images/
-│       ├── LOGO_KS-1.png       # Logotipo oficial Kolbenschmidt (KS Pierburg)
-│       ├── LOGO_KS-1.bmp       # Logotipo formato alterno KS
-│       └── LOGO_JIFIX_BRP-1.jpg # Logotipo oficial JI&FIX SIGMA / BRP
+1. **Semáforo Andon y Estado Operativo:**
+   - Visualización de baliza industrial de 3 estados: `PRODUCCIÓN EN ORDEN` (Verde), `ADVERTENCIA OPERATIVA` (Ámbar oscilante a 3 Hz) y `PRODUCCIÓN DEFICIENTE` (Rojo con alerta de paro).
+   - Cadencia horaria y Takt Time de línea (objetivo: 45.0 s).
+
+2. **Panel de KPIs de Clase Mundial (OEE):**
+   - Producción Real del Día vs. Meta Diaria (1,350 uds).
+   - Porcentaje de Avance y Unidades Pendientes con tiempo restante de turno.
+   - Eficiencia Global OEE desglosada en **Disponibilidad**, **Rendimiento** y **Calidad (FPY)**.
+   - Paros acumulados en minutos y conteo de eventos con cálculo de MTTR.
+
+3. **Visualizaciones de Datos Interactivas (Chart.js v4):**
+   - **Producción por Hora (Real vs. Meta):** Barras azul marino comparadas con la meta programada en línea ámbar.
+   - **Curva de Avance Acumulado (Curva S 24H):** Avance real acumulado continuo cortado exactamente en la última hora registrada, con proyección de meta hasta 1,350 unidades.
+   - **Distribución de Paros e Incidencias (Pareto):** Gráfica tipo dona categorizando causas (Mecánico, Herramental, Comedor, Calibración).
+
+4. **Tabla de Pizarra Industrial Oficial (10 Columnas):**
+   - Correlacionada exactamente con la plantilla PDF oficial (`WOLF V1 - Línea C`).
+   - Columnas: `Horario | Obj. Pz/Hora | Real Pz/Hora | Obj. Acumulado | Real Acumulado | Piezas Malas (Scrap) | Op | Tiempo (Min) | Paros y Descripción de Fallas | Estatus`.
+   - Filas de totalizador con cálculo automático por turno y total del día.
+
+5. **Filtros Interactivos Reactivos:**
+   - **Filtro de Turno:** Permite ver Turno 1, Turno 2, Turno 3 o los 3 turnos juntos (24 horas). Al cambiar de turno, tanto la tabla como las gráficas se recalculan dinámicamente.
+   - **Filtro de Estación:** Filtra registros por la estación de trabajo (`OP10`, `OP20`, `OP30`, `OP40`, `OP50`).
+   - **Filtro de Estado:** Aísla horas con estatus `OK`, `RUN` o `PEND / PARO`.
+   - **Buscador en Tiempo Real:** Búsqueda libre en tabla (ej. escribe `buril`, `comedor` o `personal`).
+   - **Botón Restablecer Filtros:** Regresa con un solo clic a la vista completa de la jornada.
+
+---
+
+## 🛠️ Stack Tecnológico Oficial
+
+- **Frontend:** HTML5 semántico, CSS3 corporativo (`assets/css/styles.css`), JavaScript ES6+ (`assets/js/dashboard.js`), Chart.js v4 CDN.
+- **Backend:** Python 3.10+ / 3.14, FastAPI, Uvicorn, SQLAlchemy, Pydantic, OpenCV (`opencv-python`), RapidOCR (`rapidocr-onnxruntime`).
+- **Base de Datos y Persistencia:** SQLite (`backend/storage/production_data.db`), respaldos CSV por turno en `backend/storage/turnos/` y `data/production_data.json`.
+- **Despliegue y Hosting:**
+  - Frontend Web: **GitHub Pages** (HTTPS).
+  - Backend API & Bot: Servicio local con autoarranque en Windows + Réplica en **Render Cloud**.
+
+---
+
+## 🚀 Guía de Instalación y Ejecución Local
+
+### 1. Clonar el Repositorio e Ingresar al Directorio
+```powershell
+cd D:\RESEARCH
+git clone https://github.com/RaptorT77/dashboard-seguimiento-linea-c-brp.git
+cd D:\RESEARCH\dashboard-seguimiento-linea-c-brp
 ```
 
----
-
-## 🤖 Pipeline de Datos, Telemetría y OCR de Pizarra vía Telegram
-
-El sistema cuenta con un backend desacoplado de ingeniería de datos para la **captura, digitalización y validación automática de pizarras de producción** de la **Línea C (Planta Kolben Schmidt Celaya)** para el producto **WOLF V1**.
-
-```
-[Operador en Piso] 
-       │ (Toma fotografía horaria de la pizarra)
-       ▼
-[Telegram Bot: @DASHBOARD_BRP_001_bot]
-       │ (Descarga imagen raw en alta resolución)
-       ▼
-[Image Preprocessor (OpenCV)]
-       │ • Bounding de contorno de pizarra
-       │ • CLAHE (Contrast Limited Adaptive Histogram Equalization)
-       │ • Binarización adaptativa bilateral
-       ▼
-[OCR Engine (RapidOCR PP-OCRv4 ONNX)]
-       │ • Detección de texto y cajas delimitadoras
-       │ • Centroides de celda y cálculo de confianza espacial
-       ▼
-[Data Extractor (Última Hora)]
-       │ • Extracción estricta de los 14 campos sin inferir datos ausentes
-       │ • Mapeo horario según matriz oficial de turnos (Turnos 1, 2 y 3)
-       ▼
-[Data Validator (Reglas Industriales)]
-       │ • Validación de tipos y rangos de producción
-       │ • Ecuación de balance: Real Acumulado = Previo + (Real Pz/Hora - Piezas Malas)
-       │ • Idempotencia (Prevención de registros duplicados)
-       │ • Umbrales de confianza OCR
-       ▼
-[Persistencia SQLite + Auditoría Inmutable]
-       │ • Tablas: RawImage, OcrLog, HourlyProductionRecord, ProductionHistory, AuditEvent
-       ▼
-[Sincronizador Web Atómico]
-       │ • Inyección atómica a mockData.js y data/production_data.json
-       ▼
-[Dashboard Web Línea C BRP] ◄── Visualización en vivo sin alterar código frontend
-```
-
-### 📋 Los 14 Campos Extraídos de la Pizarra
-
-1. **Línea:** Valor esperado `C`.
-2. **Producto:** Valor esperado `WOLF V1` (Pistón BRP).
-3. **Fecha:** Fecha del turno/día de producción.
-4. **Turno:** `Primero: 06:30 a 15:00 hrs`, `Segundo: 15:00 a 23:00 hrs`, o `Tercero: 23:00 a 06:30 hrs`.
-5. **Horario:** Intervalo de la última hora concluida (ej. `14:00 - 15:00`).
-6. **Obj. Pz/Hora:** Rate o meta por hora de producción.
-7. **Real Pz/Hora:** Piezas totales que salieron de línea en la hora.
-8. **Obj. Acumulado:** Meta acumulada del turno hasta la hora registrada.
-9. **Real Acumulado:** Total de piezas OK producidas acumuladas en el turno.
-10. **Piezas Malas:** Piezas de scrap / no conformes de la última hora.
-11. **Líder:** Nombre del líder de turno legible en la pizarra (ej. `Antonia`).
-12. **Op:** Estación de falla si está indicada en notas (ej. `OP20`).
-13. **Tiempo Minutos:** Minutos de paro registrados.
-14. **Paros:** Descripción manuscrita de la causa de paro reportada.
-
-### 🚀 Puesta en Marcha del Backend
-
-#### 1. Instalar Dependencias
-```bash
+### 2. Instalar Dependencias de Python
+```powershell
 pip install -r backend/requirements.txt
 ```
 
-#### 2. Modos de Ejecución (`run_backend.py`)
+### 3. Iniciar el Backend Completo (Telegram + API REST + Keepalive + Scheduler 24/7)
+```powershell
+python run_backend.py --mode all
+```
+El servidor responderá en `http://127.0.0.1:8000` e iniciará la escucha activa de Telegram para el bot `@DASHBOARD_BRP_001_bot`.
 
-- **Modo Completo (Bot de Telegram + API REST en paralelo):**
-  ```bash
-  python run_backend.py --mode all
-  ```
+### 4. Configurar Inicio Automático con Windows (Opcional)
+Para que el bot de Telegram y el backend se inicien automáticamente en segundo plano cada vez que se encienda la computadora:
+```powershell
+python install_startup.py
+```
+*(Esto creará un acceso directo VBScript en la carpeta `Startup` de Windows que corre el proceso minimizado).*
 
-- **Solo Receptor de Telegram:**
-  ```bash
-  python run_backend.py --mode bot
-  ```
-
-- **Solo Servidor API REST (FastAPI):**
-  ```bash
-  python run_backend.py --mode api --port 8000
-  ```
-
-- **Procesamiento Manual de una Fotografía:**
-  ```bash
-  python run_backend.py --mode process --image "ruta/a/foto_pizarra.jpg"
-  ```
-
-- **Ejecutar Batería de Pruebas Automatizadas:**
-  ```bash
-  python run_backend.py --mode test
-  ```
-
-### 🧪 Suite de Pruebas Automatizadas (5 Escenarios de Validación)
-
-El módulo `backend/tests/test_pipeline.py` valida 100% los requerimientos de robustez operacional:
-1. **Fotografía Real de Pizarra:** Procesa la imagen física subida por el operador, extrayendo con total fidelidad `WOLF V1`, Línea `C`, `14:00 - 15:00`, `Real: 30`, `Obj: 60`, `Acum: 185`, `Malas: 10`, `Líder: Antonia`.
-2. **Idempotencia (Imagen Duplicada):** Comprueba que enviar la misma fotografía no genere registros duplicados en base de datos.
-3. **Campos Faltantes:** Verifica que una pizarra en blanco no invente números ni líderes, clasificándose como `REQUIERE_REVISION`.
-4. **Baja Confianza / Desenfoque Extremo:** Simula pérdida de foco con desenfoque gaussiano masivo, previniendo actualizaciones corruptas.
-5. **Causa de Paro Manuscrita:** Verifica la detección de anotaciones manuscritas en la columna de paros (`golpe en cabeza`, `ajuste`, etc.).
+### 5. Ejecutar la Batería de Pruebas Unitarias
+```powershell
+python -m unittest backend/tests/test_pipeline.py
+```
 
 ---
 
-## 📄 Créditos y Derechos
+## 📸 Uso del Bot de Telegram
 
-- **Organización:** BRP ROTAX MÉXICO S.A. de C.V. — Sistema de Seguimiento Operativo Línea C (Planta Kolben Schmidt Celaya).
-- **En colaboración con:** [HC Advanced Automation](https://www.hcaa.com.mx/) &amp; **JI&amp;FIX SIGMA S.A. de C.V.**
-- **Sitio Web Oficial HCAA:** [https://www.hcaa.com.mx/](https://www.hcaa.com.mx/)
-- **Desarrollo:** Ingeniería de Procesos y Automatización MES/SCADA
+1. Abre Telegram y busca el bot oficial: **[@DASHBOARD_BRP_001_bot](https://t.me/DASHBOARD_BRP_001_bot)**.
+2. Presiona `/start` para recibir las instrucciones de captura.
+3. Toma una fotografía clara de la pizarra de Línea C y envíala al bot.
+4. El bot procesará la imagen y te responderá con un resumen de los datos extraídos:
+   - Fecha y Horario activo detectado.
+   - Producción Real y Scrap.
+   - Paros registrados.
+   - Enlace directo al dashboard web actualizado.
+5. Abre el dashboard web y presiona `Ctrl + F5` para visualizar los nuevos datos reflejados al instante.
 
+---
+
+## 📚 Documentación Adicional
+
+- [Reglas y Protocolo para Agentes de IA (`AGENTS.md`)](file:///d:/RESEARCH/dashboard-seguimiento-linea-c-brp/AGENTS.md)
+- [Memoria Operativa y Contexto de Planta (`PROJECT_CONTEXT.md`)](file:///d:/RESEARCH/dashboard-seguimiento-linea-c-brp/PROJECT_CONTEXT.md)
+- [Arquitectura Técnica y Diagramas (`ARCHITECTURE.md`)](file:///d:/RESEARCH/dashboard-seguimiento-linea-c-brp/ARCHITECTURE.md)
+
+---
+
+**BRP Rotax México & Kolbenschmidt Pierburg (KS Celaya)**  
+*Desarrollado y mantenido por JI&FIX SIGMA S.A. de C.V.*

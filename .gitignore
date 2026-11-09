@@ -18,6 +18,7 @@ backend/storage/*.db-journal
 # Local storage and audit logs (keep folders via .gitkeep)
 backend/storage/raw_images/*
 !backend/storage/raw_images/.gitkeep
+!backend/storage/raw_images/test_8nov.jpg
 backend/storage/processed_images/*
 !backend/storage/processed_images/.gitkeep
 backend/storage/audit_logs/*

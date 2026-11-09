@@ -57,7 +57,7 @@ def run_shift_scheduler():
     A las 06:30 (T1), 15:00 (T2) y 23:00 (T3) hora de Celaya (UTC-6),
     archiva automáticamente el turno saliente en CSV y prepara el nuevo turno.
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     from backend.dashboard_sync import DashboardSyncService
     from backend.config import DASHBOARD_DATA_JSON
     import json
@@ -68,7 +68,7 @@ def run_shift_scheduler():
     while True:
         try:
             time.sleep(30)
-            now_mex = datetime.utcnow() - timedelta(hours=6)
+            now_mex = datetime.now(timezone.utc) - timedelta(hours=6)
             cur_time = now_mex.hour + now_mex.minute / 60.0
 
             if 6.5 <= cur_time < 15.0:
